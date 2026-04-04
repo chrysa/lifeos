@@ -1,0 +1,33 @@
+---
+repos:
+    - repo: https://github.com/chrysa/pre-commit-tools
+      rev: 0.0.63
+      hooks:
+          - id: ruff-check
+          - id: ruff-format-check
+          - id: detect-private-key
+          - id: no-commit-to-branch
+
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: f1dff44d3a9ae852957f34def96390f28719c232
+      hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-yaml
+          - id: check-json
+          - id: check-toml
+          - id: check-merge-conflict
+          - id: check-added-large-files
+          - id: mixed-line-ending
+
+    - repo: https://github.com/adrienverge/yamllint
+      rev: 30a25fe087e31d0345be0ffed4360e4651a44b6e
+      hooks:
+          - id: yamllint
+            args: [--strict]
+
+    - repo: https://github.com/igorshubovych/markdownlint-cli
+      rev: 70466ee3b5b9cef14d47b7ff38f3e72b0a7b1009
+      hooks:
+          - id: markdownlint
+            args: [--disable, MD013, MD033, MD041]
