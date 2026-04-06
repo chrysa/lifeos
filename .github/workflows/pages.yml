@@ -1,0 +1,44 @@
+---
+name: GitHub Pages — Documentation
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - docs/**
+            - mkdocs.yml
+    workflow_dispatch:
+
+concurrency:
+    group: pages-${{ github.ref }}
+    cancel-in-progress: false
+
+permissions:
+    contents: write
+    pages: write
+    id-token: write
+
+jobs:
+    pages:
+        name: Build and deploy docs
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python 3.14
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.14'
+
+            - name: Install MkDocs
+              run: pip install mkdocs-material
+
+            - name: Build site
+              run: mkdocs build
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: site
