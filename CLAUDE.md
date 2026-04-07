@@ -1,5 +1,7 @@
 # CLAUDE.md — my-assistant
 
+> @[claude-sonnet-4-6]
+
 ## Project Purpose
 
 Floating AI assistant multi-OS desktop application. Monitors the system, integrates with messaging platforms (Discord), routes queries to AI providers (GitHub Copilot via OpenCode, OpenAI-compatible), and connects to external services (Notion, GitHub). Runs as a floating overlay or headless tray application on Linux and Windows.
