@@ -1,8 +1,8 @@
-site_name: my-assistant — Documentation
+site_name: lifeos — Documentation
 site_description: Floating desktop AI assistant — PySide6 overlay, plugin system, multi-provider
-site_url: https://chrysa.github.io/my-assistant/
-repo_url: https://github.com/chrysa/my-assistant
-repo_name: my-assistant
+site_url: https://chrysa.github.io/lifeos/
+repo_url: https://github.com/chrysa/lifeos
+repo_name: lifeos
 docs_dir: docs
 strict: true
 

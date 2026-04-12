@@ -1,4 +1,4 @@
-# CLAUDE.md — my-assistant
+# CLAUDE.md — lifeos
 
 > @[claude-sonnet-4-6]
 
@@ -40,7 +40,7 @@ Floating AI assistant multi-OS desktop application. Monitors the system, integra
 
 Config is loaded (in order) from:
 1. `--config <path>` CLI flag
-2. `~/.config/my-assistant/config.toml`
+2. `~/.config/lifeos/config.toml`
 3. `./config/config.toml`
 
 Env var interpolation: `"${ENV_VAR}"` patterns in any TOML string value are expanded via `os.environ`. If the var is missing, the literal `${ENV_VAR}` string is kept (no silent failure — warn in logs).
@@ -60,8 +60,8 @@ make dev          # pip install -e ".[ui,discord,dev]" + pre-commit install
 make test         # pytest
 make lint         # ruff check
 make format       # ruff format
-make run          # python -m my_assistant --ui
-make run-headless # python -m my_assistant --headless
+make run          # python -m lifeos --ui
+make run-headless # python -m lifeos --headless
 ```
 
 ## Testing

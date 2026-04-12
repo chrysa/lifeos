@@ -7,17 +7,17 @@ from pathlib import Path
 
 import click
 
-from my_assistant import __version__
+from lifeos import __version__
 
 
 @click.command()
-@click.version_option(__version__, prog_name="my-assistant")
+@click.version_option(__version__, prog_name="lifeos")
 @click.option(
     "--config",
     "-c",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
-    help="Path to config.toml (default: ~/.config/my-assistant/config.toml)",
+    help="Path to config.toml (default: ~/.config/lifeos/config.toml)",
 )
 @click.option(
     "--ui/--headless",
@@ -38,14 +38,14 @@ from my_assistant import __version__
     help="Enable DEBUG logging.",
 )
 def main(config: Path | None, ui: bool, enable: tuple[str, ...], debug: bool) -> None:
-    """My Assistant — floating AI assistant for Linux and Windows."""
+    """LifeOS — floating AI assistant for Linux and Windows."""
     logging.basicConfig(
         level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
 
-    from my_assistant.app import Application
-    from my_assistant.config.settings import load_config
+    from lifeos.app import Application
+    from lifeos.config.settings import load_config
 
     settings = load_config(config_path=config)
 

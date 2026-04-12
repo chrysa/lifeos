@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "my-assistant"
+name = "lifeos"
 version = "0.1.0"
 description = "Floating AI assistant multi-OS — system monitoring, messaging, AI and external service integrations"
 authors = [{name = "chrysa", email = "greau.anthony@gmail.com"}]
@@ -44,10 +44,10 @@ dev = [
 ]
 
 [project.scripts]
-my-assistant = "my_assistant.__main__:main"
+lifeos = "lifeos.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["my_assistant"]
+packages = ["lifeos"]
 
 [tool.ruff]
 target-version = "py312"
@@ -71,4 +71,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--cov=my_assistant --cov-report=xml --cov-report=term-missing"
+addopts = "--cov=lifeos --cov-report=xml --cov-report=term-missing"
