@@ -1,0 +1,40 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "github-copilot",
+  "provider": {
+    "github-copilot": {
+      "type": "copilot",
+      "options": {
+        "model": "claude-sonnet-4-5"
+      }
+    }
+  },
+  "mcp": {
+    "notion": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "environment": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"
+      },
+      "enabled": true
+    },
+    "github": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "enabled": true
+    }
+  },
+  "instructions": "You are an expert software engineer and ecosystem architect. Default to English in code, docs, and issues. Respect CLAUDE.md per repo. Use GitHub Copilot (latest Claude) as default model.",
+  "_comment_model": "Model auto-selected from latest Claude available via Copilot. Do not hardcode a version. Fallback: anthropic/claude-sonnet-4-5 if Copilot unavailable."
+}
