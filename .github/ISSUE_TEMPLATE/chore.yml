@@ -1,0 +1,23 @@
+---
+name: Maintenance / chore
+about: Track technical debt, refactoring, infrastructure, or CI work
+title: 'chore: '
+labels: ['chore']
+assignees: ''
+---
+
+## Summary
+<!-- What needs to be done? -->
+
+## Background
+<!-- Why is this needed? (tech debt, SonarCloud finding, CI alignment, etc.) -->
+
+## Tasks
+- [ ]
+- [ ]
+
+## Definition of done
+<!-- What does "done" look like? -->
+
+## Next step
+<!-- This issue should be covered by exactly 1 PR: `Closes #<this issue number>` -->
