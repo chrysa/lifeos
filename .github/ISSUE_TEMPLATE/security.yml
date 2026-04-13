@@ -1,0 +1,28 @@
+---
+name: Security vulnerability
+about: Report a security issue or vulnerability (do NOT disclose publicly)
+title: 'security: '
+labels: ['security']
+assignees: ''
+---
+
+## Severity
+<!-- Select one: Critical | High | Medium | Low -->
+
+## Summary
+<!-- Brief description — do NOT include exploit details in public issues -->
+
+## Affected component
+<!-- File, endpoint, dependency, etc. -->
+
+## Impact
+<!-- What could an attacker do? -->
+
+## Suggested fix
+<!-- If known: patch, version bump, config change -->
+
+## References
+<!-- CVE, GHSA, SonarCloud finding ID, etc. -->
+
+## Next step
+<!-- This issue should be covered by exactly 1 PR with `Closes #<this issue number>` -->

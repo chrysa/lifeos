@@ -1,34 +1,30 @@
-## Description
+## Type
+<!-- Select one: Bug Fix | Feature | Chore | Security | Refactor | Docs -->
 
-<!-- Describe the changes introduced by this PR. Why? What problem does it solve? -->
+## Summary
+<!-- Briefly describe what this PR does (1–3 sentences) -->
 
-Closes #<!-- issue number -->
+## Motivation
+<!-- Why is this change needed? Link to issues/Notion pages if relevant -->
 
-## Type of change
+Closes #<!-- issue number — required: 1 PR = 1 issue -->
 
-- [ ] 🐛 Bug fix (non-breaking change that fixes an issue)
-- [ ] ✨ New feature (non-breaking change that adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to change)
-- [ ] 🔧 Refactor / technical debt
-- [ ] 📚 Documentation only
-- [ ] 🔒 Security fix
-- [ ] 📦 Dependencies update
-- [ ] 🏗 CI/CD / Infrastructure
+## Changes
+<!-- List the concrete changes made -->
+- 
+
+## Dependencies
+<!-- List any PRs this depends on. Format: chrysa/REPO#NUMBER -->
+<!-- None -->
 
 ## Testing
-
-- [ ] Unit tests added / updated
-- [ ] Integration tests verified
-- [ ] Manually tested (describe scenario below)
-
-```
-Manual test scenario (if applicable):
-```
+<!-- How was this tested? Unit tests / manual steps / CI only -->
 
 ## Checklist
-
-- [ ] Code follows project conventions (pre-commit clean)
-- [ ] PR is assigned to the correct milestone
-- [ ] Labels correctly assigned
-- [ ] CLAUDE.md updated if necessary
-- [ ] No secrets or tokens in the code
+- [ ] Conventional commit messages used (`fix:`, `feat:`, `chore:`, etc.)
+- [ ] Pre-commit hooks pass locally (`pre-commit run --all-files`)
+- [ ] CI is green (all checks pass)
+- [ ] SonarCloud has no new **critical** or **blocker** issues
+- [ ] This PR covers exactly **one issue** (squash merge → single clean commit)
+- [ ] README / docs updated if applicable
+- [ ] No secrets, credentials, or personal data in the diff
