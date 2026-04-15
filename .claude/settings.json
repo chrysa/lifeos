@@ -1,0 +1,65 @@
+{
+  "effortLevel": "medium",
+  "autoCompact": true,
+  "autoCompactThreshold": 0.85,
+  "hooks": {
+    "PreCompact": [
+      {
+        "type": "command",
+        "command": "~/.claude/hooks/pre-compact.sh",
+        "timeout": 5000
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/secret-scanner.cjs",
+            "name": "secret-scanner",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/circuit-breaker.cjs",
+            "name": "circuit-breaker",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/verifiable-thresholds.cjs",
+            "name": "verifiable-thresholds",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/frustration-detection.cjs",
+            "name": "frustration-detection",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "type": "command",
+        "command": "notify-send 'Claude Code' 'En attente de ton input' 2>/dev/null || true",
+        "timeout": 3000
+      }
+    ]
+  }
+}

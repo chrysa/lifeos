@@ -24,5 +24,11 @@ assignees: ''
 ## References
 <!-- CVE, GHSA, SonarCloud finding ID, etc. -->
 
+## Milestone
+<!-- GitHub milestone if part of a security hardening sprint -->
+
+## Notion
+<!-- Notion page or task link if tracked — leave blank if none -->
+
 ## Next step
 <!-- This issue should be covered by exactly 1 PR with `Closes #<this issue number>` -->
