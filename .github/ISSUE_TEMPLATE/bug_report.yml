@@ -28,6 +28,16 @@ assignees: ''
 - Python/Node version:
 - Relevant versions:
 
+## Milestone
+<!-- GitHub milestone this issue belongs to — e.g. M2-Core, Maintenance -->
+
+## Notion
+<!-- Notion page or task link if tracked — leave blank if none -->
+
+## Depends on
+<!-- Issues blocking this one. Format: chrysa/REPO#NUMBER or bare #NUMBER -->
+<!-- None -->
+
 ## Additional context
 <!-- Logs, screenshots, SonarCloud findings, etc. -->
 
