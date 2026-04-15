@@ -9,12 +9,18 @@
 
 Closes #<!-- issue number — required: 1 PR = 1 issue -->
 
+## Milestone
+<!-- GitHub milestone this PR contributes to — e.g. M2-Core, Maintenance -->
+
+## Notion
+<!-- Notion project page or task link if tracked — leave blank if none -->
+
 ## Changes
 <!-- List the concrete changes made -->
 - 
 
 ## Dependencies
-<!-- List any PRs this depends on. Format: chrysa/REPO#NUMBER -->
+<!-- PRs this depends on (must be merged first). Format: chrysa/REPO#NUMBER -->
 <!-- None -->
 
 ## Testing

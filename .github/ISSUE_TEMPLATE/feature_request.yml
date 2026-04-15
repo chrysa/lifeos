@@ -22,6 +22,16 @@ assignees: ''
 - [ ]
 - [ ]
 
+## Milestone
+<!-- GitHub milestone this issue belongs to — e.g. M2-Core, M3-Next -->
+
+## Notion
+<!-- Notion page or task link if tracked — leave blank if none -->
+
+## Depends on
+<!-- Issues blocking this one. Format: chrysa/REPO#NUMBER or bare #NUMBER -->
+<!-- None -->
+
 ## Out of scope
 <!-- What is explicitly NOT part of this issue -->
 
