@@ -1,0 +1,37 @@
+---
+name: CI
+
+on:
+    push:
+        branches: [main, master]
+    pull_request:
+        branches: [main, master]
+
+permissions:
+    contents: read
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        name: Lint & pre-commit
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: '3.12'
+            - name: Run pre-commit
+              uses: pre-commit/action@v3.0.1
+
+    test:
+        runs-on: ubuntu-latest
+        name: Tests
+        needs: lint
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: '3.12'
+            - name: Install dependencies
+              run: pip install -e ".[dev]"
+            - name: Run pytest
+              run: pytest --tb=short
