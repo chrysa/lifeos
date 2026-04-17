@@ -117,6 +117,19 @@ make format       # ruff format
 - **Pydantic v2** — config validation
 - **Click** — CLI interface
 
+## Claude Optimization
+
+This project follows the **Notion AI Project Update System (Claude Optimized)** for efficient Claude-driven development.
+
+📖 **Reference:** [Notion AI Project Update System](https://www.notion.so/Notion-AI-Project-Update-System-Claude-Optimized-34459293e35e8181ba53ee0212bdba3f)
+
+**Model Strategy:**
+- Haiku: simple bugs, documentation, code reviews
+- Sonnet: feature dev, UI logic, system integration
+- Opus: multi-service architecture decisions
+
+Consult the reference page for context engineering, agent roles, and cost optimization strategies.
+
 ## Related projects
 
 - [`chrysa/ai-aggregator`](https://github.com/chrysa/ai-aggregator) — AI provider gateway (future backend)
@@ -126,7 +139,7 @@ make format       # ruff format
 
 ## Notion
 
-Project tracking: [To be linked]
+Project tracking: [AI Project Update System](https://www.notion.so/Notion-AI-Project-Update-System-Claude-Optimized-34459293e35e8181ba53ee0212bdba3f)
 
 ## License
 
