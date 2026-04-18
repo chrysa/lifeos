@@ -1,61 +1,67 @@
-# my-assistant — GitHub Copilot Instructions
+# lifeos — GitHub Copilot Instructions
 
-## Project Overview
+## Mandatory Workflow
 
-Floating AI assistant multi-OS (Linux + Windows) — PySide6 overlay, plugin system,
-multi-provider AI routing (GitHub Copilot via OpenCode, OpenAI-compatible APIs).
+1. Read `.github/instructions/*.instructions.md` when present.
+2. Read `CLAUDE.md` for repository context.
+3. Follow repository-local conventions before writing code.
 
-## Instruction files
+## Project Context
 
-- `.github/instructions/python_guidelines.instructions.md` — Python 3.14, patterns async, httpx
-- `.github/instructions/plugin_system.instructions.md` — BasePlugin ABC, lifecycle, events
-- `.github/instructions/testing.instructions.md` — pytest patterns, fixtures, mocking
+**Stack:** Python
+**Purpose:** [![CI](https://github.com/chrysa/my-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/chrysa/my-assistant/actions/workflows/ci.yml).
 
-## Stack
+## Engineering Rules
 
-- **Language**: Python 3.14
-- **UI**: PySide6 6.x (optional `[ui]` extra — app MUST start headless without it)
-- **Config**: Pydantic v2 TOML loader (`config/settings.py`) — `${ENV_VAR}` interpolation
-- **HTTP**: `httpx.AsyncClient` — explicit timeout 30s — no `requests`
-- **AI providers**: OpenCode (port 4096), OpenAI-compatible
-- **Integrations**: Notion REST API v1, GitHub REST API
-- **Tests**: pytest 8 + pytest-asyncio + unittest.mock
-- **Lint**: ruff + mypy strict
+- Write in English: code, comments, docs, issues, PRs and commits.
+- Keep changes minimal and aligned with the existing style.
+- Do not add unrelated refactors or speculative improvements.
+- Prefer make targets when available instead of invoking tooling ad hoc.
+- Never commit secrets, credentials or environment-specific values.
 
-## Key Constraints
+## Automation & Industrialization (NON-NEGOTIABLE)
 
-- Python 3.14 minimum — no platform-specific code in `core/` or `plugins/`
-- PySide6 optional: `try/except ImportError` everywhere in `ui/`
-- All config via TOML — no hardcoded values (except Pydantic defaults)
-- No secrets in code — always `"${ENV_VAR}"` pattern
-- Plugin failures **must never crash the app** — always `try/except` in `setup()` / `teardown()`
-- All HTTP calls: `httpx.AsyncClient` with explicit `timeout=httpx.Timeout(30.0)`
-- OWASP Top 10: validate all external inputs, no secrets in logs
+- Projects must be **maximally automated and industrialized**.
+- Every repetitive task must be covered by one of: CI/CD pipeline, Makefile target, pre-commit hook, GitHub Actions workflow, or a bot/script.
+- Required automation baseline for any project:
+  - **CI/CD**: automated lint, type-check, tests, build on every push/PR.
+  - **Formatting**: auto-applied via pre-commit or CI (no manual `ruff`/`prettier` runs).
+  - **Releases**: automated versioning and changelog generation (e.g. `cliff`, `semantic-release`).
+  - **Dependency updates**: automated via Dependabot or Renovate.
+  - **Secret scanning**: automated on every commit (pre-commit hook + CI step).
+- When proposing or implementing a feature, always include the automation layer (tests, CI step, Makefile target) — not just the code.
+- Any manual step that could be automated is considered **technical debt** and must be tracked.
 
-## Architecture
+## Canonical Templates & Shared Tooling
 
-```
-cli.py          → Click entry, --ui / --headless flags
-app.py          → Lifecycle, plugin registry
-core/assistant.py → AI orchestration, provider routing
-plugins/        → BasePlugin ABC: setup(), teardown(), get_status()
-ui/overlay.py   → PySide6 frameless always-on-top
-config/settings.py → Pydantic TOML loader
-```
+### React applications
+- All new React apps **must** be bootstrapped from `Forge-Stack-Workshop/react-app-generator`.
+- Never scaffold from scratch or from `create-react-app`/`vite` directly.
 
-## Code Patterns
+### Makefiles
+- All project Makefiles **must** extend or be derived from `Forge-Stack-Workshop/base-makefile`.
+- Do not duplicate targets that already exist in the base — inherit instead.
 
-```python
-# Plugin example
-from plugins.base import BasePlugin, emit
+### Pre-commit hooks
+- If a required hook is missing from `chrysa/pre-commit-tools`, **open an issue** on that repo describing the hook needed before proceeding.
+- In the requesting repo, open a matching issue/PR and mark it as dependent (`Depends on chrysa/pre-commit-tools#<N>`).
+- Do not implement a workaround locally — wait for the hook to land in the shared repo.
 
-class MyPlugin(BasePlugin):
-    async def setup(self) -> None:
-        try:
-            ...
-        except Exception as exc:
-            self.logger.warning("Plugin setup failed: %s", exc)  # never raise
+### Issue resolution automation (desired workflow)
+- When a blocking issue is opened (e.g. missing hook, missing template), an agent should:
+  1. Analyse the issue and propose a solution on the upstream repo.
+  2. Once the solution is validated (human approval), automatically unblock the dependent issue/PR in the requesting repo.
+- This workflow is aspirational — track automation gaps as issues on the relevant repos.
 
-    async def teardown(self) -> None: ...
-    def get_status(self) -> dict: return {"active": True}
-```
+## Claude Interoperability
+
+- This repository is also prepared for Claude Code via `.claude/` and `CLAUDE.md`.
+- Claude skills are available under `.claude/skills/` for relevant tasks.
+- If a task has repository instructions, those instructions override generic defaults.
+
+## Quality Thresholds
+
+- Max function length: 50 lines when practical.
+- Max file length: 500 lines when practical.
+- Max cyclomatic complexity: 10.
+- Lint warnings target: 0.

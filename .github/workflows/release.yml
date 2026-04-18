@@ -1,0 +1,59 @@
+---
+name: Release
+
+on:
+    push:
+        branches: [main, master]
+        paths-ignore:
+            - '**.md'
+            - '.github/**'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: read
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        name: Create release
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+            - name: Setup GitVersion
+              uses: gittools/actions/gitversion/setup@v3
+              with:
+                  versionSpec: 6.x
+
+            - name: Determine version
+              id: gitversion
+              uses: gittools/actions/gitversion/execute@v3
+
+            - name: Install git-cliff
+              uses: taiki-e/install-action@git-cliff
+
+            - name: Generate changelog
+              id: changelog
+              run: |
+                  CURRENT_TAG="v${{ steps.gitversion.outputs.semVer }}"
+                  git cliff --output CHANGELOG_RELEASE.md --tag "$CURRENT_TAG" 2>/dev/null || \
+                    git cliff --unreleased --output CHANGELOG_RELEASE.md
+                  echo "version=$CURRENT_TAG" >> "$GITHUB_OUTPUT"
+
+            - name: Create tag
+              run: |
+                  git config user.name 'chrysa'
+                  git config user.email 'greau.anthony@gmail.com'
+                  git tag "${{ steps.changelog.outputs.version }}" || echo "Tag already exists"
+                  git push origin "${{ steps.changelog.outputs.version }}" || echo "Tag push skipped"
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.changelog.outputs.version }}
+                  name: Release ${{ steps.changelog.outputs.version }}
+                  body_path: CHANGELOG_RELEASE.md
+                  token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
