@@ -22,6 +22,9 @@ dev:  ## Install all dev dependencies + pre-commit
 test:  ## Run tests
 	pytest tests/ -v
 
+test-cov: ## Run tests with coverage report
+	pytest tests/ -v --cov --cov-report=term-missing --cov-report=xml
+
 lint:  ## Run linter (ruff check)
 	ruff check $(PKG) tests
 
