@@ -12,6 +12,16 @@ assignees: ''
 ## Background
 <!-- Why is this needed? (tech debt, SonarCloud finding, CI alignment, etc.) -->
 
+## Milestone
+<!-- GitHub milestone this issue belongs to — e.g. Maintenance, M2-Core -->
+
+## Notion
+<!-- Notion page or task link if tracked — leave blank if none -->
+
+## Depends on
+<!-- Issues blocking this one. Format: chrysa/REPO#NUMBER or bare #NUMBER -->
+<!-- None -->
+
 ## Tasks
 - [ ]
 - [ ]
