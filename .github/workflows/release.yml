@@ -51,7 +51,7 @@ jobs:
                   git push origin "${{ steps.changelog.outputs.version }}" || echo "Tag push skipped"
 
             - name: Create GitHub Release
-              uses: softprops/action-gh-release@v2
+              uses: softprops/action-gh-release@v3
               with:
                   tag_name: ${{ steps.changelog.outputs.version }}
                   name: Release ${{ steps.changelog.outputs.version }}
