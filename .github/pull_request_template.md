@@ -1,36 +1,22 @@
-## Type
-<!-- Select one: Bug Fix | Feature | Chore | Security | Refactor | Docs -->
-
 ## Summary
-<!-- Briefly describe what this PR does (1–3 sentences) -->
+<!-- Briefly describe what this PR does -->
 
 ## Motivation
-<!-- Why is this change needed? Link to issues/Notion pages if relevant -->
+<!-- Why is this change needed? Link to issues/Notion pages -->
 
-Closes #<!-- issue number — required: 1 PR = 1 issue -->
-
-## Milestone
-<!-- GitHub milestone this PR contributes to — e.g. M2-Core, Maintenance -->
-
-## Notion
-<!-- Notion project page or task link if tracked — leave blank if none -->
+Closes #<!-- issue number -->
 
 ## Changes
-<!-- List the concrete changes made -->
-- 
+<!-- List the changes made -->
 
 ## Dependencies
-<!-- PRs this depends on (must be merged first). Format: chrysa/REPO#NUMBER -->
-<!-- None -->
+<!-- List any PRs this depends on (if any). Format: depends on chrysa/REPO#NUMBER -->
 
 ## Testing
-<!-- How was this tested? Unit tests / manual steps / CI only -->
+<!-- How was this tested? -->
 
 ## Checklist
-- [ ] Conventional commit messages used (`fix:`, `feat:`, `chore:`, etc.)
-- [ ] Pre-commit hooks pass locally (`pre-commit run --all-files`)
-- [ ] CI is green (all checks pass)
-- [ ] SonarCloud has no new **critical** or **blocker** issues
-- [ ] This PR covers exactly **one issue** (squash merge → single clean commit)
-- [ ] README / docs updated if applicable
-- [ ] No secrets, credentials, or personal data in the diff
+- [ ] Conventional commit messages
+- [ ] Pre-commit hooks pass locally
+- [ ] CI is green
+- [ ] README updated (if applicable)
