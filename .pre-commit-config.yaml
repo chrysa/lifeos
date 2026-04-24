@@ -28,7 +28,7 @@ repos:
             args: [--strict]
 
     - repo: https://github.com/igorshubovych/markdownlint-cli
-      rev: 70466ee3b5b9cef14d47b7ff38f3e72b0a7b1009
+      rev: f7ed74202ac8ec26bab4a68359556c5243df142f
       hooks:
           - id: markdownlint
             args: [--disable, MD013, MD033, MD041]
