@@ -14,6 +14,7 @@ permissions:
 jobs:
     sonar:
         name: SonarCloud scan
+        if: ${{ github.event_name != 'pull_request' || github.actor != 'dependabot[bot]' }}
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
@@ -21,14 +22,14 @@ jobs:
               with:
                   fetch-depth: 0
             - name: SonarCloud scan
-              uses: SonarSource/sonarqube-scan-action@v5
+              uses: SonarSource/sonarqube-scan-action@v6
               with:
                   args: >
                       -Dsonar.projectKey=chrysa_lifeos
                       -Dsonar.organization=chrysa
                       -Dsonar.projectName=lifeos
                       -Dsonar.sources=.
-                      -Dsonar.exclusions=**/.git/**,**/reports/**,**/.vscode/**,**/node_modules/**
+                      -Dsonar.exclusions=**/.git/**,**/reports/**,**/.vscode/**,**/node_modules/**,**/.github/workflows/**
                       -Dsonar.sourceEncoding=UTF-8
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
