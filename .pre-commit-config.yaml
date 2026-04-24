@@ -4,6 +4,7 @@ repos:
       rev: 78d8bd3118110cc9095fcd61eb4772061c3ab628
       hooks:
           - id: yaml-sorter
+          exclude: ^\.github/ISSUE_TEMPLATE/
           - id: json-sorter
           - id: env-file-check
 
