@@ -22,7 +22,7 @@ jobs:
               with:
                   fetch-depth: 0
             - name: SonarCloud scan
-                            uses: SonarSource/sonarqube-scan-action@v6
+              uses: SonarSource/sonarqube-scan-action@v6
               with:
                   args: >
                       -Dsonar.projectKey=chrysa_lifeos
