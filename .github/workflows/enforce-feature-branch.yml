@@ -1,0 +1,20 @@
+name: Enforce Feature Branch Policy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  branch-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR source branch naming
+        shell: bash
+        run: |
+          branch="${{ github.head_ref }}"
+          pattern='^(feature|fix|chore|docs|refactor|test|ci|build|perf|hotfix)/[a-z0-9._-]+$'
+          if [[ ! "$branch" =~ $pattern ]]; then
+            echo "Invalid branch name: $branch"
+            echo "Expected: type/short-description (e.g. feature/add-auth-flow)"
+            exit 1
+          fi
