@@ -1,0 +1,39 @@
+true:
+  schedule:
+  - cron: 0 5 * * 1
+  workflow_dispatch: null
+jobs:
+  pre-commit-autoupdate:
+    name: Bump pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        persist-credentials: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Setup Python
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
+      with:
+        python-version: '3.12'
+    - name: Install pre-commit
+      run: pip install --upgrade pre-commit
+    - name: Autoupdate hooks
+      run: pre-commit autoupdate
+    - name: Open PR if changes
+      uses: peter-evans/create-pull-request@67ccf781d68cd99b580ae25a5c18a1cc84ffff1f
+      with:
+        body: Automated weekly bump of `.pre-commit-config.yaml` hooks.
+        branch: chore/pre-commit-autoupdate
+        commit-message: 'chore(pre-commit): autoupdate hook versions'
+        delete-branch: true
+        labels: 'skip-ci
+
+          Pre-commit
+
+          '
+        title: '[SKIP CI] [pre-commit] Autoupdate weekly'
+name: Auto-update pre-commit hooks
+permissions:
+  contents: write
+  pull-requests: write
