@@ -1,0 +1,27 @@
+true:
+  push:
+    branches:
+    - develop
+    - main
+    - master
+    paths:
+    - .github/labels.yml
+  schedule:
+  - cron: 0 2 * * 1
+  workflow_dispatch: null
+jobs:
+  sync-labels:
+    name: Synchronize labels
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - name: Sync labels
+      uses: marocchino/create-labels@v1.3.0
+      with:
+        labels: .github/labels.yml
+name: Sync GitHub Labels
+permissions:
+  contents: read
+  issues: write
+run-name: "\U0001F3F7\uFE0F Sync labels from config"
