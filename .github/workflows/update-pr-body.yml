@@ -1,0 +1,40 @@
+true:
+  pull_request:
+    types:
+    - opened
+    - synchronize
+jobs:
+  update-body:
+    if: contains(github.event.pull_request.body, '<!-- auto-changes-start -->')
+    name: Fill auto-changes section
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        fetch-depth: 0
+    - env:
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      name: Update PR body
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      with:
+        script: "const { execSync } = require('child_process');\nconst baseRef = process.env.BASE_REF;\n\
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);\n\nexecSync(`git fetch\
+          \ origin ${baseRef} --depth=50`, { stdio: 'inherit' });\n\nconst rawLog\
+          \ = execSync(\n    `git log origin/${baseRef}..HEAD --oneline --no-merges\
+          \ --reverse`,\n    { encoding: 'utf8' }\n).trim();\n\nconst bullets = rawLog.length\
+          \ > 0\n    ? rawLog.split('\\n').map(line => `- ${line}`).join('\\n')\n\
+          \    : '- _no commits yet_';\n\nconst { data: pr } = await github.rest.pulls.get({\n\
+          \    owner: context.repo.owner,\n    repo: context.repo.repo,\n    pull_number:\
+          \ prNumber,\n});\n\nconst marker = /<!-- auto-changes-start -->[\\s\\S]*?<!--\
+          \ auto-changes-end -->/;\nconst replacement = `<!-- auto-changes-start -->\\\
+          n${bullets}\\n<!-- auto-changes-end -->`;\nconst updatedBody = pr.body.replace(marker,\
+          \ replacement);\n\nif (updatedBody === pr.body) {\n    console.log('No change\
+          \ detected \u2014 skipping update.');\n    return;\n}\n\nawait github.rest.pulls.update({\n\
+          \    owner: context.repo.owner,\n    repo: context.repo.repo,\n    pull_number:\
+          \ prNumber,\n    body: updatedBody,\n});\n\nconsole.log('PR body updated.');\n"
+name: Update PR body
+permissions:
+  contents: read
+  pull-requests: write

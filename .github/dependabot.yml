@@ -1,9 +1,95 @@
+---
+# Dependabot template chrysa · avril 2026
+# Source : shared-standards/templates/github-config/dependabot.yml.tpl
+#
+# Schedule unifié : vendredi 04h00 UTC cron (évite PR en cours de sprint)
+# Cooldown 7j sur ecosystems bruyants · groups pour réduire volume PR
+#
+# Marqueurs {{ ... }} à remplacer par le script apply-ci-process.sh selon stack détectée.
+# Ecosystems possibles : pip, npm, docker, docker-compose, github-actions, pre-commit, cargo
+
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
+    # ═══ GitHub Actions (tous repos) ═══
+    - package-ecosystem: github-actions
+      directory: .github/workflows/
+      assignees:
+          - chrysa
+      reviewers:
+          - chrysa
+      open-pull-requests-limit: 8
+      commit-message:
+          prefix: "[SKIP CI] [GA] "
+      labels:
+          - skip-ci
+          - dependencies
+          - Ci
+      schedule:
+          interval: cron
+          cronjob: "0 4 * * 5"
+      groups:
+          actions-official:
+              patterns:
+                  - actions/*
+          peter-evans:
+              patterns:
+                  - peter-evans/*
+          community-actions:
+              patterns:
+                  - "*"
+      cooldown:
+          default-days: 7
+
+    # ═══ Pre-commit (tous repos avec .pre-commit-config.yaml) ═══
+    - package-ecosystem: pre-commit
+      directory: /
+      assignees:
+          - chrysa
+      reviewers:
+          - chrysa
+      open-pull-requests-limit: 2
+      commit-message:
+          prefix: "[SKIP CI] [pre-commit] "
+      labels:
+          - skip-ci
+          - dependencies
+          - Pre-commit
+      schedule:
+          interval: cron
+          cronjob: "0 4 * * 5"
+
+    # ═══ Python · pip ═══
+    - package-ecosystem: pip
+      directory: /
+      assignees:
+          - chrysa
+      reviewers:
+          - chrysa
+      open-pull-requests-limit: 10
+      commit-message:
+          prefix: "[pip] "
+      labels:
+          - dependencies
+          - Python
+      schedule:
+          interval: cron
+          cronjob: "0 4 * * 5"
+      groups:
+          testing:
+              patterns:
+                  - pytest*
+                  - faker
+                  - mock
+                  - coverage*
+          typing-stubs:
+              patterns:
+                  - mypy*
+                  - types-*
+          linters:
+              patterns:
+                  - ruff*
+                  - black*
+                  - flake8*
+      cooldown:
+          default-days: 7
+
