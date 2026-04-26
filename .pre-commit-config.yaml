@@ -1,7 +1,7 @@
 ---
 repos:
     - repo: https://github.com/chrysa/pre-commit-tools
-      rev: 78d8bd3118110cc9095fcd61eb4772061c3ab628
+      rev: v0.1.1-37
       hooks:
           - id: yaml-sorter
             exclude: ^\.github/ISSUE_TEMPLATE/
