@@ -9,7 +9,7 @@ repos:
           - id: env-file-check
 
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: f1dff44d3a9ae852957f34def96390f28719c232
+      rev: b89c5eef3ba3a74ecd506d968e63a8b80f697abf
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
