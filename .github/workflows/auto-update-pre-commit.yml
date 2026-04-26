@@ -13,7 +13,7 @@ jobs:
         persist-credentials: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
       with:
         python-version: '3.12'
     - name: Install pre-commit
