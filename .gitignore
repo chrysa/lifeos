@@ -60,3 +60,4 @@ config/config.toml
 # Logs
 *.log
 logs/
+.ci-backup-*/

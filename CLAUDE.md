@@ -6,6 +6,10 @@
 
 Floating AI assistant multi-OS desktop application. Monitors the system, integrates with messaging platforms (Discord), routes queries to AI providers (GitHub Copilot via OpenCode, OpenAI-compatible), and connects to external services (Notion, GitHub). Runs as a floating overlay or headless tray application on Linux and Windows.
 
+
+## Language Rules
+
+- Language: English — all code, comments, documentation, instructions, and configuration files must be in English.
 ## Architecture
 
 - `cli.py` — Click entry point; `--ui`, `--headless`, `--enable`, `--config` flags
