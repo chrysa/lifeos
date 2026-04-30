@@ -1,0 +1,34 @@
+{
+  "commands": {
+    "build": "make build",
+    "coverage": "make coverage",
+    "lint": "make lint",
+    "tests": "make test",
+    "types": "make type-check"
+  },
+  "description": "Quality gate configuration for lifeos (Python project)",
+  "thresholds": {
+    "build": {
+      "operator": "=",
+      "type": "exit_code",
+      "value": 0
+    },
+    "coverage": {
+      "operator": "≥",
+      "type": "percentage"
+    },
+    "lint": {
+      "operator": "=",
+      "type": "count",
+      "value": 0
+    },
+    "tests": {
+      "operator": "≥",
+      "type": "count"
+    },
+    "types": {
+      "operator": "≤",
+      "type": "count"
+    }
+  }
+}
