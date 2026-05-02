@@ -1,6 +1,6 @@
 name: Enforce Feature Branch Policy
 
-"on":
+on:
   pull_request:
     types:
       - opened
