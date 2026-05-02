@@ -12,7 +12,8 @@ jobs:
       uses: dependabot/fetch-metadata@v3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-    - env:
+    - continue-on-error: true
+      env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PR_URL: ${{ github.event.pull_request.html_url }}
       name: Approve PR
