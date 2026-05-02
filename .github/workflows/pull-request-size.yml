@@ -1,4 +1,4 @@
-true: pull_request_target
+"on": pull_request_target
 jobs:
   size-label:
     runs-on: ubuntu-latest

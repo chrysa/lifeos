@@ -1,4 +1,4 @@
-true: pull_request_review
+"on": pull_request_review
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.ref }}
