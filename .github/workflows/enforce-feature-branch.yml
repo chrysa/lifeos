@@ -15,8 +15,10 @@ jobs:
     steps:
       - name: Validate PR source branch naming
         shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          branch="${{ github.head_ref }}"
+          branch="$HEAD_REF"
           pattern='^(feat|feature|fix|chore|docs|refactor|test|ci|build|perf|hotfix)/[a-z0-9._-]+$'
           if [[ ! "$branch" =~ $pattern ]]; then
             echo "Invalid branch name: $branch"

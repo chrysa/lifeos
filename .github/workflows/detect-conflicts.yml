@@ -41,7 +41,7 @@ jobs:
           \ Conflits r\xE9solus.`\n  });\n}\n"
     timeout-minutes: 5
 name: Check Conflicts
-'on':
+on:
   pull_request:
     types:
     - opened

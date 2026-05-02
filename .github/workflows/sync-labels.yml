@@ -10,7 +10,7 @@ jobs:
       with:
         labels: .github/labels.yml
 name: Sync GitHub Labels
-'on':
+on:
   push:
     branches:
     - develop

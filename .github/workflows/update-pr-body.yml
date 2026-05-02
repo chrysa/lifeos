@@ -30,7 +30,7 @@ jobs:
           \    owner: context.repo.owner,\n    repo: context.repo.repo,\n    pull_number:\
           \ prNumber,\n    body: updatedBody,\n});\n\nconsole.log('PR body updated.');\n"
 name: Update PR body
-'on':
+on:
   pull_request:
     types:
     - opened
