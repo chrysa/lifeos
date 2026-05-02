@@ -11,7 +11,7 @@ jobs:
       with:
         configuration-path: .github/auto_assign.yml
 name: Auto Assign Reviewers
-'on':
+on:
   pull_request:
     types:
     - opened
