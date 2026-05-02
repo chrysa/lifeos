@@ -1,4 +1,4 @@
-true:
+"on":
   pull_request: null
   workflow_call: null
   workflow_dispatch: null
