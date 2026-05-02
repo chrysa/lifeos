@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Validate PR source branch naming
-      run: "branch=\"${{ github.head_ref }}\"\npattern='^(feat|feature|fix|chore|docs|refactor|test|ci|build|perf|hotfix)/[a-z0-9._-]+$'\n\
+      run: "branch=\"${{ github.head_ref }}\"\npattern='^(feature|fix|chore|docs|refactor|test|ci|build|perf|hotfix)/[a-z0-9._-]+$'\n\
         if [[ ! \"$branch\" =~ $pattern ]]; then\n  echo \"Invalid branch name: $branch\"\
         \n  echo \"Expected: type/short-description (e.g. feature/add-auth-flow)\"\
         \n  exit 1\nfi\n"
