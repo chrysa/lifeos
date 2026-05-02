@@ -30,7 +30,7 @@ jobs:
           '
         title: '[SKIP CI] [pre-commit] Autoupdate weekly'
 name: Auto-update pre-commit hooks
-'on':
+on:
   schedule:
   - cron: 0 5 * * 1
   workflow_dispatch: null
