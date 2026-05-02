@@ -16,6 +16,9 @@ repos:
           - id: detect-private-key
           - id: no-commit-to-branch
           - id: check-yaml
+            args:
+                - --allow-multiple-documents
+            exclude: ^\.github/ISSUE_TEMPLATE/
           - id: check-json
           - id: check-toml
           - id: check-merge-conflict

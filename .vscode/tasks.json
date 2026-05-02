@@ -1,153 +1,153 @@
 {
-  "version": "2.0.0",
   "tasks": [
-
     {
-      "label": "lint",
-      "type": "shell",
       "command": "make lint",
       "group": "test",
+      "label": "lint",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
     {
-      "label": "format",
-      "type": "shell",
       "command": "make format",
       "group": "none",
+      "label": "format",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
     {
-      "label": "typecheck",
-      "type": "shell",
       "command": "make typecheck",
       "group": "test",
+      "label": "typecheck",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
-
     {
-      "label": "test",
-      "type": "shell",
       "command": "make test",
       "group": {
-        "kind": "test",
-        "isDefault": true
+        "isDefault": true,
+        "kind": "test"
       },
+      "label": "test",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
     {
-      "label": "test-cov",
-      "type": "shell",
       "command": "make test-cov",
       "group": "test",
+      "label": "test-cov",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": false,
         "panel": "dedicated",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
-
     {
-      "label": "run-headless",
-      "type": "shell",
       "command": "make run-headless",
       "group": {
-        "kind": "build",
-        "isDefault": true
+        "isDefault": true,
+        "kind": "build"
       },
       "isBackground": true,
+      "label": "run-headless",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": true,
         "panel": "dedicated",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
     {
-      "label": "run",
-      "type": "shell",
       "command": "make run",
       "group": "build",
       "isBackground": true,
+      "label": "run",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": true,
         "panel": "dedicated",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
     {
-      "label": "run-discord",
-      "type": "shell",
       "command": "make run-discord",
       "group": "build",
       "isBackground": true,
+      "label": "run-discord",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": true,
         "panel": "dedicated",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "type": "shell"
     },
-
     {
-      "label": "quality-check",
-      "dependsOn": ["lint", "typecheck", "test"],
+      "dependsOn": [
+        "lint",
+        "typecheck",
+        "test"
+      ],
       "dependsOrder": "sequence",
       "group": "test",
+      "label": "quality-check",
       "presentation": {
+        "clear": true,
         "echo": true,
-        "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "showReuseMessage": false,
-        "clear": true
+        "reveal": "always",
+        "showReuseMessage": false
       },
       "problemMatcher": []
     }
-  ]
+  ],
+  "version": "2.0.0"
 }
