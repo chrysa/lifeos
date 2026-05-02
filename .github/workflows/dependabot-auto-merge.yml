@@ -23,7 +23,7 @@ jobs:
       name: "Enable auto-merge (squash \u2014 waits for CI)"
       run: gh pr merge --auto --squash "$PR_URL"
 name: Dependabot Auto-merge
-'on':
+on:
   pull_request_target:
     types:
     - opened

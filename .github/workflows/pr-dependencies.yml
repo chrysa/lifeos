@@ -10,7 +10,7 @@ jobs:
       with:
         use-label: Blocked
 name: Check PR dependencies
-'on':
+on:
   pull_request:
     branches-ignore:
     - develop

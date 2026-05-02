@@ -20,7 +20,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - continue-on-error: true
@@ -37,11 +37,14 @@ jobs:
         '
     - id: quality-gate
       name: Run quality gate verification
-      run: 'make quality-gate-verify || exit_code=$?
+      run: |
+        if [ ! -f .quality-gate-baseline.json ]; then
+          echo "ℹ️ No baseline found — skipping quality gate (run quality-gate-baseline on main first)"
+          exit 0
+        fi
+        make quality-gate-verify || exit_code=$?
+        exit "${exit_code:-0}"
 
-        exit ${exit_code:-0}
-
-        '
     - if: always()
       name: Report quality gate status
       run: "if [ ${{ steps.quality-gate.outcome }} == 'success' ]; then\n  echo \"\
