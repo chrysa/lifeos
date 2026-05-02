@@ -3,7 +3,7 @@
 PYTHON := python3
 PKG    := my_assistant
 
-.PHONY: help install install-ui dev test lint format clean run run-headless run-discord
+.PHONY: help install install-ui dev test lint format clean run run-headless run-discord quality-gate-baseline quality-gate-verify
 
 help:  ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -44,3 +44,11 @@ run-headless:  ## Start headless (system tray only, no overlay)
 
 run-discord:  ## Start with Discord plugin enabled
 	$(PYTHON) -m my_assistant --ui --enable discord
+
+# ── Quality Gates ──────────────────────────────────────────────────────────
+
+quality-gate-baseline: ## Record baseline metrics for regression detection
+	@python3 scripts/quality_gate.py baseline
+
+quality-gate-verify: ## Verify no regression since baseline
+	@python3 scripts/quality_gate.py verify

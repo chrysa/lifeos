@@ -1,0 +1,54 @@
+true:
+  pull_request:
+    branches:
+    - develop
+    - main
+    - master
+    types:
+    - opened
+    - reopened
+    - synchronize
+  push:
+    branches:
+    - main
+    - master
+jobs:
+  quality-gate:
+    name: No-Regression Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - continue-on-error: true
+      name: Set up Node.js (if needed)
+      uses: actions/setup-node@v4
+      with:
+        cache: npm
+        node-version: '20'
+    - name: Install dependencies
+      run: 'if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+        if [ -f package.json ]; then npm ci; fi
+
+        '
+    - id: quality-gate
+      name: Run quality gate verification
+      run: 'make quality-gate-verify || exit_code=$?
+
+        exit ${exit_code:-0}
+
+        '
+    - if: always()
+      name: Report quality gate status
+      run: "if [ ${{ steps.quality-gate.outcome }} == 'success' ]; then\n  echo \"\
+        \u2705 All quality gates passed\"\n  exit 0\nelse\n  echo \"\u274C Quality\
+        \ gate regression detected\"\n  exit 1\nfi\n"
+name: Quality Gate Check
+permissions:
+  checks: write
+  contents: read
+  statuses: write
