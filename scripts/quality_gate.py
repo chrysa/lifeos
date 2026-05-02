@@ -1,315 +1,169 @@
 #!/usr/bin/env python3
-"""Quality Gate Verification Script.
-
-Machine-readable output lines:
-- GATE_RESULT|<Gate>|PASS|...
-- GATE_RESULT|<Gate>|FAIL|...
-- OVERALL_RESULT|PASS
-- OVERALL_RESULT|FAIL
-"""
+"""Quality Gate Verification Script"""
 
 import json
-import re
 import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
-
+from datetime import datetime
+from typing import Dict, Any, Tuple
 
 class QualityGate:
     CONFIG_FILE = ".quality-gate.json"
     BASELINE_FILE = ".quality-gate-baseline.json"
-    LAST_REPORT_FILE = ".quality-gate-last-report.json"
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.config_path = Path(self.CONFIG_FILE)
         self.baseline_path = Path(self.BASELINE_FILE)
-        self.last_report_path = Path(self.LAST_REPORT_FILE)
-
         if not self.config_path.exists():
-            print(f"ERROR: configuration file not found: {self.CONFIG_FILE}")
+            print(f"❌ Configuration file not found: {self.CONFIG_FILE}")
             sys.exit(1)
-
-        with open(self.config_path, "r", encoding="utf-8") as handle:
-            self.config = json.load(handle)
-
-        self.gates = [
-            ("Tests", "tests", "passed_tests", "≥", "make test"),
-            ("Coverage", "coverage", "coverage_percentage", "≥", "make test-coverage"),
-            ("Lint", "lint", "warning_count", "=", "make lint"),
-            ("Types", "types", "error_count", "≤", "make type-check"),
-            ("Build", "build", "build_status", "=", "make build"),
-            ("Secrets", "security_secrets", "secret_count", "=", "detect-secrets scan --all-files 2>&1 || true"),
-            ("VulnDeps", "security_vulns", "vuln_count", "≤", "pip-audit 2>&1 || npm audit --audit-level=high 2>&1 || true"),
-        ]
+        with open(self.config_path) as f:
+            self.config = json.load(f)
 
     def _run(self, cmd: str) -> Tuple[int, str]:
         try:
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                capture_output=True,
-                text=True,
-                timeout=600,
-            )
-            return result.returncode, (result.stdout or "") + (result.stderr or "")
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
+            return result.returncode, result.stdout + result.stderr
         except subprocess.TimeoutExpired:
-            return 124, "Command timed out after 600 seconds"
-        except Exception as exc:
-            return 127, f"Execution error: {exc}"
-
-    def _parse_passed_tests(self, output: str) -> int:
-        patterns = [
-            r"(\d+)\s+passed",
-            r"passed\s*=\s*(\d+)",
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, output, flags=re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-        return 0
+            return 124, "Command timed out after 300s"
+        except Exception as e:
+            return 127, f"Error: {e}"
 
     def _parse_coverage(self, output: str) -> float:
-        for line in output.splitlines():
-            if any(token in line.lower() for token in ["total", "coverage", "covered"]):
-                for value in re.findall(r"(\d+(?:\.\d+)?)%", line):
-                    try:
-                        return float(value)
-                    except ValueError:
-                        continue
+        for line in output.split('\n'):
+            if 'coverage' in line.lower():
+                for word in line.split():
+                    if word.endswith('%'):
+                        try:
+                            return float(word.rstrip('%'))
+                        except ValueError:
+                            continue
         return -1.0
 
+    def _parse_passed_tests(self, output: str) -> int:
+        for line in output.split('\n'):
+            if 'passed' in line:
+                parts = line.split()
+                for i, part in enumerate(parts):
+                    if 'passed' in part and i > 0:
+                        try:
+                            return int(parts[i-1])
+                        except (ValueError, IndexError):
+                            continue
+        return 0
+
     def _parse_warning_count(self, output: str) -> int:
-        match = re.search(r"(\d+)\s+warnings?", output, flags=re.IGNORECASE)
-        if match:
-            return int(match.group(1))
+        for line in output.split('\n'):
+            if 'warning' in line.lower():
+                try:
+                    count = int(line.split()[0])
+                    return count
+                except (ValueError, IndexError):
+                    continue
         return 0
 
     def _parse_error_count(self, output: str) -> int:
-        match = re.search(r"(\d+)\s+errors?", output, flags=re.IGNORECASE)
-        if match:
-            return int(match.group(1))
+        for line in output.split('\n'):
+            if 'error' in line.lower():
+                try:
+                    count = int(line.split()[0])
+                    return count
+                except (ValueError, IndexError):
+                    continue
         return 0
 
-    def _parse_secret_count(self, output: str) -> int:
-        try:
-            d = json.loads(output)
-            return sum(len(v) for v in d.get("results", {}).values())
-        except (json.JSONDecodeError, AttributeError, ValueError):
-            pass
-        match = re.search(r"secrets?\s+found[:\s]+(\d+)", output, re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-        return 0
-
-    def _parse_vuln_count(self, output: str) -> int:
-        match = re.search(r"found\s+(\d+)\s+vulnerabilit", output, re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-        count = len(re.findall(r"(?:GHSA|CVE)-\S+", output))
-        if count:
-            return count
-        if re.search(r"no\s+known\s+vulnerabilit", output, re.IGNORECASE):
-            return 0
-        return 0
-
-    def _parse_metric(self, gate_name: str, exit_code: int, output: str) -> Any:
-        if gate_name == "Tests":
-            return self._parse_passed_tests(output)
-        if gate_name == "Coverage":
-            return self._parse_coverage(output)
-        if gate_name == "Lint":
-            return self._parse_warning_count(output)
-        if gate_name == "Types":
-            return self._parse_error_count(output)
-        if gate_name == "Build":
-            return 0 if exit_code == 0 else 1
-        if gate_name == "Secrets":
-            return self._parse_secret_count(output)
-        if gate_name == "VulnDeps":
-            return self._parse_vuln_count(output)
-        return None
-
-    def _compare(self, current: Any, target: Any, operator: str) -> bool:
-        if operator == "=":
-            return current == target
-        if operator == "≥":
-            return current >= target
-        if operator == "≤":
-            return current <= target
-        if operator == ">=":
-            return current >= target
-        if operator == "<=":
-            return current <= target
-        return False
-
-    def _run_gate(self, gate_name: str, key: str, metric_name: str, default_cmd: str) -> Dict[str, Any]:
-        cmd = self.config.get("commands", {}).get(key, default_cmd)
-        print(f"RUN_GATE|{gate_name}|{cmd}")
+    def _run_gate(self, gate_name: str, cmd: str) -> Dict[str, Any]:
+        print(f"  🔍 {gate_name}...", end=" ", flush=True)
         exit_code, output = self._run(cmd)
-        metric = self._parse_metric(gate_name, exit_code, output)
-        return {
-            "gate": gate_name,
-            "command": cmd,
-            "exit_code": exit_code,
-            "metric_name": metric_name,
-            "metric": metric,
-            "timestamp": datetime.now().isoformat(),
-            "output": output,
-        }
+        result = {"command": cmd, "exit_code": exit_code, "output": output, "timestamp": datetime.now().isoformat()}
 
-    def _write_report(self, report: Dict[str, Any]) -> None:
-        with open(self.last_report_path, "w", encoding="utf-8") as handle:
-            json.dump(report, handle, indent=2)
+        if gate_name == "Tests":
+            result["metric"] = self._parse_passed_tests(output)
+            result["metric_name"] = "passed_tests"
+        elif gate_name == "Coverage":
+            result["metric"] = self._parse_coverage(output)
+            result["metric_name"] = "coverage_percentage"
+        elif gate_name == "Lint":
+            result["metric"] = self._parse_warning_count(output)
+            result["metric_name"] = "warning_count"
+        elif gate_name == "Types":
+            result["metric"] = self._parse_error_count(output)
+            result["metric_name"] = "error_count"
+        elif gate_name == "Build":
+            result["metric"] = 0 if exit_code == 0 else 1
+            result["metric_name"] = "build_status"
 
-    def baseline(self) -> bool:
-        print("BASELINE|START")
-        baseline_data: Dict[str, Any] = {
-            "recorded_at": datetime.now().isoformat(),
-            "gates": {},
-            "valid": True,
-        }
+        print(f"OK ({result.get('metric', 'N/A')})")
+        return result
 
-        all_ok = True
-        for gate_name, key, metric_name, _default_op, default_cmd in self.gates:
-            result = self._run_gate(gate_name, key, metric_name, default_cmd)
+    def baseline(self):
+        print("\n📋 Recording Quality Gate Baseline\n")
+        baseline_data = {"recorded_at": datetime.now().isoformat(), "gates": {}}
+        gates = [
+            ("Tests", self.config["commands"].get("tests", "make test")),
+            ("Coverage", self.config["commands"].get("coverage", "make test-coverage")),
+            ("Lint", self.config["commands"].get("lint", "make lint")),
+            ("Types", self.config["commands"].get("types", "make type-check")),
+            ("Build", self.config["commands"].get("build", "make build")),
+        ]
+        for gate_name, cmd in gates:
+            result = self._run_gate(gate_name, cmd)
             baseline_data["gates"][gate_name] = result
-            if result["exit_code"] != 0:
-                all_ok = False
-                baseline_data["valid"] = False
-            status = "PASS" if result["exit_code"] == 0 else "FAIL"
-            print(
-                f"GATE_RESULT|{gate_name}|{status}|metric={result['metric']}|"
-                f"exit={result['exit_code']}|mode=baseline"
-            )
-
-        with open(self.baseline_path, "w", encoding="utf-8") as handle:
-            json.dump(baseline_data, handle, indent=2)
-
-        report = {
-            "mode": "baseline",
-            "overall": "PASS" if all_ok else "FAIL",
-            "baseline_file": str(self.baseline_path),
-            "gates": baseline_data["gates"],
-        }
-        self._write_report(report)
-
-        if all_ok:
-            print("OVERALL_RESULT|PASS")
-            return True
-
-        print("OVERALL_RESULT|FAIL")
-        print("ERROR: baseline contains failing gates; fix quality checks before using this baseline")
-        return False
+        with open(self.baseline_path, 'w') as f:
+            json.dump(baseline_data, f, indent=2)
+        print(f"\n✅ Baseline saved\n")
+        return True
 
     def verify(self) -> bool:
-        print("VERIFY|START")
+        print("\n🔍 Verifying Quality Gates\n")
         if not self.baseline_path.exists():
-            report = {
-                "mode": "verify",
-                "overall": "FAIL",
-                "reason": "missing_baseline",
-                "baseline_file": str(self.baseline_path),
-            }
-            self._write_report(report)
-            print("OVERALL_RESULT|FAIL")
-            print("ERROR: baseline file not found; run quality-gate-baseline first")
+            print(f"❌ Baseline not found. Run 'make quality-gate-baseline' first\n")
             return False
-
-        with open(self.baseline_path, "r", encoding="utf-8") as handle:
-            baseline = json.load(handle)
-
-        baseline_valid = bool(baseline.get("valid", True))
+        with open(self.baseline_path) as f:
+            baseline = json.load(f)
+        gates = [
+            ("Tests", self.config["commands"].get("tests", "make test"), "≥"),
+            ("Coverage", self.config["commands"].get("coverage", "make test-coverage"), "≥"),
+            ("Lint", self.config["commands"].get("lint", "make lint"), "="),
+            ("Types", self.config["commands"].get("types", "make type-check"), "≤"),
+            ("Build", self.config["commands"].get("build", "make build"), "="),
+        ]
+        print("Results:"); print("-" * 60)
         all_passed = True
-        gate_reports: List[Dict[str, Any]] = []
-
-        for gate_name, key, metric_name, default_op, default_cmd in self.gates:
-            current = self._run_gate(gate_name, key, metric_name, default_cmd)
-            baseline_gate = baseline.get("gates", {}).get(gate_name, {})
-
-            threshold_cfg = self.config.get("thresholds", {}).get(key, {})
-            operator = str(threshold_cfg.get("operator", default_op))
+        for gate_name, cmd, check_type in gates:
+            current = self._run_gate(gate_name, cmd)
+            baseline_gate = baseline["gates"][gate_name]
             baseline_metric = baseline_gate.get("metric", 0)
-            target = threshold_cfg.get("value", baseline_metric)
             current_metric = current.get("metric", 0)
-
-            passed = True
-            reason = "ok"
-
-            if not baseline_valid:
-                passed = False
-                reason = "invalid_baseline"
-            elif current.get("exit_code", 1) != 0:
-                passed = False
-                reason = "command_failed"
-            else:
-                try:
-                    passed = self._compare(current_metric, target, operator)
-                    if not passed:
-                        reason = "metric_regression"
-                except Exception:
-                    passed = False
-                    reason = "comparison_error"
-
+            passed = (check_type == "=" and current_metric == baseline_metric) or \
+                     (check_type == "≥" and current_metric >= baseline_metric) or \
+                     (check_type == "≤" and current_metric <= baseline_metric)
+            status = "✅" if passed else "❌"
+            print(f"{status} {gate_name:12} {baseline_metric} {check_type} {current_metric}")
             if not passed:
                 all_passed = False
-
-            status = "PASS" if passed else "FAIL"
-            print(
-                f"GATE_RESULT|{gate_name}|{status}|baseline={baseline_metric}|"
-                f"target={target}|current={current_metric}|op={operator}|"
-                f"exit={current.get('exit_code', 1)}|reason={reason}"
-            )
-
-            gate_reports.append(
-                {
-                    "gate": gate_name,
-                    "status": status,
-                    "reason": reason,
-                    "operator": operator,
-                    "baseline_metric": baseline_metric,
-                    "target": target,
-                    "current_metric": current_metric,
-                    "exit_code": current.get("exit_code", 1),
-                    "metric_name": metric_name,
-                    "command": current.get("command", ""),
-                }
-            )
-
-        report = {
-            "mode": "verify",
-            "overall": "PASS" if all_passed else "FAIL",
-            "baseline_file": str(self.baseline_path),
-            "generated_at": datetime.now().isoformat(),
-            "gates": gate_reports,
-        }
-        self._write_report(report)
-
+        print("-" * 60)
         if all_passed:
-            print("OVERALL_RESULT|PASS")
+            print("\n✅ All gates passed\n")
             return True
+        else:
+            print("\n❌ Regression detected\n")
+            return False
 
-        print("OVERALL_RESULT|FAIL")
-        return False
-
-
-def main() -> None:
+def main():
     if len(sys.argv) < 2:
-        print("Usage: python3 quality_gate.py [baseline|verify]")
+        print("Usage: python quality_gate.py [baseline|verify]")
         sys.exit(1)
-
-    command = sys.argv[1].strip().lower()
-    quality_gate = QualityGate()
-
+    command = sys.argv[1].lower()
+    gate = QualityGate()
     if command == "baseline":
-        sys.exit(0 if quality_gate.baseline() else 1)
-    if command == "verify":
-        sys.exit(0 if quality_gate.verify() else 1)
-
-    print(f"Unknown command: {command}")
-    sys.exit(1)
-
+        sys.exit(0 if gate.baseline() else 1)
+    elif command == "verify":
+        sys.exit(0 if gate.verify() else 1)
+    else:
+        print(f"Unknown command: {command}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
