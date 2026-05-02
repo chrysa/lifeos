@@ -1,15 +1,3 @@
-"on":
-  pull_request:
-    paths:
-    - .github/actionlint.yaml
-    - .github/workflows/**
-  push:
-    branches:
-    - develop
-    - main
-    - master
-    paths:
-    - .github/workflows/**
 jobs:
   actionlint:
     name: Lint workflows
@@ -24,5 +12,17 @@ jobs:
       with:
         matcher: true
 name: Actionlint
+'on':
+  pull_request:
+    paths:
+    - .github/actionlint.yaml
+    - .github/workflows/**
+  push:
+    branches:
+    - develop
+    - main
+    - master
+    paths:
+    - .github/workflows/**
 permissions:
   contents: read

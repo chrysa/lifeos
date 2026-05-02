@@ -1,64 +1,64 @@
 {
-  "effortLevel": "medium",
   "autoCompact": true,
   "autoCompactThreshold": 0.85,
+  "effortLevel": "medium",
   "hooks": {
-    "PreCompact": [
+    "Notification": [
       {
-        "type": "command",
-        "command": "~/.claude/hooks/pre-compact.sh",
-        "timeout": 5000
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/secret-scanner.cjs",
-            "name": "secret-scanner",
-            "timeout": 10000
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/circuit-breaker.cjs",
-            "name": "circuit-breaker",
-            "timeout": 5000
-          }
-        ]
+        "command": "notify-send 'Claude Code' 'En attente de ton input' 2>/dev/null || true",
+        "timeout": 3000,
+        "type": "command"
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
-            "type": "command",
             "command": "node .claude/hooks/verifiable-thresholds.cjs",
             "name": "verifiable-thresholds",
-            "timeout": 10000
+            "timeout": 10000,
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": "Write|Edit|MultiEdit"
+      }
+    ],
+    "PreCompact": [
+      {
+        "command": "~/.claude/hooks/pre-compact.sh",
+        "timeout": 5000,
+        "type": "command"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "node .claude/hooks/secret-scanner.cjs",
+            "name": "secret-scanner",
+            "timeout": 10000,
+            "type": "command"
+          },
+          {
+            "command": "node .claude/hooks/circuit-breaker.cjs",
+            "name": "circuit-breaker",
+            "timeout": 5000,
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
       }
     ],
     "UserPromptSubmit": [
       {
         "hooks": [
           {
-            "type": "command",
             "command": "node .claude/hooks/frustration-detection.cjs",
             "name": "frustration-detection",
-            "timeout": 5000
+            "timeout": 5000,
+            "type": "command"
           }
         ]
-      }
-    ],
-    "Notification": [
-      {
-        "type": "command",
-        "command": "notify-send 'Claude Code' 'En attente de ton input' 2>/dev/null || true",
-        "timeout": 3000
       }
     ]
   }

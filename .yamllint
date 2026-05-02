@@ -1,0 +1,23 @@
+extends: default
+ignore: '.github/ISSUE_TEMPLATE/
+
+  .pre-commit-config.yaml
+
+  '
+rules:
+  document-start: disable
+  indentation:
+    indent-sequences: consistent
+    spaces: 2
+  line-length:
+    level: warning
+    max: 120
+  truthy:
+    allowed-values:
+    - 'false'
+    - 'no'
+    - 'off'
+    - 'on'
+    - 'true'
+    - 'yes'
+    check-keys: false

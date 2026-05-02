@@ -1,44 +1,36 @@
----
-name: GitHub Pages — Documentation
-
 on:
-    push:
-        branches: [main]
-        paths:
-            - docs/**
-            - mkdocs.yml
-    workflow_dispatch:
-
+  push:
+    branches:
+    - main
+    paths:
+    - docs/**
+    - mkdocs.yml
+  workflow_dispatch: null
 concurrency:
-    group: pages-${{ github.ref }}
-    cancel-in-progress: false
-
-permissions:
-    contents: write
-    pages: write
-    id-token: write
-
+  cancel-in-progress: false
+  group: pages-${{ github.ref }}
 jobs:
-    pages:
-        name: Build and deploy docs
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        steps:
-            - uses: actions/checkout@v6
-
-            - name: Set up Python 3.14
-              uses: actions/setup-python@v6
-              with:
-                  python-version: '3.14'
-
-            - name: Install MkDocs
-              run: pip install mkdocs-material
-
-            - name: Build site
-              run: mkdocs build
-
-            - name: Deploy to GitHub Pages
-              uses: peaceiris/actions-gh-pages@v4
-              with:
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
-                  publish_dir: site
+  pages:
+    name: Build and deploy docs
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python 3.14
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.14'
+    - name: Install MkDocs
+      run: pip install mkdocs-material
+    - name: Build site
+      run: mkdocs build
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: site
+    timeout-minutes: 10
+name: "GitHub Pages \u2014 Documentation"
+permissions:
+  contents: write
+  id-token: write
+  pages: write
