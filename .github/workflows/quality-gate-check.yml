@@ -50,6 +50,24 @@ jobs:
       run: "if [ ${{ steps.quality-gate.outcome }} == 'success' ]; then\n  echo \"\
         \u2705 All quality gates passed\"\n  exit 0\nelse\n  echo \"\u274C Quality\
         \ gate regression detected\"\n  exit 1\nfi\n"
+    - env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        OUTCOME: ${{ steps.quality-gate.outcome }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      if: always()
+      name: Set quality-gate commit status
+      run: |
+        STATE="success"
+        DESCRIPTION="All quality gates passed"
+        if [ "$OUTCOME" != "success" ]; then
+          STATE="failure"
+          DESCRIPTION="Quality gate regression detected"
+        fi
+        gh api "repos/${REPO}/statuses/${SHA}" \
+          -f state="${STATE}" \
+          -f context="quality-gate" \
+          -f description="${DESCRIPTION}"
 name: Quality Gate Check
 permissions:
   checks: write
