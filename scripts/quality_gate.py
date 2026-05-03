@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Quality Gate Verification Script"""
 
+from datetime import datetime
 import json
+from pathlib import Path
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 class QualityGate:
@@ -76,7 +76,10 @@ class QualityGate:
     def _run_gate(self, gate_name: str, cmd: str) -> dict[str, Any]:
         print(f"  🔍 {gate_name}...", end=" ", flush=True)
         exit_code, output = self._run(cmd)
-        result = {"command": cmd, "exit_code": exit_code, "output": output, "timestamp": datetime.now().isoformat()}
+        result: dict[str, Any] = {
+            "command": cmd, "exit_code": exit_code, "output": output,
+            "timestamp": datetime.now().isoformat(),
+        }
 
         if gate_name == "Tests":
             result["metric"] = self._parse_passed_tests(output)
@@ -112,13 +115,13 @@ class QualityGate:
             baseline_data["gates"][gate_name] = result
         with open(self.baseline_path, 'w') as f:
             json.dump(baseline_data, f, indent=2)
-        print(f"\n✅ Baseline saved\n")
+        print("\n✅ Baseline saved\n")
         return True
 
     def verify(self) -> bool:
         print("\n🔍 Verifying Quality Gates\n")
         if not self.baseline_path.exists():
-            print(f"❌ Baseline not found. Run 'make quality-gate-baseline' first\n")
+            print("❌ Baseline not found. Run 'make quality-gate-baseline' first\n")
             return False
         with open(self.baseline_path) as f:
             baseline = json.load(f)
@@ -129,7 +132,8 @@ class QualityGate:
             ("Types", self.config["commands"].get("types", "make type-check"), "≤"),
             ("Build", self.config["commands"].get("build", "make build"), "="),
         ]
-        print("Results:"); print("-" * 60)
+        print("Results:")
+        print("-" * 60)
         all_passed = True
         for gate_name, cmd, check_type in gates:
             current = self._run_gate(gate_name, cmd)
