@@ -1,12 +1,16 @@
 ---
 repos:
     - repo: https://github.com/chrysa/pre-commit-tools
-      rev: 78d8bd3118110cc9095fcd61eb4772061c3ab628
+      rev: v0.1.1-57
       hooks:
           - id: yaml-sorter
             exclude: ^(\.github/ISSUE_TEMPLATE/|\.github/workflows/)
           - id: json-sorter
           - id: env-file-check
+          - id: debugger-detection
+          - id: python-print-detection
+          - id: python-logger-detection
+          - id: no-bare-except
 
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: 803469bde8523f208d030ce33f575d7bee0ba9bf
@@ -25,6 +29,13 @@ repos:
           - id: check-added-large-files
           - id: mixed-line-ending
 
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.15.12
+      hooks:
+          - id: ruff
+            args: [--fix]
+          - id: ruff-format
+
     - repo: https://github.com/adrienverge/yamllint
       rev: 30a25fe087e31d0345be0ffed4360e4651a44b6e
       hooks:
@@ -36,3 +47,15 @@ repos:
       hooks:
           - id: markdownlint
             args: [--disable, MD013, MD033, MD041]
+
+    - repo: https://github.com/gitleaks/gitleaks
+      rev: v8.30.1
+      hooks:
+          - id: gitleaks
+
+    - repo: https://github.com/compilerla/conventional-pre-commit
+      rev: v4.4.0
+      hooks:
+          - id: conventional-pre-commit
+            stages: [commit-msg]
+            args: [feat, fix, docs, style, refactor, test, chore, perf, revert, ci]
