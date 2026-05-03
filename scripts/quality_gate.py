@@ -4,9 +4,9 @@
 import json
 import subprocess
 import sys
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Tuple
+from pathlib import Path
+from typing import Any
 
 class QualityGate:
     CONFIG_FILE = ".quality-gate.json"
@@ -21,7 +21,7 @@ class QualityGate:
         with open(self.config_path) as f:
             self.config = json.load(f)
 
-    def _run(self, cmd: str) -> Tuple[int, str]:
+    def _run(self, cmd: str) -> tuple[int, str]:
         try:
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
             return result.returncode, result.stdout + result.stderr
@@ -73,7 +73,7 @@ class QualityGate:
                     continue
         return 0
 
-    def _run_gate(self, gate_name: str, cmd: str) -> Dict[str, Any]:
+    def _run_gate(self, gate_name: str, cmd: str) -> dict[str, Any]:
         print(f"  🔍 {gate_name}...", end=" ", flush=True)
         exit_code, output = self._run(cmd)
         result = {"command": cmd, "exit_code": exit_code, "output": output, "timestamp": datetime.now().isoformat()}
