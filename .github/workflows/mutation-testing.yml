@@ -2,87 +2,89 @@
 name: Mutation Testing
 
 on:
-    schedule:
-        - cron: "0 3 * * 1"
-    workflow_dispatch:
-        inputs:
-            paths:
-                description: "Comma-separated paths to mutate (default: lifeos)"
-                required: false
-                default: "lifeos"
-            threshold:
-                description: "Minimum mutation score (0–100)"
-                required: false
-                default: "70"
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: "Comma-separated paths to mutate (default: lifeos)"
+        required: false
+        default: "lifeos"
+      threshold:
+        description: "Minimum mutation score (0–100)"
+        required: false
+        default: "70"
 
 env:
-    MUTATION_PATHS: ${{ github.event.inputs.paths || 'lifeos' }}
-    MUTATION_THRESHOLD: ${{ github.event.inputs.threshold || '70' }}
+  MUTATION_PATHS: ${{ github.event.inputs.paths || 'lifeos' }}
+  MUTATION_THRESHOLD: ${{ github.event.inputs.threshold || '70' }}
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    mutation:
-        name: Mutmut
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
+  mutation:
+    name: Mutmut
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
-            - name: Set up Python
-              uses: actions/setup-python@v6
-              with:
-                  python-version: "3.12"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install -e ".[dev]" mutmut
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" mutmut
 
-            - name: Run mutmut
-              id: mutmut
-              run: |
-                  mutmut run \
-                    --paths-to-mutate "${{ env.MUTATION_PATHS }}" \
-                    --runner "python -m pytest tests/ -x -q --no-header" \
-                    --no-progress \
-                    || true
+      - name: Run mutmut
+        id: mutmut
+        run: |
+          mutmut run \
+            --paths-to-mutate "${{ env.MUTATION_PATHS }}" \
+            --runner "python -m pytest tests/ -x -q --no-header" \
+            --no-progress \
+            || true
 
-            - name: Compute mutation score
-              id: score
-              run: |
-                  KILLED=$(mutmut results 2>/dev/null | grep -c "^Killed" || echo 0)
-                  SURVIVED=$(mutmut results 2>/dev/null | grep -c "^Survived" || echo 0)
-                  TOTAL=$((KILLED + SURVIVED))
-                  if [ "$TOTAL" -eq 0 ]; then
-                    echo "score=100" >> "$GITHUB_OUTPUT"
-                  else
-                    SCORE=$(( KILLED * 100 / TOTAL ))
-                    echo "score=$SCORE" >> "$GITHUB_OUTPUT"
-                  fi
-                  echo "killed=$KILLED" >> "$GITHUB_OUTPUT"
-                  echo "survived=$SURVIVED" >> "$GITHUB_OUTPUT"
-                  echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+      - name: Compute mutation score
+        id: score
+        run: |
+          KILLED=$(mutmut results 2>/dev/null | grep -c "^Killed" || echo 0)
+          SURVIVED=$(mutmut results 2>/dev/null | grep -c "^Survived" || echo 0)
+          TOTAL=$((KILLED + SURVIVED))
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "score=100" >> "$GITHUB_OUTPUT"
+          else
+            SCORE=$(( KILLED * 100 / TOTAL ))
+            echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "killed=$KILLED"
+            echo "survived=$SURVIVED"
+            echo "total=$TOTAL"
+          } >> "$GITHUB_OUTPUT"
 
-            - name: Show surviving mutants
-              if: always()
-              run: mutmut results || true
+      - name: Show surviving mutants
+        if: always()
+        run: mutmut results || true
 
-            - name: Fail if score below threshold
-              run: |
-                  SCORE=${{ steps.score.outputs.score }}
-                  THRESHOLD=${{ env.MUTATION_THRESHOLD }}
-                  echo "Mutation score: ${SCORE}% (threshold: ${THRESHOLD}%)"
-                  if [ "$SCORE" -lt "$THRESHOLD" ]; then
-                    echo "❌ Mutation score ${SCORE}% is below threshold ${THRESHOLD}%"
-                    exit 1
-                  fi
-                  echo "✅ Mutation score ${SCORE}% meets threshold ${THRESHOLD}%"
+      - name: Fail if score below threshold
+        run: |
+          SCORE=${{ steps.score.outputs.score }}
+          THRESHOLD=${{ env.MUTATION_THRESHOLD }}
+          echo "Mutation score: ${SCORE}% (threshold: ${THRESHOLD}%)"
+          if [ "$SCORE" -lt "$THRESHOLD" ]; then
+            echo "❌ Mutation score ${SCORE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
+          echo "✅ Mutation score ${SCORE}% meets threshold ${THRESHOLD}%"
 
-            - name: Upload mutmut results
-              if: always()
-              uses: actions/upload-artifact@v7
-              with:
-                  name: mutmut-results
-                  path: .mutmut-cache
-                  retention-days: 7
+      - name: Upload mutmut results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutmut-results
+          path: .mutmut-cache
+          retention-days: 7
