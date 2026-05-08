@@ -8,6 +8,7 @@ import subprocess
 import sys
 from typing import Any
 
+
 class QualityGate:
     CONFIG_FILE = ".quality-gate.json"
     BASELINE_FILE = ".quality-gate-baseline.json"
@@ -31,31 +32,31 @@ class QualityGate:
             return 127, f"Error: {e}"
 
     def _parse_coverage(self, output: str) -> float:
-        for line in output.split('\n'):
-            if 'coverage' in line.lower():
+        for line in output.split("\n"):
+            if "coverage" in line.lower():
                 for word in line.split():
-                    if word.endswith('%'):
+                    if word.endswith("%"):
                         try:
-                            return float(word.rstrip('%'))
+                            return float(word.rstrip("%"))
                         except ValueError:
                             continue
         return -1.0
 
     def _parse_passed_tests(self, output: str) -> int:
-        for line in output.split('\n'):
-            if 'passed' in line:
+        for line in output.split("\n"):
+            if "passed" in line:
                 parts = line.split()
                 for i, part in enumerate(parts):
-                    if 'passed' in part and i > 0:
+                    if "passed" in part and i > 0:
                         try:
-                            return int(parts[i-1])
+                            return int(parts[i - 1])
                         except (ValueError, IndexError):
                             continue
         return 0
 
     def _parse_warning_count(self, output: str) -> int:
-        for line in output.split('\n'):
-            if 'warning' in line.lower():
+        for line in output.split("\n"):
+            if "warning" in line.lower():
                 try:
                     count = int(line.split()[0])
                     return count
@@ -64,8 +65,8 @@ class QualityGate:
         return 0
 
     def _parse_error_count(self, output: str) -> int:
-        for line in output.split('\n'):
-            if 'error' in line.lower():
+        for line in output.split("\n"):
+            if "error" in line.lower():
                 try:
                     count = int(line.split()[0])
                     return count
@@ -77,7 +78,9 @@ class QualityGate:
         print(f"  🔍 {gate_name}...", end=" ", flush=True)
         exit_code, output = self._run(cmd)
         result: dict[str, Any] = {
-            "command": cmd, "exit_code": exit_code, "output": output,
+            "command": cmd,
+            "exit_code": exit_code,
+            "output": output,
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -113,7 +116,7 @@ class QualityGate:
         for gate_name, cmd in gates:
             result = self._run_gate(gate_name, cmd)
             baseline_data["gates"][gate_name] = result
-        with open(self.baseline_path, 'w') as f:
+        with open(self.baseline_path, "w") as f:
             json.dump(baseline_data, f, indent=2)
         print("\n✅ Baseline saved\n")
         return True
@@ -140,9 +143,11 @@ class QualityGate:
             baseline_gate = baseline["gates"][gate_name]
             baseline_metric = baseline_gate.get("metric", 0)
             current_metric = current.get("metric", 0)
-            passed = (check_type == "=" and current_metric == baseline_metric) or \
-                     (check_type == "≥" and current_metric >= baseline_metric) or \
-                     (check_type == "≤" and current_metric <= baseline_metric)
+            passed = (
+                (check_type == "=" and current_metric == baseline_metric)
+                or (check_type == "≥" and current_metric >= baseline_metric)
+                or (check_type == "≤" and current_metric <= baseline_metric)
+            )
             status = "✅" if passed else "❌"
             print(f"{status} {gate_name:12} {baseline_metric} {check_type} {current_metric}")
             if not passed:
@@ -154,6 +159,7 @@ class QualityGate:
         else:
             print("\n❌ Regression detected\n")
             return False
+
 
 def main():
     if len(sys.argv) < 2:
@@ -168,6 +174,7 @@ def main():
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
