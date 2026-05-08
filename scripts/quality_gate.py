@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Quality Gate Verification Script"""
 
-from datetime import datetime
 import json
-from pathlib import Path
 import subprocess
 import sys
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 
