@@ -34,7 +34,7 @@ jobs:
     - name: Create tag
       run: 'git config user.name ''chrysa''
 
-        git config user.email ''greau.anthony@gmail.com''
+        git config user.email ''greau.anthony+chrysa@gmail.com''
 
         git tag "${{ steps.changelog.outputs.version }}" || echo "Tag already exists"
 
