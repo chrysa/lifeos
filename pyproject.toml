@@ -6,11 +6,18 @@ build-backend = "hatchling.build"
 name = "lifeos"
 version = "0.1.0"
 description = "Floating AI assistant multi-OS — system monitoring, messaging, AI and external service integrations"
-authors = [{name = "chrysa", email = "greau.anthony@gmail.com"}]
+authors = [{ name = "chrysa", email = "greau.anthony@gmail.com" }]
 readme = "README.md"
-license = {file = "LICENSE"}
-requires-python = ">=3.12"
-keywords = ["ai", "assistant", "overlay", "system-monitoring", "notion", "discord"]
+license = { file = "LICENSE" }
+requires-python = ">=3.14"
+keywords = [
+    "ai",
+    "assistant",
+    "overlay",
+    "system-monitoring",
+    "notion",
+    "discord",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3.12",
@@ -62,9 +69,14 @@ ignore = ["S101"]
 "tests/**" = ["S", "T20"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 strict = true
 ignore_missing_imports = true
+exclude = ["scripts/"]
+
+[[tool.mypy.overrides]]
+module = ["lifeos.cli"]
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -72,4 +84,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--cov=lifeos --cov-report=xml --cov-report=term-missing"
+addopts = "--cov=lifeos --cov-report=xml --cov-report=term-missing --cov-fail-under=85"
