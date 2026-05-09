@@ -2,6 +2,9 @@ branches:
   chore:
     increment: Patch
     regex: ^chore/.*$
+  feat:
+    increment: Minor
+    regex: ^feat/.*$
   feature:
     increment: Minor
     regex: ^feature/.*$

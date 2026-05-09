@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 PYTHON := python3
-PKG    := my_assistant
+PKG    := lifeos
 
 .PHONY: help install install-ui dev test lint format clean run run-headless run-discord quality-gate-baseline quality-gate-verify
 

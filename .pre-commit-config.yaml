@@ -13,7 +13,7 @@ repos:
           - id: no-bare-except
 
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: 803469bde8523f208d030ce33f575d7bee0ba9bf
+      rev: v5.0.0
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
@@ -28,6 +28,16 @@ repos:
           - id: check-merge-conflict
           - id: check-added-large-files
           - id: mixed-line-ending
+
+    - repo: https://github.com/pre-commit/mirrors-mypy
+      rev: v1.15.0
+      hooks:
+          - id: mypy
+            additional_dependencies:
+                - pydantic>=2.7
+                - pydantic-settings>=2.3
+                - httpx>=0.27
+                - psutil>=6.0
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.15.12
