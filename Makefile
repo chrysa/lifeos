@@ -45,6 +45,15 @@ run-headless:  ## Start headless (system tray only, no overlay)
 run-discord:  ## Start with Discord plugin enabled
 	$(PYTHON) -m my_assistant --ui --enable discord
 
+typecheck: ## Run mypy type checking
+	mypy $(PKG) tests
+
+build: clean ## Build wheel distribution package
+	$(PYTHON) -m build
+
+pre-commit: ## Run all pre-commit hooks on every file
+	pre-commit run --all-files --verbose
+
 # ── Quality Gates ──────────────────────────────────────────────────────────
 
 quality-gate-baseline: ## Record baseline metrics for regression detection
