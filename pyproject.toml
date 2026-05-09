@@ -72,6 +72,11 @@ ignore = ["S101"]
 python_version = "3.14"
 strict = true
 ignore_missing_imports = true
+exclude = ["scripts/"]
+
+[[tool.mypy.overrides]]
+module = ["lifeos.cli"]
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
