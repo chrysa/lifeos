@@ -1,54 +1,55 @@
 on:
   push:
     branches:
-    - main
-    - master
+      - main
+      - master
     paths-ignore:
-    - '**.md'
-    - .github/**
+      - "**.md"
+      - .github/**
   workflow_dispatch: null
 jobs:
   release:
     name: Create release
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-    - name: Setup GitVersion
-      uses: gittools/actions/gitversion/setup@v4
-      with:
-        versionSpec: 6.x
-    - id: gitversion
-      name: Determine version
-      uses: gittools/actions/gitversion/execute@v4
-    - name: Install git-cliff
-      uses: taiki-e/install-action@git-cliff
-    - id: changelog
-      name: Generate changelog
-      run: "CURRENT_TAG=\"v${{ steps.gitversion.outputs.semVer }}\"\ngit cliff --output\
-        \ CHANGELOG_RELEASE.md --tag \"$CURRENT_TAG\" 2>/dev/null || \\\n  git cliff\
-        \ --unreleased --output CHANGELOG_RELEASE.md\necho \"version=$CURRENT_TAG\"\
-        \ >> \"$GITHUB_OUTPUT\"\n"
-    - name: Create tag
-      run: 'git config user.name ''chrysa''
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Setup GitVersion
+        uses: gittools/actions/gitversion/setup@v4
+        with:
+          versionSpec: 6.x
+      - id: gitversion
+        name: Determine version
+        uses: gittools/actions/gitversion/execute@v4
+      - name: Install git-cliff
+        uses: taiki-e/install-action@git-cliff
+      - id: changelog
+        name: Generate changelog
+        run:
+          "CURRENT_TAG=\"v${{ steps.gitversion.outputs.semVer }}\"\ngit cliff --output\
+          \ CHANGELOG_RELEASE.md --tag \"$CURRENT_TAG\" 2>/dev/null || \\\n  git cliff\
+          \ --unreleased --output CHANGELOG_RELEASE.md\necho \"version=$CURRENT_TAG\"\
+          \ >> \"$GITHUB_OUTPUT\"\n"
+      - name: Create tag
+        run: 'git config user.name ''chrysa''
 
-        git config user.email ''greau.anthony+chrysa@gmail.com''
+          git config user.email ''greau.anthony+chrysa@gmail.com''
 
-        git tag "${{ steps.changelog.outputs.version }}" || echo "Tag already exists"
+          git tag "${{ steps.changelog.outputs.version }}" || echo "Tag already exists"
 
-        git push origin "${{ steps.changelog.outputs.version }}" || echo "Tag push
-        skipped"
+          git push origin "${{ steps.changelog.outputs.version }}" || echo "Tag push
+          skipped"
 
-        '
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v3
-      with:
-        body_path: CHANGELOG_RELEASE.md
-        name: Release ${{ steps.changelog.outputs.version }}
-        tag_name: ${{ steps.changelog.outputs.version }}
-        token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          '
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: CHANGELOG_RELEASE.md
+          name: Release ${{ steps.changelog.outputs.version }}
+          tag_name: ${{ steps.changelog.outputs.version }}
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 name: Release
 permissions:
   contents: write

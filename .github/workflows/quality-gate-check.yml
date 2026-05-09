@@ -1,73 +1,75 @@
 on:
   pull_request:
     branches:
-    - develop
-    - main
-    - master
+      - develop
+      - main
+      - master
     types:
-    - opened
-    - reopened
-    - synchronize
+      - opened
+      - reopened
+      - synchronize
   push:
     branches:
-    - main
-    - master
+      - main
+      - master
 jobs:
   quality-gate:
     name: No-Regression Quality Gates
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.14'
-    - continue-on-error: true
-      name: Set up Node.js (if needed)
-      uses: actions/setup-node@v6
-      with:
-        cache: npm
-        node-version: '20'
-    - name: Install dependencies
-      run: 'if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - continue-on-error: true
+        name: Set up Node.js (if needed)
+        uses: actions/setup-node@v6
+        with:
+          cache: npm
+          node-version: "20"
+      - name: Install dependencies
+        run:
+          "if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-        if [ -f package.json ]; then npm ci; fi
+          if [ -f package.json ]; then npm ci; fi
 
-        '
-    - id: quality-gate
-      name: Run quality gate verification
-      run: |
-        if [ ! -f .quality-gate-baseline.json ]; then
-          echo "ℹ️ No baseline found — skipping quality gate (run quality-gate-baseline on main first)"
-          exit 0
-        fi
-        make quality-gate-verify || exit_code=$?
-        exit "${exit_code:-0}"
+          "
+      - id: quality-gate
+        name: Run quality gate verification
+        run: |
+          if [ ! -f .quality-gate-baseline.json ]; then
+            echo "ℹ️ No baseline found — skipping quality gate (run quality-gate-baseline on main first)"
+            exit 0
+          fi
+          make quality-gate-verify || exit_code=$?
+          exit "${exit_code:-0}"
 
-    - if: always()
-      name: Report quality gate status
-      run: "if [ ${{ steps.quality-gate.outcome }} == 'success' ]; then\n  echo \"\
-        \u2705 All quality gates passed\"\n  exit 0\nelse\n  echo \"\u274C Quality\
-        \ gate regression detected\"\n  exit 1\nfi\n"
-    - env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        OUTCOME: ${{ steps.quality-gate.outcome }}
-        REPO: ${{ github.repository }}
-        SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      if: always()
-      name: Set quality-gate commit status
-      run: |
-        STATE="success"
-        DESCRIPTION="All quality gates passed"
-        if [ "$OUTCOME" != "success" ]; then
-          STATE="failure"
-          DESCRIPTION="Quality gate regression detected"
-        fi
-        gh api "repos/${REPO}/statuses/${SHA}" \
-          -f state="${STATE}" \
-          -f context="quality-gate" \
-          -f description="${DESCRIPTION}"
+      - if: always()
+        name: Report quality gate status
+        run:
+          "if [ ${{ steps.quality-gate.outcome }} == 'success' ]; then\n  echo \"\
+          \u2705 All quality gates passed\"\n  exit 0\nelse\n  echo \"\u274C Quality\
+          \ gate regression detected\"\n  exit 1\nfi\n"
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTCOME: ${{ steps.quality-gate.outcome }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        if: always()
+        name: Set quality-gate commit status
+        run: |
+          STATE="success"
+          DESCRIPTION="All quality gates passed"
+          if [ "$OUTCOME" != "success" ]; then
+            STATE="failure"
+            DESCRIPTION="Quality gate regression detected"
+          fi
+          gh api "repos/${REPO}/statuses/${SHA}" \
+            -f state="${STATE}" \
+            -f context="quality-gate" \
+            -f description="${DESCRIPTION}"
 name: Quality Gate Check
 permissions:
   checks: write

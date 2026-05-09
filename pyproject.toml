@@ -6,11 +6,18 @@ build-backend = "hatchling.build"
 name = "lifeos"
 version = "0.1.0"
 description = "Floating AI assistant multi-OS — system monitoring, messaging, AI and external service integrations"
-authors = [{name = "chrysa", email = "greau.anthony@gmail.com"}]
+authors = [{ name = "chrysa", email = "greau.anthony@gmail.com" }]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 requires-python = ">=3.14"
-keywords = ["ai", "assistant", "overlay", "system-monitoring", "notion", "discord"]
+keywords = [
+    "ai",
+    "assistant",
+    "overlay",
+    "system-monitoring",
+    "notion",
+    "discord",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3.12",
