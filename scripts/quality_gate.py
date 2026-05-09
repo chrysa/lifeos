@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Quality Gate Verification Script"""
 
+from __future__ import annotations
+
 import json
 import subprocess
 import sys
@@ -13,7 +15,7 @@ class QualityGate:
     CONFIG_FILE = ".quality-gate.json"
     BASELINE_FILE = ".quality-gate-baseline.json"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config_path = Path(self.CONFIG_FILE)
         self.baseline_path = Path(self.BASELINE_FILE)
         if not self.config_path.exists():
@@ -103,9 +105,9 @@ class QualityGate:
         print(f"OK ({result.get('metric', 'N/A')})")
         return result
 
-    def baseline(self):
+    def baseline(self) -> bool:
         print("\n📋 Recording Quality Gate Baseline\n")
-        baseline_data = {"recorded_at": datetime.now().isoformat(), "gates": {}}
+        baseline_data: dict[str, Any] = {"recorded_at": datetime.now().isoformat(), "gates": {}}
         gates = [
             ("Tests", self.config["commands"].get("tests", "make test")),
             ("Coverage", self.config["commands"].get("coverage", "make test-coverage")),
@@ -161,7 +163,7 @@ class QualityGate:
             return False
 
 
-def main():
+def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: python quality_gate.py [baseline|verify]")
         sys.exit(1)
