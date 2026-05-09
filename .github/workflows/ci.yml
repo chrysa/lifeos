@@ -1,36 +1,141 @@
+---
+name: CI
+
 on:
   pull_request:
     branches:
-    - main
-    - master
+      - main
   push:
     branches:
-    - main
-    - master
-jobs:
-  lint:
-    name: Lint & pre-commit
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.12'
-    - name: Run pre-commit
-      uses: pre-commit/action@v3.0.1
-  test:
-    name: Tests
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.12'
-    - name: Install dependencies
-      run: pip install -e ".[dev]"
-    - name: Run pytest
-      run: pytest --tb=short
-name: CI
+      - main
+      - "feat/**"
+      - "fix/**"
+      - "chore/**"
+      - "ci/**"
+  workflow_dispatch:
+
+# Required for publish-unit-test-result-action and SonarCloud
 permissions:
+  checks: write
   contents: read
+  pull-requests: write
+  statuses: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  config:
+    name: Build matrix config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python-versions: ${{ steps.matrix.outputs.python-versions }}
+      latest-python: ${{ steps.matrix.outputs.latest-python }}
+    steps:
+      - id: matrix
+        shell: bash
+        run: |
+          echo 'python-versions=["3.12","3.13","3.14"]' >> "$GITHUB_OUTPUT"
+          echo 'latest-python=3.14' >> "$GITHUB_OUTPUT"
+
+  ruff:
+    name: Ruff (${{ matrix.python-version }})
+    needs: config
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: chrysa/github-actions/tool-setup@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          extras: dev
+
+      - name: Ruff checks
+        uses: chrysa/github-actions/ruff-check@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          latest-python: ${{ needs.config.outputs.latest-python }}
+          sources: "lifeos tests"
+
+  mypy:
+    name: Mypy (${{ matrix.python-version }})
+    needs: config
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: chrysa/github-actions/tool-setup@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          extras: dev
+
+      - name: Mypy checks
+        uses: chrysa/github-actions/mypy-check@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          latest-python: ${{ needs.config.outputs.latest-python }}
+          config-file: pyproject.toml
+          sources: "lifeos"
+
+  test:
+    name: Test (${{ matrix.python-version }})
+    needs: config
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: chrysa/github-actions/tool-setup@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          extras: dev
+
+      - name: Run tests
+        uses: chrysa/github-actions/run-tests@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          latest-python: ${{ needs.config.outputs.latest-python }}
+          cov-module: lifeos
+
+  sonar:
+    name: SonarCloud analysis
+    needs: [config, ruff, mypy, test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud scan
+        uses: chrysa/github-actions/sonar-scan@v1
+        with:
+          latest-python: ${{ needs.config.outputs.latest-python }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          project-key: chrysa_lifeos
+          organization: chrysa
+          project-name: lifeos
+          sources: lifeos
+          tests: tests
