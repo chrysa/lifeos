@@ -47,7 +47,7 @@ repos:
           - id: ruff-format
 
     - repo: https://github.com/adrienverge/yamllint
-      rev: 30a25fe087e31d0345be0ffed4360e4651a44b6e
+      rev: v1.9.0
       hooks:
           - id: yamllint
             args: [--strict]
