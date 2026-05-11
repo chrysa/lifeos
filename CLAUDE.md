@@ -89,6 +89,7 @@ make run-headless # python -m lifeos --headless
 
 Project tracking: [to be filled after creation]
 
+<<<<<<< Updated upstream
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
@@ -132,3 +133,13 @@ This project is indexed by GitNexus as **lifeos** (62 symbols, 54 relationships,
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+||||||| Stash base
+=======
+## Compact instructions
+
+When compacting, always preserve:
+1. List of all files modified this session (with paths)
+2. Current task description and next steps
+3. Any uncommitted / unpushed changes
+4. Open blockers and errors not yet resolved
+>>>>>>> Stashed changes
