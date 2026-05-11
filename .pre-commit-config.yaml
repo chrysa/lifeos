@@ -8,7 +8,7 @@ repos:
       rev: v0.1.1-72
       hooks:
           - id: yaml-sorter
-            exclude: ^(\.github/ISSUE_TEMPLATE/|\.github/workflows/)
+            exclude: ^(\.github/ISSUE_TEMPLATE/|\.github/workflows/|GitVersion\.yml)
           - id: json-sorter
           - id: env-file-check
           - id: debugger-detection
