@@ -25,6 +25,10 @@ test:  ## Run tests
 test-cov: ## Run tests with coverage report
 	pytest tests/ -v --cov --cov-report=term-missing --cov-report=xml
 
+docker-test: ## Run tests inside Docker
+	docker build --target test -f Dockerfile.test -t lifeos-test .
+	docker run --rm lifeos-test
+
 lint:  ## Run linter (ruff check)
 	ruff check $(PKG) tests
 

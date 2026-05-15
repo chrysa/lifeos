@@ -12,12 +12,4 @@ rules:
   line-length:
     level: warning
     max: 120
-  truthy:
-    allowed-values:
-    - 'false'
-    - 'no'
-    - 'off'
-    - 'on'
-    - 'true'
-    - 'yes'
-    check-keys: false
+  truthy: disable
