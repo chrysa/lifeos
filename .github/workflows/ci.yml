@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       python-versions: ${{ steps.matrix.outputs.python-versions }}
-      latest-python: ${{ steps.matrix.outputs.latest-python }}
+      python-version: ${{ steps.matrix.outputs.latest-python }}
     steps:
       - id: matrix
         shell: bash
@@ -75,7 +75,7 @@ jobs:
         uses: chrysa/github-actions/ruff-check@v1
         with:
           python-version: ${{ matrix.python-version }}
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           sources: "lifeos tests"
 
   mypy:
@@ -101,7 +101,7 @@ jobs:
         uses: chrysa/github-actions/mypy-check@v1
         with:
           python-version: ${{ matrix.python-version }}
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           config-file: pyproject.toml
           sources: "lifeos"
 
@@ -130,7 +130,7 @@ jobs:
         uses: chrysa/github-actions/run-tests@v1
         with:
           python-version: ${{ matrix.python-version }}
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           cov-module: lifeos
 
   sonar:
@@ -152,7 +152,7 @@ jobs:
       - name: SonarCloud scan
         uses: chrysa/github-actions/sonar-scan-python@v1
         with:
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           project-key: chrysa_my-assistant
