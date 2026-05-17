@@ -33,9 +33,13 @@ jobs:
               with:
                   fetch-depth: 0
             - name: SonarCloud scan
-              uses: chrysa/github-actions/sonar-scan@v1
+              uses: chrysa/github-actions/sonar-scan-python@v1
               with:
+                  python-version: "3.14"
                   sonar-token: ${{ secrets.SONAR_TOKEN }}
-                  project-key: chrysa_lifeos
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  project-key: chrysa_my-assistant
+                  organization: chrysa
+                  project-name: my-assistant
                   sources: lifeos
                   tests: tests
