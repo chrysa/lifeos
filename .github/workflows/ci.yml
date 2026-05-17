@@ -14,12 +14,9 @@ on:
       - "ci/**"
   workflow_dispatch:
 
-# Required for publish-unit-test-result-action and SonarCloud
+# Default: least privilege — write access is granted per-job only
 permissions:
-  checks: write
   contents: read
-  pull-requests: write
-  statuses: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -113,6 +110,9 @@ jobs:
     needs: config
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      checks: write
+      statuses: write
     strategy:
       fail-fast: false
       matrix:
@@ -139,19 +139,24 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+      statuses: write
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: SonarCloud scan
-        uses: chrysa/github-actions/sonar-scan@v1
+        uses: chrysa/github-actions/sonar-scan-python@v1
         with:
           latest-python: ${{ needs.config.outputs.latest-python }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          project-key: chrysa_lifeos
+          project-key: chrysa_my-assistant
           organization: chrysa
-          project-name: lifeos
+          project-name: my-assistant
           sources: lifeos
           tests: tests
