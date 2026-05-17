@@ -52,7 +52,7 @@ class QualityGate:
                     if "passed" in part and i > 0:
                         try:
                             return int(parts[i - 1])
-                        except ValueError, IndexError:
+                        except (ValueError, IndexError):
                             continue
         return 0
 
@@ -62,7 +62,7 @@ class QualityGate:
                 try:
                     count = int(line.split()[0])
                     return count
-                except ValueError, IndexError:
+                except (ValueError, IndexError):
                     continue
         return 0
 
@@ -72,9 +72,22 @@ class QualityGate:
                 try:
                     count = int(line.split()[0])
                     return count
-                except ValueError, IndexError:
+                except (ValueError, IndexError):
                     continue
         return 0
+
+    def _extract_metric(self, gate_name: str, exit_code: int, output: str) -> tuple[Any, str]:
+        """Return (metric_value, metric_name) for a given gate."""
+        if gate_name == "Tests":
+            return self._parse_passed_tests(output), "passed_tests"
+        if gate_name == "Coverage":
+            return self._parse_coverage(output), "coverage_percentage"
+        if gate_name == "Lint":
+            return self._parse_warning_count(output), "warning_count"
+        if gate_name == "Types":
+            return self._parse_error_count(output), "error_count"
+        # Build
+        return 0 if exit_code == 0 else 1, "build_status"
 
     def _run_gate(self, gate_name: str, cmd: str) -> dict[str, Any]:
         print(f"  🔍 {gate_name}...", end=" ", flush=True)
@@ -86,21 +99,7 @@ class QualityGate:
             "timestamp": datetime.now().isoformat(),
         }
 
-        if gate_name == "Tests":
-            result["metric"] = self._parse_passed_tests(output)
-            result["metric_name"] = "passed_tests"
-        elif gate_name == "Coverage":
-            result["metric"] = self._parse_coverage(output)
-            result["metric_name"] = "coverage_percentage"
-        elif gate_name == "Lint":
-            result["metric"] = self._parse_warning_count(output)
-            result["metric_name"] = "warning_count"
-        elif gate_name == "Types":
-            result["metric"] = self._parse_error_count(output)
-            result["metric_name"] = "error_count"
-        elif gate_name == "Build":
-            result["metric"] = 0 if exit_code == 0 else 1
-            result["metric_name"] = "build_status"
+        result["metric"], result["metric_name"] = self._extract_metric(gate_name, exit_code, output)
 
         print(f"OK ({result.get('metric', 'N/A')})")
         return result
