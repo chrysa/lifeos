@@ -5,7 +5,7 @@ fail_fast: false
 minimum_pre_commit_version: 4.1.0
 repos:
     - repo: https://github.com/chrysa/pre-commit-tools
-      rev: v0.1.1-75
+      rev: v0.1.1-76
       hooks:
           - id: yaml-sorter
             exclude: ^(\.github/ISSUE_TEMPLATE/|\.github/workflows/|GitVersion\.yml)
@@ -34,7 +34,7 @@ repos:
           - id: mixed-line-ending
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.15.0
+      rev: v2.1.0
       hooks:
           - id: mypy
             additional_dependencies:
@@ -44,7 +44,7 @@ repos:
                 - psutil>=6.0
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.15.12
+      rev: v0.15.13
       hooks:
           - id: ruff
             args: [--fix]
@@ -57,13 +57,13 @@ repos:
             args: [--strict]
 
     - repo: https://github.com/igorshubovych/markdownlint-cli
-      rev: v0.44.0
+      rev: v0.48.0
       hooks:
           - id: markdownlint
             args: [--disable, MD013, MD033, MD041]
 
     - repo: https://github.com/gitleaks/gitleaks
-      rev: v8.30.1
+      rev: v8.30.0
       hooks:
           - id: gitleaks
 
