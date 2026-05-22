@@ -33,7 +33,7 @@ jobs:
               with:
                   fetch-depth: 0
             - name: SonarCloud scan
-              uses: chrysa/github-actions/sonar-scan-python@v1
+              uses: chrysa/github-actions/sonar-scan-python@v1.0.8
               with:
                   python-version: "3.14"
                   sonar-token: ${{ secrets.SONAR_TOKEN }}
