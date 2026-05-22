@@ -61,3 +61,6 @@ config/config.toml
 *.log
 logs/
 .ci-backup-*/
+
+# CodeGraph (local index — never commit)
+.codegraph/
