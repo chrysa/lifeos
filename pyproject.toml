@@ -35,6 +35,7 @@ dependencies = [
     "rich>=13.0",
     "click>=8.1",
     "python-dotenv>=1.0",
+    "sentry-sdk>=2.0.0",
 ]
 
 [project.optional-dependencies]
