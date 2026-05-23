@@ -5,7 +5,7 @@ fail_fast: false
 minimum_pre_commit_version: 4.1.0
 repos:
     - repo: https://github.com/chrysa/pre-commit-tools
-      rev: v0.1.1-75
+      rev: v0.1.1-76
       hooks:
           - id: yaml-sorter
             exclude: ^(\.github/ISSUE_TEMPLATE/|\.github/workflows/|GitVersion\.yml)
@@ -15,6 +15,8 @@ repos:
           - id: python-print-detection
           - id: python-logger-detection
           - id: no-bare-except
+          - id: regression-gate
+            stages: [pre-push]
 
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v6.0.0
