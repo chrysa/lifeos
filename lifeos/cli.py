@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from lifeos import __version__
+from lifeos.observability import init_sentry
 
 
 @click.command()
@@ -39,6 +40,7 @@ from lifeos import __version__
 )
 def main(config: Path | None, ui: bool, enable: tuple[str, ...], debug: bool) -> None:
     """LifeOS — floating AI assistant for Linux and Windows."""
+    init_sentry()
     logging.basicConfig(
         level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
