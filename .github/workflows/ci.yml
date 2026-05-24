@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       python-versions: ${{ steps.matrix.outputs.python-versions }}
-      latest-python: ${{ steps.matrix.outputs.latest-python }}
+      python-version: ${{ steps.matrix.outputs.latest-python }}
     steps:
       - id: matrix
         shell: bash
@@ -66,16 +66,16 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: chrysa/github-actions/tool-setup@v1
+        uses: chrysa/github-actions/tool-setup@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
           extras: dev
 
       - name: Ruff checks
-        uses: chrysa/github-actions/ruff-check@v1
+        uses: chrysa/github-actions/ruff-check@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           sources: "lifeos tests"
 
   mypy:
@@ -92,16 +92,16 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: chrysa/github-actions/tool-setup@v1
+        uses: chrysa/github-actions/tool-setup@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
           extras: dev
 
       - name: Mypy checks
-        uses: chrysa/github-actions/mypy-check@v1
+        uses: chrysa/github-actions/mypy-check@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           config-file: pyproject.toml
           sources: "lifeos"
 
@@ -121,16 +121,16 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup environment
-        uses: chrysa/github-actions/tool-setup@v1
+        uses: chrysa/github-actions/tool-setup@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
           extras: dev
 
       - name: Run tests
-        uses: chrysa/github-actions/run-tests@v1
+        uses: chrysa/github-actions/run-tests@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           cov-module: lifeos
 
   sonar:
@@ -150,9 +150,9 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud scan
-        uses: chrysa/github-actions/sonar-scan-python@v1
+        uses: chrysa/github-actions/sonar-scan-python@v1.0.8
         with:
-          latest-python: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.latest-python }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           project-key: chrysa_my-assistant
