@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: chrysa/github-actions/python-setup@v1
         with:
@@ -63,7 +63,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup environment
         uses: chrysa/github-actions/tool-setup@v1.0.8
@@ -75,7 +75,6 @@ jobs:
         uses: chrysa/github-actions/ruff-check@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
-          python-version: ${{ needs.config.outputs.latest-python }}
           sources: "lifeos tests"
 
   mypy:
@@ -89,7 +88,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup environment
         uses: chrysa/github-actions/tool-setup@v1.0.8
@@ -101,7 +100,6 @@ jobs:
         uses: chrysa/github-actions/mypy-check@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
-          python-version: ${{ needs.config.outputs.latest-python }}
           config-file: pyproject.toml
           sources: "lifeos"
 
@@ -118,7 +116,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup environment
         uses: chrysa/github-actions/tool-setup@v1.0.8
@@ -130,7 +128,6 @@ jobs:
         uses: chrysa/github-actions/run-tests@v1.0.8
         with:
           python-version: ${{ matrix.python-version }}
-          python-version: ${{ needs.config.outputs.latest-python }}
           cov-module: lifeos
 
   sonar:
@@ -145,7 +142,7 @@ jobs:
       checks: write
       statuses: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
