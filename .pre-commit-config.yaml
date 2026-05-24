@@ -36,7 +36,7 @@ repos:
           - id: mixed-line-ending
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.15.0
+      rev: v2.1.0
       hooks:
           - id: mypy
             additional_dependencies:
@@ -46,7 +46,7 @@ repos:
                 - psutil>=6.0
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.15.12
+      rev: v0.15.13
       hooks:
           - id: ruff
             args: [--fix]
@@ -65,7 +65,7 @@ repos:
             args: [--disable, MD013, MD033, MD041]
 
     - repo: https://github.com/gitleaks/gitleaks
-      rev: v8.30.1
+      rev: v8.30.0
       hooks:
           - id: gitleaks
 
