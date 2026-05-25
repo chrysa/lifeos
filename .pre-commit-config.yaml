@@ -49,7 +49,7 @@ repos:
                 - psutil>=6.0
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.15.12
+      rev: v0.15.14
       hooks:
           - id: ruff
             args: [--fix]
