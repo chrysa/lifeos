@@ -1,3 +1,7 @@
+"on":
+  schedule:
+  - cron: 0 5 * * 1
+  workflow_dispatch: null
 jobs:
   pre-commit-autoupdate:
     name: Bump pre-commit hooks
@@ -9,7 +13,7 @@ jobs:
         persist-credentials: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup Python
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
       with:
         python-version: '3.12'
     - name: Install pre-commit
@@ -17,7 +21,7 @@ jobs:
     - name: Autoupdate hooks
       run: pre-commit autoupdate
     - name: Open PR if changes
-      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
+      uses: peter-evans/create-pull-request@67ccf781d68cd99b580ae25a5c18a1cc84ffff1f
       with:
         body: Automated weekly bump of `.pre-commit-config.yaml` hooks.
         branch: chore/pre-commit-autoupdate
@@ -30,10 +34,6 @@ jobs:
           '
         title: '[SKIP CI] [pre-commit] Autoupdate weekly'
 name: Auto-update pre-commit hooks
-on:
-  schedule:
-  - cron: 0 5 * * 1
-  workflow_dispatch: null
 permissions:
   contents: write
   pull-requests: write
