@@ -1,3 +1,7 @@
+"on":
+  pull_request: null
+  workflow_call: null
+  workflow_dispatch: null
 jobs:
   labels:
     name: Apply labels on pull request
@@ -9,14 +13,10 @@ jobs:
         persist-credentials: false
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213
+      uses: actions/labeler@634933edcd8ababfe52f92936142cc22ac488b1b
       with:
         sync-labels: true
 name: Pull Request Labels
-on:
-  pull_request: null
-  workflow_call: null
-  workflow_dispatch: null
 permissions:
   contents: read
   pull-requests: write
