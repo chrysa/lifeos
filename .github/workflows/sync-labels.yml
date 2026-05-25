@@ -1,3 +1,14 @@
+"on":
+  push:
+    branches:
+    - develop
+    - main
+    - master
+    paths:
+    - .github/labels.yml
+  schedule:
+  - cron: 0 2 * * 1
+  workflow_dispatch: null
 jobs:
   sync-labels:
     name: Synchronize labels
@@ -10,17 +21,6 @@ jobs:
       with:
         labels: .github/labels.yml
 name: Sync GitHub Labels
-on:
-  push:
-    branches:
-    - develop
-    - main
-    - master
-    paths:
-    - .github/labels.yml
-  schedule:
-  - cron: 0 2 * * 1
-  workflow_dispatch: null
 permissions:
   contents: read
   issues: write
