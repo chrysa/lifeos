@@ -149,7 +149,7 @@ jobs:
       - name: SonarCloud scan
         uses: chrysa/github-actions/sonar-scan-python@v1.0.8
         with:
-          python-version: ${{ needs.config.outputs.latest-python }}
+          python-version: ${{ needs.config.outputs.python-version }}
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           project-key: chrysa_my-assistant
