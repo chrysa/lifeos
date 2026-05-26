@@ -52,7 +52,7 @@ class QualityGate:
                     if "passed" in part and i > 0:
                         try:
                             return int(parts[i - 1])
-                        except (ValueError, IndexError):  # fmt: skip  # fmt: skip
+                        except (ValueError, IndexError):  # fmt: skip
                             continue
         return 0
 
