@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - uses: chrysa/github-actions/python-setup@v1.0.12
         with:
@@ -63,7 +63,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup environment
         uses: chrysa/github-actions/tool-setup@v1.0.12
@@ -88,7 +88,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup environment
         uses: chrysa/github-actions/tool-setup@v1.0.12
@@ -116,7 +116,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup environment
         uses: chrysa/github-actions/tool-setup@v1.0.12
@@ -142,7 +142,7 @@ jobs:
       checks: write
       statuses: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
