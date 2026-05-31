@@ -27,7 +27,7 @@ jobs:
     name: Mutmut
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v6.2.0
@@ -83,7 +83,7 @@ jobs:
 
       - name: Upload mutmut results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: mutmut-results
           path: .mutmut-cache
