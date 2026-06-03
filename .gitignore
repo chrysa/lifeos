@@ -64,3 +64,6 @@ logs/
 
 # CodeGraph (local index — never commit)
 .codegraph/
+graphify
+sys
+graphify-out/
