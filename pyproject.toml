@@ -58,7 +58,8 @@ lifeos = "lifeos.__main__:main"
 packages = ["lifeos"]
 
 [tool.ruff]
-target-version = "py314"
+# py313 (not py314): ruff format <=0.15.15 strips multi-except parens under py314 — restore when fixed upstream
+target-version = "py313"
 line-length = 120
 
 [tool.ruff.lint]
