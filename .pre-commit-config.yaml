@@ -46,7 +46,7 @@ repos:
                 - pydantic>=2.13.4
                 - pydantic-settings>=2.14.1
                 - httpx>=0.28.1
-                - psutil>=6.0
+                - psutil>=7.2.2
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.15.14
