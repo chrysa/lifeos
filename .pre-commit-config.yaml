@@ -1,11 +1,11 @@
 ---
 default_language_version:
-    python: python3.14
+  python: python3.14
 fail_fast: false
 minimum_pre_commit_version: 4.1.0
 repos:
     - repo: https://github.com/chrysa/pre-commit-tools
-      rev: v0.1.1-92
+      rev: v0.1.1-93
       hooks:
           - id: yaml-sorter
             exclude: ^(\.github/ISSUE_TEMPLATE/|\.github/workflows/|GitVersion\.yml)
@@ -20,6 +20,10 @@ repos:
           - id: no-sync-in-async
           - id: regression-gate
             stages: [pre-push]
+          - id: env-example-sync
+          - id: python-unreachable-code
+          - id: no-hardcoded-localhost
+            exclude: 'tests?/|\.test\.|\.spec\.'
 
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v6.0.0
