@@ -1,91 +1,45 @@
 # Contributing to lifeos
 
-Thank you for your interest in contributing! This project is part of the
-**chrysa** ecosystem and follows shared conventions described below.
+Thanks for contributing. This repo follows the chrysa
+[Execution Standard](https://github.com/chrysa/shared-standards/blob/main/EXECUTION_STANDARD.md).
 
 ## Prerequisites
 
+Install dev dependencies and pre-commit hooks:
+
 ```bash
-# GitHub CLI authenticated as chrysa
-gh auth status
-
-# Python tooling
-pip install pre-commit
-pre-commit install
-
-# Project dependencies
 make install
 ```
 
-## Branch naming
-
-| Type | Pattern | Example |
-|------|---------|---------|
-| Feature | `feat/<short-slug>` | `feat/add-scoring-api` |
-| Bug fix | `fix/<short-slug>` | `fix/pagination-overflow` |
-| Chore / CI | `chore/<short-slug>` | `chore/update-dependabot` |
-| Documentation | `docs/<short-slug>` | `docs/api-reference` |
-| Refactoring | `refactor/<short-slug>` | `refactor/extract-helpers` |
-
-> Branches are enforced by `.github/workflows/enforce-feature-branch.yml`.
-
-## Commit format
-
-All commits **must** follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(<optional scope>): <short description>
-
-[optional body]
-
-[optional footer: Closes #N]
-```
-
-Types: `feat` · `fix` · `chore` · `docs` · `refactor` · `test` · `perf` · `ci`
-
 ## Workflow
 
-1. **Open an issue** (or pick an existing one). One issue = one PR.
-2. Create a branch from `main` following the naming convention above.
-3. Make your changes, writing tests and updating docs where needed.
-4. Run pre-commit hooks locally: `pre-commit run --all-files`
-5. Run the test suite: `make test`
-6. Push and open a PR. Fill in the PR template completely.
-7. Request review from `@chrysa`. Minimum 1 approval required to merge.
-8. All CI checks must be green before merge (lint · tests · coverage · SonarCloud).
-9. Merge via **squash merge** — one clean commit per PR.
+1. **Branch** from `main` using a typed prefix: `feat/`, `fix/`, `chore/`,
+   `docs/`, `ci/`, `refactor/`, `test/`, `perf/`. Direct commits to `main` are
+   blocked (`no-commit-to-branch`).
+2. **Develop** using the `make` targets only — never call `pytest` / `ruff` /
+   `mypy` directly on the host: `make test`, `make test-cov`, `make lint`,
+   `make format`, `make typecheck`.
+3. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
+   `type(scope): subject` (allowed types: feat, fix, docs, style, refactor, test,
+   chore, perf, revert, ci). Commit messages are linted via `conventional-pre-commit`.
+4. **Verify** before pushing, then open a PR against `main`.
 
-## Code quality gates
-
-| Gate | Requirement |
-|------|-------------|
-| Tests | All passing, count ≥ baseline |
-| Coverage | ≥ baseline (never decrease) |
-| Lint | 0 warnings (ruff / eslint) |
-| Type check | 0 new errors (mypy / tsc) |
-| SonarCloud | No new Critical/Blocker issues |
-| Secret scan | Must pass (detect-secrets hook) |
-
-## Local development
+Verification commands:
 
 ```bash
-make install    # install all dependencies
-make dev        # start dev server / environment
-make test       # run full test suite
-make lint       # run linters
-make build      # production build
+pre-commit run --all-files
+make test
 ```
 
-See the `Makefile` for the full list of available targets.
+CI (pre-commit, lint, test, sonar) must pass and one approval is required before merge.
 
-## Resources
+## Code standards
 
-- [DECISIONS.md](./DECISIONS.md) — architectural decisions (ADR mini)
-- [chrysa/shared-standards](https://github.com/chrysa/shared-standards) — CI, linting, pre-commit config
-- [chrysa/pre-commit-tools](https://github.com/chrysa/pre-commit-tools) — shared pre-commit hooks
-- Notion project page — linked in issues and PRs
+- All committed files (code, comments, docs, config) are in **English**.
+- No hardcoded secrets — use env vars and keep `.env.example` in sync.
+- New behaviour ships with tests; keep coverage at or above the project threshold.
 
-## Security
+## Reporting issues
 
-Do not open public issues for security vulnerabilities.
-Use the **Security** issue template and keep exploit details private.
+Use the issue templates under `.github/ISSUE_TEMPLATE/`. Include reproduction
+steps, expected vs actual behaviour, and environment details.
