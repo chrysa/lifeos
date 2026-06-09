@@ -1,146 +1,125 @@
-# my-assistant
+# lifeos
 
-> Floating AI assistant multi-OS — system monitoring, messaging interactions, AI integrations, and external service connectivity.
+> Floating desktop AI assistant for Linux and Windows — a single, always-accessible overlay for system info, messaging, and AI providers.
 
 [![CI](https://github.com/chrysa/my-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/chrysa/my-assistant/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Overview
+> [!WARNING]
+> **Early scaffold (v0.1.0, Alpha).** Only the CLI skeleton and Sentry error
+> tracking are implemented today. The application runtime (`lifeos.app.Application`),
+> the config loader (`lifeos.config.settings.load_config`), the plugin system, and
+> the PySide6 overlay UI described as goals below **do not exist yet** — running the
+> command currently exits with an import error. See [Status](#status) before using.
 
-`my-assistant` is a configurable floating AI assistant that runs as a desktop overlay on Linux and Windows. It aggregates data from your system, messaging platforms, AI providers, and external services (Notion, GitHub, …) into a single, always-accessible interface.
+## Who it's for
 
-## Features
+A solo developer (or small team) who wants one floating overlay on the desktop to
+glance at system metrics, watch messaging channels, and talk to AI providers without
+switching windows. This repository is the project foundation; it is not yet usable.
 
-| Category | Capabilities |
-|----------|-------------|
-| **System** | CPU, RAM, disk, network monitoring (psutil) |
-| **Messaging** | Discord channel monitoring, AI-powered reply suggestions |
-| **AI** | GitHub Copilot, OpenCode server, OpenAI-compatible providers |
-| **Services** | Notion (read/write pages), GitHub (repos, issues, PRs) |
-| **UI** | Floating frameless overlay (PySide6), system tray, configurable hotkey |
-| **Config** | TOML-based, env var interpolation, fully parameterable |
+## Status
 
-## Architecture
+What ships in this version:
 
-```
-my_assistant/
-├── cli.py              # Click entry point (--ui / --headless / --enable)
-├── app.py              # Application lifecycle + plugin registry
-├── config/
-│   └── settings.py     # Pydantic settings loaded from config.toml
-├── core/
-│   └── assistant.py    # AI orchestration — routes queries to providers
-├── plugins/
-│   ├── base.py         # BasePlugin ABC — setup/teardown/status
-│   ├── system/         # System monitor (psutil)
-│   ├── messaging/      # Discord webhook + bot monitoring
-│   ├── ai/             # AI providers (OpenCode, OpenAI-compatible)
-│   └── services/       # External services (Notion, GitHub)
-└── ui/
-    ├── overlay.py      # PySide6 floating window (requires [ui] extra)
-    ├── tray.py         # System tray icon + menu
-    └── components/     # Chat widget, system panel, notifications
-```
+- **CLI entry point** (`lifeos`) built on Click — parses `--config`, `--ui/--headless`,
+  `--enable`, `--debug` and is wired to bootstrap the (not-yet-written) application.
+- **Observability** — optional Sentry integration (`lifeos.observability.init_sentry`),
+  a no-op unless `SENTRY_DSN` is set.
+- Full project tooling: CI, Ruff, Mypy (strict), pytest (≥85% coverage gate),
+  pre-commit, MkDocs, SonarCloud, git-cliff changelog.
 
-## Quickstart
+Not yet implemented (planned): `lifeos.app.Application`, config loading from TOML,
+the plugin system, the PySide6 overlay, system tray, and any AI / Notion / Discord /
+GitHub integrations.
+
+## Installation
+
+Requires **Python 3.14+**.
 
 ```bash
-# Install (headless — no UI)
-pip install -e .
-
-# Install with floating UI
-pip install -e ".[ui,discord]"
-
-# Copy and edit config
-mkdir -p ~/.config/my-assistant
-cp config/config.example.toml ~/.config/my-assistant/config.toml
-$EDITOR ~/.config/my-assistant/config.toml
-
-# Run
-my-assistant --ui            # float overlay + tray
-my-assistant --headless      # tray only (background mode)
+# Clone and install (editable)
+git clone https://github.com/chrysa/my-assistant.git
+cd my-assistant
+pip install -e .              # runtime (headless)
+pip install -e ".[ui]"        # + PySide6 overlay extra
+pip install -e ".[ui,discord,dev]"   # + Discord extra + dev tooling
 ```
+
+## Usage
+
+The CLI is the only runnable surface today. Inspect its interface:
+
+```bash
+lifeos --help
+lifeos --version
+```
+
+```
+Usage: lifeos [OPTIONS]
+
+  LifeOS — floating AI assistant for Linux and Windows.
+
+Options:
+  --version            Show the version and exit.
+  -c, --config FILE    Path to config.toml (default: ~/.config/lifeos/config.toml)
+  --ui / --headless    Enable floating overlay UI (requires [ui] extra).  [default: ui]
+  --enable PLUGIN      Force-enable plugin(s) regardless of config (e.g. --enable discord).
+  --debug              Enable DEBUG logging.
+  --help               Show this message and exit.
+```
+
+> Invoking `lifeos --ui` or `lifeos --headless` currently fails: the CLI imports
+> `lifeos.app.Application` and `lifeos.config.settings.load_config`, which are not
+> implemented yet. `--help` and `--version` work.
 
 ## Configuration
 
-Config file is resolved in this order:
-1. `--config <path>` CLI flag
-2. `~/.config/my-assistant/config.toml`
-3. `./config/config.toml`
+The CLI resolves its config path from `--config <path>`, falling back to
+`~/.config/lifeos/config.toml`. The TOML schema and loader are not implemented yet,
+so no config keys are wired in.
 
-Environment variables can be injected anywhere in the config using `"${ENV_VAR_NAME}"` syntax:
+### Environment variables
 
-```toml
-[plugins.services.notion]
-api_key = "${NOTION_API_KEY}"
-```
+Sentry is configured purely from the environment (see [.env.example](.env.example)):
 
-See [config/config.example.toml](config/config.example.toml) for all available options.
-
-## Plugins
-
-Plugins are enabled/disabled individually in the config. Each plugin is independent and can be added without breaking others.
-
-| Plugin | Extra required | Key dependencies |
-|--------|---------------|-----------------|
-| `system` | — | `psutil` |
-| `messaging.discord` | `[discord]` | `discord.py` |
-| `ai.opencode` | — | `httpx` (calls local OpenCode server) |
-| `ai.openai` | — | `httpx` (OpenAI-compatible REST) |
-| `services.notion` | — | `httpx` (Notion REST API) |
-| `services.github` | — | `httpx` (GitHub REST API) |
-
-## AI Providers
-
-The `core.assistant` routes queries to the appropriate provider based on intent:
-
-- **Code tasks** → OpenCode server (`opencode serve`, port 4096)
-- **Chat / General** → configured default provider (GitHub Copilot, OpenAI, …)
-- **Notion queries** → Notion plugin (native MCP or REST)
+| Variable      | Default          | Purpose                                              |
+|---------------|------------------|------------------------------------------------------|
+| `SENTRY_DSN`  | _(empty)_        | Sentry DSN. Empty disables error tracking entirely.  |
+| `ENVIRONMENT` | `development`    | Sentry environment tag.                              |
+| `RELEASE`     | `lifeos@0.1.0`   | Sentry release tag.                                  |
 
 ## Development
 
 ```bash
-make dev          # Install all deps + pre-commit hooks
-make test         # pytest
+make dev          # install [ui,discord,dev] + pre-commit hooks
+make test         # pytest (coverage gate: 85%)
 make lint         # ruff check
 make format       # ruff format
+make typecheck    # mypy (strict)
 ```
 
 ## Stack
 
-- **Python** 3.12+
-- **PySide6** (Qt6) — floating overlay UI (optional)
-- **psutil** — system monitoring
-- **httpx** — async HTTP (AI providers, Notion, GitHub)
-- **Pydantic v2** — config validation
+- **Python** 3.14+
 - **Click** — CLI interface
+- **Pydantic v2** / **pydantic-settings** — config validation (planned)
+- **httpx** — async HTTP (planned integrations)
+- **psutil** — system monitoring (planned)
+- **Rich** — terminal output
+- **sentry-sdk** — error tracking
+- **PySide6** (Qt6) — floating overlay UI (planned, optional `[ui]` extra)
 
-## Claude Optimization
+## Documentation
 
-This project follows the **Notion AI Project Update System (Claude Optimized)** for efficient Claude-driven development.
-
-📖 **Reference:** [Notion AI Project Update System](https://www.notion.so/Notion-AI-Project-Update-System-Claude-Optimized-34459293e35e8181ba53ee0212bdba3f)
-
-**Model Strategy:**
-- Haiku: simple bugs, documentation, code reviews
-- Sonnet: feature dev, UI logic, system integration
-- Opus: multi-service architecture decisions
-
-Consult the reference page for context engineering, agent roles, and cost optimization strategies.
-
-## Related projects
-
-- [`chrysa/ai-aggregator`](https://github.com/chrysa/ai-aggregator) — AI provider gateway (future backend)
-- [`chrysa/discord-bot-back`](https://github.com/chrysa/discord-bot-back) — Discord bot backend
-- [`chrysa/server`](https://github.com/chrysa/server) — k8s cluster (Phase 7: hosted assistant service)
-- [`chrysa/diy-stream-deck`](https://github.com/chrysa/diy-stream-deck) — hardware control
-
-## Notion
-
-Project tracking: [AI Project Update System](https://www.notion.so/Notion-AI-Project-Update-System-Claude-Optimized-34459293e35e8181ba53ee0212bdba3f)
+- [docs/index.md](docs/index.md) — project docs (MkDocs Material, published via GitHub Pages)
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution guide
+- [CHANGELOG.md](CHANGELOG.md) — auto-generated from conventional commits (git-cliff)
+- [DECISIONS.md](DECISIONS.md) — architecture decisions
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT — see [LICENSE](LICENSE).
+</content>
+</invoke>
