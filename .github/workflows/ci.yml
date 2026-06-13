@@ -1,159 +1,33 @@
 ---
+# Thin caller of the generalized chrysa lean CI (compose-backed app).
+# Gate = pre-commit; reports -> Sonar; tests via make docker-test; sonar.
+# Auto-versioning stays in release.yml (GitVersion).
+
 name: CI
 
 on:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
-      - "feat/**"
-      - "fix/**"
-      - "chore/**"
-      - "ci/**"
-  workflow_dispatch:
+    pull_request:
+        branches: [main]
+    push:
+        branches: [main, "feat/**", "fix/**", "chore/**", "ci/**"]
+    workflow_dispatch:
 
-# Default: least privilege — write access is granted per-job only
 permissions:
-  contents: read
+    contents: read
+    checks: write
+    pull-requests: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  pre-commit:
-    name: Pre-commit checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v6.0.3
-
-      - uses: chrysa/github-actions/python-setup@v1.1.3
+    ci:
+        uses: chrysa/github-actions/.github/workflows/ci-python-app.yml@main
         with:
-          python-version: "3.14"
-          cache: pip
-
-      - uses: pre-commit/action@v3.0.1
-        env:
-          SKIP: no-commit-to-branch
-
-  config:
-    name: Build matrix config
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      python-versions: ${{ steps.matrix.outputs.python-versions }}
-      python-version: ${{ steps.matrix.outputs.latest-python }}
-    steps:
-      - id: matrix
-        shell: bash
-        run: |
-          echo 'python-versions=["3.14"]' >> "$GITHUB_OUTPUT"
-          echo 'latest-python=3.14' >> "$GITHUB_OUTPUT"
-
-  ruff:
-    name: Ruff (${{ matrix.python-version }})
-    needs: config
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
-    steps:
-      - uses: actions/checkout@v6.0.3
-
-      - name: Setup environment
-        uses: chrysa/github-actions/tool-setup@v1.1.3
-        with:
-          python-version: ${{ matrix.python-version }}
-          extras: dev
-
-      - name: Ruff checks
-        uses: chrysa/github-actions/ruff-check@v1.1.3
-        with:
-          python-version: ${{ matrix.python-version }}
-          sources: "lifeos tests"
-
-  mypy:
-    name: Mypy (${{ matrix.python-version }})
-    needs: config
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
-    steps:
-      - uses: actions/checkout@v6.0.3
-
-      - name: Setup environment
-        uses: chrysa/github-actions/tool-setup@v1.1.3
-        with:
-          python-version: ${{ matrix.python-version }}
-          extras: dev
-
-      - name: Mypy checks
-        uses: chrysa/github-actions/mypy-check@v1.1.3
-        with:
-          python-version: ${{ matrix.python-version }}
-          config-file: pyproject.toml
-          sources: "lifeos"
-
-  test:
-    name: Test (${{ matrix.python-version }})
-    needs: config
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      checks: write
-      statuses: write
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ${{ fromJson(needs.config.outputs.python-versions) }}
-    steps:
-      - uses: actions/checkout@v6.0.3
-
-      - name: Setup environment
-        uses: chrysa/github-actions/tool-setup@v1.1.3
-        with:
-          python-version: ${{ matrix.python-version }}
-          extras: dev
-
-      - name: Run tests
-        uses: chrysa/github-actions/run-tests@v1.1.3
-        with:
-          python-version: ${{ matrix.python-version }}
-          cov-module: lifeos
-
-  sonar:
-    name: SonarCloud analysis
-    needs: [config, ruff, mypy, test]
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
-      statuses: write
-    steps:
-      - uses: actions/checkout@v6.0.3
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud scan
-        uses: chrysa/github-actions/sonar-scan-python@v1.1.3
-        with:
-          python-version: ${{ needs.config.outputs.python-version }}
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          project-key: chrysa_my-assistant
-          organization: chrysa
-          project-name: my-assistant
-          sources: lifeos
-          tests: tests
+            sources: "."
+            typecheck-paths: lifeos
+            project-key: chrysa_lifeos
+            project-name: lifeos
+            sonar-sources: "."
+        secrets: inherit
