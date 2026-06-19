@@ -1,7 +1,24 @@
 ---
-# Thin caller of the generalized chrysa lean CI (compose-backed app).
-# Gate = pre-commit; reports -> Sonar; tests via make docker-test; sonar.
-# Auto-versioning stays in release.yml (GitVersion).
+# Canonical CI workflow for Python projects (chrysa ecosystem).
+#
+# Usage: copy to .github/workflows/ci.yml. The applier
+# (scripts/apply-repo-standard.sh) substitutes the ${...} placeholders:
+#   lifeos      import package / source dir       (e.g. django_pytest)
+#   lifeos tests      ruff sources, space-separated     (e.g. "django_pytest tests")
+#   tests        test dir                          (e.g. tests)
+#   target    repo name                         (e.g. django-pytest)
+#   chrysa_target  SonarCloud project key            (e.g. chrysa_django-pytest)
+#
+# ⚠️ This file lives in workflows/ (NOT .github/workflows/) — it is a copy-to-use
+#    template, not a reusable `uses:` workflow.
+#
+# NOTE: Lint (ruff/mypy/pre-commit) does NOT run here. It lives in pre-commit
+#       (local) and is replayed in CI only at release time via release.yml's
+#       lint gate (chrysa/github-actions/.github/workflows/lint-python.yml).
+#       This CI keeps only tests + sonar, to gate PRs without per-push lint billing.
+#
+# Job names (test / sonar) are the branch-protection required status checks —
+# keep them stable across repos.
 
 name: CI
 
@@ -9,25 +26,57 @@ on:
     pull_request:
         branches: [main]
     push:
-        branches: [main, "feat/**", "fix/**", "chore/**", "ci/**"]
+        branches:
+            - main
+            - "feat/**"
+            - "fix/**"
+            - "chore/**"
+            - "ci/**"
     workflow_dispatch:
 
 permissions:
-    contents: read
     checks: write
+    contents: read
     pull-requests: write
+    statuses: write
 
 concurrency:
-    group: ci-${{ github.ref }}
+    group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
 jobs:
-    ci:
-        uses: chrysa/github-actions/.github/workflows/ci-python-app.yml@v1.2.0
-        with:
-            sources: "."
-            typecheck-paths: lifeos
-            project-key: chrysa_lifeos
-            project-name: lifeos
-            sonar-sources: "."
-        secrets: inherit
+    test:
+        name: Docker tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v6.0.2
+
+            - name: Run tests via Docker
+              run: make docker-test
+
+    sonar:
+        name: SonarCloud
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        needs: test
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: read
+            pull-requests: read
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+
+            - uses: chrysa/github-actions/sonar-scan-python@v1.0.12
+              with:
+                  python-version: "3.14"
+                  sonar-token: ${{ secrets.SONAR_TOKEN }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  project-key: chrysa_target
+                  organization: chrysa
+                  project-name: target
+                  sources: .
+                  tests: tests
+                  coverage-report: coverage.xml
