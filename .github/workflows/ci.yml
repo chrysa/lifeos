@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
     ci:
-        uses: chrysa/github-actions/.github/workflows/ci-python-app.yml@main
+        uses: chrysa/github-actions/.github/workflows/ci-python-app.yml@v1.2.0
         with:
             sources: "."
             typecheck-paths: lifeos
