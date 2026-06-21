@@ -4,7 +4,7 @@ fail_fast: false
 minimum_pre_commit_version: 4.1.0
 repos:
 - repo: https://github.com/chrysa/pre-commit-tools
-  rev: v0.1.1-94
+  rev: v0.1.1-95
   hooks:
   - id: makefile-check
   - id: yaml-sorter
