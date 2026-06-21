@@ -74,9 +74,9 @@ jobs:
                   python-version: "3.14"
                   sonar-token: ${{ secrets.SONAR_TOKEN }}
                   github-token: ${{ secrets.GITHUB_TOKEN }}
-                  project-key: chrysa_lifeos
+                  project-key: chrysa_target
                   organization: chrysa
-                  project-name: lifeos
-                  sources: lifeos
+                  project-name: target
+                  sources: .
                   tests: tests
                   coverage-report: coverage.xml
