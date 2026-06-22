@@ -95,6 +95,12 @@ When compacting, always preserve:
 
 ## Skills
 
+- `testing-pytest/SKILL.md` — pytest DDD + pytest-mock + constants (load when writing tests)
+
+- `dockerfile-multistage/SKILL.md` — 4-stage Python 3.14 containers (load when editing Dockerfile)
+
+- `agent-patterns/SKILL.md` — LangGraph + PydanticAI + Claude API agent patterns (load when building agents)
+
 Shared skills from `shared-standards/.claude/skills/`:
 
 - `ui-ux/SKILL.md` — UX/UI/ergonomics across ALL surfaces (web, CLI, VS Code, Discord, desktop, game, agent) + WCAG 2.1 AA + dark mode + i18n FR+EN (load when building any human-facing surface)
