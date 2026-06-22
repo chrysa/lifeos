@@ -6,8 +6,8 @@
 #   lifeos      import package / source dir       (e.g. django_pytest)
 #   lifeos tests      ruff sources, space-separated     (e.g. "django_pytest tests")
 #   tests        test dir                          (e.g. tests)
-#   target    repo name                         (e.g. django-pytest)
-#   chrysa_target  SonarCloud project key            (e.g. chrysa_django-pytest)
+#   lifeos    repo name                         (e.g. django-pytest)
+#   chrysa_lifeos  SonarCloud project key            (e.g. chrysa_django-pytest)
 #
 # ⚠️ This file lives in workflows/ (NOT .github/workflows/) — it is a copy-to-use
 #    template, not a reusable `uses:` workflow.
