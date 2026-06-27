@@ -44,6 +44,11 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
 - **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA.
+- **No hardcoded constants** in code — neither backend (Python) nor frontend (TS).
+  All constants and config values (thresholds, business rules, labels, URLs, magic
+  numbers) live in **external YAML files** and are loaded at runtime. Code reads them
+  through a typed loader (Pydantic Settings backend · generated typed module frontend),
+  never as inline literals. Only language-level enums (e.g. `status.HTTP_*`) are exempt.
 
 ## Quality gates
 
