@@ -44,11 +44,20 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
 - **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA.
+- **Notion logging**: every advancement and modification (progress, decisions, state
+  changes) is logged in Notion — the single source of truth. Run `@notion-sync` after any
+  state change; in case of conflict between local docs and Notion, Notion wins.
 - **No hardcoded constants** in code — neither backend (Python) nor frontend (TS).
   All constants and config values (thresholds, business rules, labels, URLs, magic
   numbers) live in **external YAML files** and are loaded at runtime. Code reads them
   through a typed loader (Pydantic Settings backend · generated typed module frontend),
   never as inline literals. Only language-level enums (e.g. `status.HTTP_*`) are exempt.
+- **Semantic URLs & code** — URLs are resource-oriented and human-readable: lowercase,
+  hyphenated, plural-noun collections, no verbs or actions in the path (`GET /invoices/42`,
+  never `/getInvoice?id=42`); REST shapes follow the `api-design` skill. Code is
+  self-describing: intention-revealing names over comments, semantic HTML elements
+  (`<nav>`, `<button>`, `<main>`, `<header>`…) never a `<div>` wired as a control, and
+  ARIA used only to fill gaps native semantics cannot express.
 
 ## Quality gates
 
