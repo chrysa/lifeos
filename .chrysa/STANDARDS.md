@@ -65,6 +65,23 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
 
+## Makefile targets
+
+- **Referential**: `Forge-Stack-Workshop/base-makefile` (`Makefile.basic`, `Makefile.python`,
+  `Makefile.with-sub-folder`) is the single source of truth for target names and behaviour.
+- **Canonical naming** — follow base-makefile verbatim, one word where it is one word:
+  `typecheck` (**never** `type-check`), `test-cov`, `format-check`, `quality-gate-verify`,
+  `docker-test`, `ci`. Renaming or aliasing a canonical target is forbidden.
+- **Mandatory socle** — every application repo MUST expose, with these exact names and intent:
+  `help install install-dev lint format format-check typecheck test test-cov pre-commit clean
+  ci quality-gate-baseline quality-gate-verify`. Non-applicative repos (pure infra/Helm/Terraform,
+  config-only, docs) are exempt from the language-specific targets (`typecheck`, `test-cov`) but
+  still expose `help lint pre-commit clean`.
+- **Docs must match** — every `make <target>` cited in `CLAUDE.md` or `README.md` MUST exist in
+  the Makefile (no `make type-check` when the target is `typecheck`).
+- **Recipe style** — prefix every recipe line with `@`; add `## Description` after each target so
+  it appears in `make help`.
+
 ## Shared skills (load on demand from shared-standards/.claude/skills/)
 
 - `testing-pytest` — pytest DDD + pytest-mock + constants (writing tests)
