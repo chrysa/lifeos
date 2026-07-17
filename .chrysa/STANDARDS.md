@@ -17,7 +17,7 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 |------------------|----------------------------------------------------------------|
 | Python           | 3.14 target (CI matrix 3.12 + 3.14)                            |
 | FastAPI          | >= 0.115 + Pydantic v2                                          |
-| Frontend         | React 19 + TypeScript + Vite 6                                  |
+| Frontend         | React 19 + TypeScript 7 + Vite 8                                |
 | UI               | shadcn/ui + Tailwind CSS                                        |
 | State            | TanStack Query + Zustand                                        |
 | DB               | PostgreSQL 16 + Redis 7                                         |
@@ -121,3 +121,36 @@ Per-project activation checklist:
 3. The auto-issue alert rule exists (run the provisioning script, or add it in
    Alerts → Create Alert → Issues → action "Create a GitHub issue").
 4. The GitHub repo has a `sentry` label (CI label sync provides it).
+
+## Governance — strategic pillars & ADR format
+
+Five non-negotiables hold across every chrysa project, whatever the stack. Breaking one
+requires an ADR with a kill-test, not a shrug.
+
+1. **LLM-provider independence** — no vendor SDK in business code; inference goes through a
+   local port with **≥2 real, tested adapters** (e.g. Claude + a local model). A prompt that
+   only works on one vendor is a bug, not a feature.
+2. **GAFAM independence** — every managed-cloud dependency has a documented self-hosted exit
+   path; the cloud SDK stays confined to an adapter (`BlobStore`, not `S3Client`).
+3. **Portable personalisation data** — all user/personal data is exportable to an open format
+   (JSON/SQLite) by a documented command; `export → import → export` is idempotent (tested).
+   A stored-but-unexportable field needs an ADR.
+4. **k8s config in-project** — manifests live in `deploy/k8s/` of the repo; nothing exists
+   only inside a running cluster.
+5. **Adaptation layer** — no third-party lib/API/service is imported by the domain directly;
+   it goes through an adapter whose port is written in the domain's language, not the vendor's.
+
+**ADR format (refutable).** Any structural decision — new external dependency, LLM/cloud
+provider choice, breaking public-API change, data-model change, or a pillar exception — gets
+one ADR under `docs/adr/` (series named in the local `CLAUDE.md`). Beyond the classic fields,
+every chrysa ADR carries three that make it falsifiable:
+
+- **Fatal hypothesis** — the single, falsifiable belief whose falsity invalidates the decision.
+  One only; about the real world (cost, latency, a third party), not an internal intention.
+- **Kill-test** — the observable, dated signal that proves it wrong: what to measure, which
+  threshold, when checked, what happens on breach. Mechanised as a test where possible.
+- **Validation gate** — the pre-agreed condition that unlocks the next step, written *before*
+  building.
+
+`Killed` is a valid ADR status: the kill-test fired and the hypothesis was false. A corpus with
+no `Killed` entry has kill-tests that are too lax. Scaffold a new record with `/adr-new`.
