@@ -173,6 +173,40 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
 
+## Shared UI library contract (`@chrysa/ui`)
+
+The shared component library is the single source of UX truth; a defect there
+propagates to every consumer. The library **guarantees**, it does not suggest
+(see ADR-0005):
+
+- **Ships its own styles.** The package delivers its CSS + design tokens (dark +
+  light), not just class names. A consumer importing `@chrysa/ui` with zero extra
+  CSS renders WCAG 2.1 AA, `:focus-visible`, ≥44px targets, and honours
+  `prefers-reduced-motion`. Kill-test: a bare consumer passes an axe-core AA scan
+  with no local style overrides.
+- **Owns the non-nominal states.** Every data component exposes `loading` / `empty`
+  / `error`; the app never reinvents them. `BackendConnectionBanner` is provided
+  **and mounted** by the shell — never shipped as dead code.
+- **A11y is mandatory by type, not by discipline.** `Input` requires a label or
+  `aria-label` and wires `aria-invalid`/`aria-describedby`; overlays trap focus and
+  close on `Esc`; `Icon` requires `aria-label` or `aria-hidden`. A prop that lets
+  a11y be omitted is a bug.
+
+## CLI UX (every distributed command-line surface)
+
+A CLI is a human-facing surface, held to the same "no surprises" bar as the web UI
+(see ADR-0005; enforced via the `cli-developer` agent brief):
+
+- `--version` and `--help` (with examples) on every command and sub-command.
+- **stdout = data, stderr = logs/errors.** Machine output via `--json` on stdout only.
+- Documented, stable **exit codes** (`0` ok · `1` findings/soft-fail · `2` usage).
+- Colour only on a TTY; honour `NO_COLOR`; never ANSI in a pipe.
+- Any destructive command offers a **truly non-destructive `--dry-run`** (writes
+  nothing — verified by a test) and a non-interactive flag for CI.
+- Error messages are actionable: what failed **and** how to fix it.
+
+A CLI missing `--version`, or whose `--dry-run` writes, is a bug.
+
 ## Makefile targets
 
 - **Referential**: `Forge-Stack-Workshop/base-makefile` (`Makefile.basic`, `Makefile.python`,
