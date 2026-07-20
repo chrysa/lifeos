@@ -166,85 +166,90 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   self-describing: intention-revealing names over comments, semantic HTML elements
   (`<nav>`, `<button>`, `<main>`, `<header>`…) never a `<div>` wired as a control, and
   ARIA used only to fill gaps native semantics cannot express.
+- **URL-addressable frontend navigation — mandatory.** Every navigable view/route/tab/
+  detail is a **real, semantic URL** (`/projects/42/settings`, not `/#` or a modal with no
+  address). Navigating **must change the URL** via the router (History API `pushState`), so:
+  1. the change is **recorded in browser history** — Back/Forward move between views, never
+     trap or reload the app;
+  2. a link is **right-clickable / middle-clickable / ⌘-clickable → open in a new tab**, which
+     means it is a genuine `<a href>` (or the router's `<Link>`), **never** a `<div>`/`<button>`
+     with an `onClick` that only mutates state;
+  3. the URL is **deep-linkable & shareable** — pasting it in a fresh tab lands on the exact
+     same view (route params + query for filters/selection/pagination), reproducible without
+     prior in-app state.
+  Ephemeral UI (transient toasts, open/closed of a purely local menu) may stay stateless, but
+  anything a user would bookmark, share, or reload into is a route. This complements
+  *UI state survives reload & focus*: persisted view-state that has an addressable identity
+  belongs in the URL, not only `localStorage`.
+- **No virtualenv in a repo — ever.** `venv/`, `.venv/`, `env/` are **forbidden** inside a
+  project tree. Python runs in the Docker image (deps baked into the image layer, or a named
+  volume for editable installs). A committed or on-disk virtualenv is a bug, not a setup step.
+  The only sanctioned local Python is a **uv/pipx tool env stored outside the repo** (e.g.
+  `~/.local`, `$UV_CACHE_DIR`), never a folder living next to the source.
+- **Tool caches & deps never touch the project tree.** `__pycache__`, `.pytest_cache`,
+  `.ruff_cache`, `.mypy_cache`, `.benchmarks`, `node_modules`, and pip/npm/uv download caches
+  are regenerable machine artifacts — they must be **invisible in the repo working copy**.
+  Enforcement is three-layered and all three are mandatory:
+  1. **`.gitignore`** carries the managed canonical block (`templates/gitignore.canonical`) so
+     they are never tracked. Appended, not hand-maintained.
+  2. **Docker caches live in named volumes**, and every cache-dir env var points **outside**
+     the bind mount so nothing is written back into the mounted source:
+     ```yaml
+     # docker-compose: a container that bind-mounts the repo
+     services:
+       tests:
+         user: "${UID:-1000}:${GID:-1000}"   # host UID — NEVER `user: root`
+         environment:
+           PYTHONPYCACHEPREFIX: /caches/pycache
+           RUFF_CACHE_DIR: /caches/ruff
+           MYPY_CACHE_DIR: /caches/mypy
+           PYTEST_ADDOPTS: -p no:cacheprovider  # or PYTEST_CACHE_DIR under /caches
+           npm_config_cache: /caches/npm
+         volumes:
+           - .:/code
+           - tool-caches:/caches          # named volume, persists across runs
+           - node-modules:/code/node_modules   # deps in a volume, shadowing the mount
+     volumes:
+       tool-caches:
+       node-modules:
+     ```
+  3. **Any container that bind-mounts a repo runs as the host UID** (`user: "${UID}:${GID}"`),
+     **never `user: root`** — root-owned artifacts written into a bind mount are unremovable
+     without `sudo` and are treated as a defect. Root user is allowed only for containers with
+     **no** repo bind mount (e.g. `.:/code` absent).
+  Regenerable artifacts already in a repo are purged with `scripts/purge-artifacts.sh`.
+- **Dockerfiles are multi-stage, with a `production` and a `dev` stage — mandatory.** Every
+  application Dockerfile uses named build stages so a single file yields both runtime and
+  developer images (`docker build --target production` / `--target dev`). Minimum stages:
+  a shared `base` (interpreter + OS deps), a `builder`/`deps` (compiles/installs dependencies),
+  a **`production`** target (slim runtime — no dev tooling, non-root `USER`, only the built
+  artifact), and a **`dev`** target (production + test/lint/debug tooling, editable install,
+  live-reload). A single-stage Dockerfile, or one missing either `production` or `dev`, is a
+  defect. Compose services select the target explicitly (`build.target: production|dev|tests`).
+  Canonical shape + Python 3.14 example: the `dockerfile-multistage` skill.
+  *Exemption — container-collection repos:* a repo whose product **is** a set of standalone
+  utility/tool container images (e.g. `usefull-containers`), not one application, is exempt from the
+  `production`+`dev` two-stage rule per image — each image is single-purpose. Such images still must
+  not embed a reverse proxy and still run as non-root where they bind-mount host paths.
+- **App containers ship the app only — the platform layer is the owner's responsibility.** An
+  application image/container **never embeds a reverse proxy** (nginx/Traefik/Caddy/HAProxy as a
+  TLS-terminating or routing front). The app container exposes its own port and speaks plain HTTP;
+  routing, TLS, virtual hosts, and load-balancing live in the **platform layer** (the owner's
+  Nginx/Traefik + Certbot on the host, or `deploy/k8s/` ingress), out of the app image. A static
+  frontend may use a minimal internal web server to serve its own built assets, but it does **not**
+  proxy other services. Baking a reverse proxy into an app container is a defect (couples the app to
+  infra, duplicates the platform, and breaks the ownership boundary).
+- **Dev stage must hot-reload.** The `dev` target/service provides live auto-reload so a source edit
+  is reflected without a manual rebuild/restart: backend `uvicorn --reload` (or the framework's
+  autoreload), frontend the dev server with HMR (`vite`/`npm run dev`), watched via the compose
+  `develop.watch` sync or a source bind mount. A `dev` image identical to `production` (no reload) is
+  not a dev image.
 
 ## Quality gates
 
 - Test coverage **>= 85%** by default. A repo may override upward, never below 80%.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
-
-## Frontend linting under TypeScript 7
-
-TypeScript 7 (native/tsgo) is the fleet standard, but the published `typescript@7`
-package no longer exposes the classic compiler JS API (`ts.Extension`, `ts.ModuleKind`).
-`@typescript-eslint/typescript-estree` reads that API at import, so **any ESLint config
-using `@typescript-eslint/parser` or its plugin crashes on load** — `eslint`/`make
-web-lint` is dead. No released `typescript-eslint` (≤ 8.64) supports TS7.
-
-**Interim standard until `typescript-eslint` ships TS7 support:** lint with
-`@babel/eslint-parser` **v8** (ESLint-10 compatible) + `@babel/preset-typescript` — it
-parses TS/TSX syntax without the TS compiler API. Keep `eslint-plugin-react-hooks`
-(`rules-of-hooks` error, `exhaustive-deps` warn). This is a **deliberately degraded**
-lint: type-aware `@typescript-eslint` rules are dropped, and **`tsc --noEmit` (`make
-typecheck`) remains the source of truth for type errors**. Revert to the
-typescript-eslint parser + recommended rules once it supports TS7.
-
-```js
-// eslint.config.js (flat)
-import babelParser from "@babel/eslint-parser";
-import reactHooks from "eslint-plugin-react-hooks";
-export default [
-  { ignores: ["dist/**", "node_modules/**", "vite.config.ts"] },
-  {
-    files: ["src/**/*.{ts,tsx}"],
-    languageOptions: {
-      parser: babelParser,
-      parserOptions: {
-        requireConfigFile: false, sourceType: "module", ecmaFeatures: { jsx: true },
-        babelOptions: { presets: [["@babel/preset-typescript", { isTSX: true, allExtensions: true }]] },
-      },
-    },
-    plugins: { "react-hooks": reactHooks },
-    rules: { "react-hooks/rules-of-hooks": "error", "react-hooks/exhaustive-deps": "warn" },
-  },
-];
-```
-
-Reference implementation: `chrysa/sport-intelligence-hub#270`.
-
-## Shared UI library contract (`@chrysa/ui`)
-
-The shared component library is the single source of UX truth; a defect there
-propagates to every consumer. The library **guarantees**, it does not suggest
-(see ADR-0005):
-
-- **Ships its own styles.** The package delivers its CSS + design tokens (dark +
-  light), not just class names. A consumer importing `@chrysa/ui` with zero extra
-  CSS renders WCAG 2.1 AA, `:focus-visible`, ≥44px targets, and honours
-  `prefers-reduced-motion`. Kill-test: a bare consumer passes an axe-core AA scan
-  with no local style overrides.
-- **Owns the non-nominal states.** Every data component exposes `loading` / `empty`
-  / `error`; the app never reinvents them. `BackendConnectionBanner` is provided
-  **and mounted** by the shell — never shipped as dead code.
-- **A11y is mandatory by type, not by discipline.** `Input` requires a label or
-  `aria-label` and wires `aria-invalid`/`aria-describedby`; overlays trap focus and
-  close on `Esc`; `Icon` requires `aria-label` or `aria-hidden`. A prop that lets
-  a11y be omitted is a bug.
-
-## CLI UX (every distributed command-line surface)
-
-A CLI is a human-facing surface, held to the same "no surprises" bar as the web UI
-(see ADR-0005; enforced via the `cli-developer` agent brief):
-
-- `--version` and `--help` (with examples) on every command and sub-command.
-- **stdout = data, stderr = logs/errors.** Machine output via `--json` on stdout only.
-- Documented, stable **exit codes** (`0` ok · `1` findings/soft-fail · `2` usage).
-- Colour only on a TTY; honour `NO_COLOR`; never ANSI in a pipe.
-- Any destructive command offers a **truly non-destructive `--dry-run`** (writes
-  nothing — verified by a test) and a non-interactive flag for CI.
-- Error messages are actionable: what failed **and** how to fix it.
-
-A CLI missing `--version`, or whose `--dry-run` writes, is a bug.
 
 ## Makefile targets
 
