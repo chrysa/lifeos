@@ -173,6 +173,45 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
 
+## Frontend linting under TypeScript 7
+
+TypeScript 7 (native/tsgo) is the fleet standard, but the published `typescript@7`
+package no longer exposes the classic compiler JS API (`ts.Extension`, `ts.ModuleKind`).
+`@typescript-eslint/typescript-estree` reads that API at import, so **any ESLint config
+using `@typescript-eslint/parser` or its plugin crashes on load** — `eslint`/`make
+web-lint` is dead. No released `typescript-eslint` (≤ 8.64) supports TS7.
+
+**Interim standard until `typescript-eslint` ships TS7 support:** lint with
+`@babel/eslint-parser` **v8** (ESLint-10 compatible) + `@babel/preset-typescript` — it
+parses TS/TSX syntax without the TS compiler API. Keep `eslint-plugin-react-hooks`
+(`rules-of-hooks` error, `exhaustive-deps` warn). This is a **deliberately degraded**
+lint: type-aware `@typescript-eslint` rules are dropped, and **`tsc --noEmit` (`make
+typecheck`) remains the source of truth for type errors**. Revert to the
+typescript-eslint parser + recommended rules once it supports TS7.
+
+```js
+// eslint.config.js (flat)
+import babelParser from "@babel/eslint-parser";
+import reactHooks from "eslint-plugin-react-hooks";
+export default [
+  { ignores: ["dist/**", "node_modules/**", "vite.config.ts"] },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    languageOptions: {
+      parser: babelParser,
+      parserOptions: {
+        requireConfigFile: false, sourceType: "module", ecmaFeatures: { jsx: true },
+        babelOptions: { presets: [["@babel/preset-typescript", { isTSX: true, allExtensions: true }]] },
+      },
+    },
+    plugins: { "react-hooks": reactHooks },
+    rules: { "react-hooks/rules-of-hooks": "error", "react-hooks/exhaustive-deps": "warn" },
+  },
+];
+```
+
+Reference implementation: `chrysa/sport-intelligence-hub#270`.
+
 ## Shared UI library contract (`@chrysa/ui`)
 
 The shared component library is the single source of UX truth; a defect there
