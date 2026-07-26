@@ -3,10 +3,9 @@ default_language_version:
 fail_fast: false
 minimum_pre_commit_version: 4.1.0
 exclude: ^\.claude/
-
 repos:
 - repo: https://github.com/chrysa/pre-commit-tools
-  rev: v0.1.1-97
+  rev: v0.1.1-98
   hooks:
   - id: makefile-check
   - id: yaml-sorter
@@ -27,6 +26,9 @@ repos:
   - id: python-unreachable-code
   - id: no-hardcoded-localhost
     exclude: tests?/|\.test\.|\.spec\.
+  - id: claude-skill-frontmatter
+  - id: claude-agent-frontmatter
+  - id: claude-mcp-config
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
   hooks:

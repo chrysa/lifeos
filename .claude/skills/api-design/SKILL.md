@@ -1,4 +1,9 @@
-# Skill: REST API Design
+---
+name: api-design
+description: 'Use when designing new API endpoints, reviewing API responses, adding HTTP status codes, writing FastAPI routes, defining request/response schemas.'
+---
+
+# REST API Design
 
 ## When to invoke
 Auto-invoke when: designing new API endpoints, reviewing API responses, adding HTTP status codes, writing FastAPI routes, defining request/response schemas.

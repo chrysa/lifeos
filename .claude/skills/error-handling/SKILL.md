@@ -1,4 +1,9 @@
-# Skill: Error handling — structured errors, correlation IDs, Sentry
+---
+name: error-handling
+description: 'Use when adding error handling to a FastAPI endpoint, setting up logging, integrating Sentry, reviewing error responses for consistency, designing exception hierarchies.'
+---
+
+# Error handling — structured errors, correlation IDs, Sentry
 
 ## When to invoke
 Auto-invoke when: adding error handling to a FastAPI endpoint, setting up logging, integrating Sentry, reviewing error responses for consistency, designing exception hierarchies.

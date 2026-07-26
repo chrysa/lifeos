@@ -1,4 +1,9 @@
-# Skill: Council — Decide With an Adversarial Panel
+---
+name: council
+description: 'Use when a high-stakes decision with genuine uncertainty: "should I X or Y", "pressure-test this", "arbitre entre", "dois-je faire X ou Y", "aide-moi à trancher", architecture/stack/tooling calls, prioritization calls. Explicit trigger: "council this", "run the council".'
+---
+
+# Council — Decide With an Adversarial Panel
 
 ## When to invoke
 Auto-invoke on a **high-stakes decision with genuine uncertainty**: "should I X or Y",

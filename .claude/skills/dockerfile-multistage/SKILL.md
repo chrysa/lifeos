@@ -1,4 +1,9 @@
-# Skill: Dockerfile multi-stage Python 3.14
+---
+name: dockerfile-multistage
+description: 'Use when creating or modifying a Dockerfile, updating docker-compose.yml, adding new services, changing Python version, asking about container strategy.'
+---
+
+# Dockerfile multi-stage Python 3.14
 
 ## When to invoke
 Auto-invoke when: creating or modifying a Dockerfile, updating docker-compose.yml, adding new services, changing Python version, asking about container strategy.
