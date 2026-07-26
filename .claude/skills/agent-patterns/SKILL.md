@@ -1,4 +1,9 @@
-# Skill: Agent patterns — LangGraph + Pydantic AI
+---
+name: agent-patterns
+description: 'Use when building AI agents, designing LangGraph state machines, defining Pydantic AI tools, writing agent tests, integrating Claude API with stateful workflows (lifeos, ai-aggregator, discord-bot-back).'
+---
+
+# Agent patterns — LangGraph + Pydantic AI
 
 ## When to invoke
 Auto-invoke when: building AI agents, designing LangGraph state machines, defining Pydantic AI tools, writing agent tests, integrating Claude API with stateful workflows (lifeos, ai-aggregator, discord-bot-back).

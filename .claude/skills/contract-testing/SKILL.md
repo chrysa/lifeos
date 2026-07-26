@@ -1,4 +1,9 @@
-# Skill: Consumer-driven contract testing
+---
+name: contract-testing
+description: 'Use when chrysa-lib is about to release a new version, adding a new consumer of @chrysa/auth / @chrysa/ui / @chrysa/api-client, reviewing breaking changes in a library, or designing a new package API.'
+---
+
+# Consumer-driven contract testing
 
 ## When to invoke
 Auto-invoke when: chrysa-lib is about to release a new version, adding a new consumer of `@chrysa/auth` / `@chrysa/ui` / `@chrysa/api-client`, reviewing breaking changes in a library, or designing a new package API.
