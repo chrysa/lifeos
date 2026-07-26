@@ -1,4 +1,9 @@
-# Skill: Clean Architecture for FastAPI projects
+---
+name: clean-architecture
+description: 'Use when creating a new FastAPI module, adding a new domain feature, reviewing existing project structure, deciding where to place new code.'
+---
+
+# Clean Architecture for FastAPI projects
 
 ## When to invoke
 Auto-invoke when: creating a new FastAPI module, adding a new domain feature, reviewing existing project structure, deciding where to place new code.

@@ -1,4 +1,9 @@
-# Skill: Async patterns for FastAPI + SQLAlchemy 2.0
+---
+name: async-patterns
+description: 'Use when writing async FastAPI endpoints, setting up SQLAlchemy async sessions, writing async tests, using asyncio/anyio, creating background tasks, or designing repository classes.'
+---
+
+# Async patterns for FastAPI + SQLAlchemy 2.0
 
 ## When to invoke
 Auto-invoke when: writing async FastAPI endpoints, setting up SQLAlchemy async sessions, writing async tests, using asyncio/anyio, creating background tasks, or designing repository classes.
