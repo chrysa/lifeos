@@ -26,7 +26,7 @@ Run and improve the test suite for the scope in $ARGUMENTS.
 
 Tests, lint and type-checks run through **Docker or pre-commit ONLY**. Never invoke host
 `pytest`, `ruff`, `tsc`, `jest`, `vitest`, etc. directly. Use the standard Makefile targets
-(`EXECUTION_STANDARD.md` §1):
+([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)):
 
 - `make test` — unit tests
 - `make test-cov` — tests + coverage (`coverage.xml`)

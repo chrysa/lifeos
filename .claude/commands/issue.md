@@ -49,7 +49,7 @@ Adapt to the issue type:
 
 ## Create
 
-1. Branch per `EXECUTION_STANDARD.md` naming: `feat/<issue-id>-short-desc`
+1. Branch per [chrysa standards](https://github.com/chrysa/shared-standards/blob/main/standards/STANDARDS.chrysa.md) naming: `feat/<issue-id>-short-desc`
    (`fix/`, `chore/`, `docs/`, `ci/` per type).
 2. Implement in small steps; `/commit` after each.
 

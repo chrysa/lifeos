@@ -34,6 +34,6 @@ Always provide concrete next steps with clear ownership, timelines, and success 
 
 This agent operates in the chrysa ecosystem. Always:
 - Run tests, lint and type-checks via **Docker or pre-commit only** — never invoke host `pytest`/`ruff`/`tsc` directly.
-- Follow `EXECUTION_STANDARD.md` (chrysa/shared-standards): mandatory Makefile targets, standard layout, branch naming (`feat/<id>-desc`).
+- Follow the chrysa Makefile & layout standards: mandatory Makefile targets ([`MAKEFILE-STANDARD.md`](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (`feat/<id>-desc`).
 - Use **Conventional Commits** (`feat`/`fix`/`chore`/`docs`/`ci`/`refactor`/`test`/`perf`). Never add a Claude co-author trailer.
 - Run `gh auth switch -u chrysa` before any `gh` command.
