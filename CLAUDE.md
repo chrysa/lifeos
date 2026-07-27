@@ -129,6 +129,9 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 | Monitoring       | Sentry + Uptime Kuma (self-hosted)                            |
 | Agents           | Claude API (primary) · Ollama (fallback)                       |
 | Orchestration    | LangGraph (stateful) · PydanticAI (structured outputs)         |
+| Registry         | GHCR private `ghcr.io/chrysa/{repo}` — never public            |
+| Docs             | MkDocs → GitHub Pages (`pages.yml`) · ADRs in `docs/adr/`       |
+| Changelog        | git-cliff (`cliff.toml`) · Keep a Changelog                    |
 
 ## Non-negotiable conventions
 
@@ -142,7 +145,9 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   fixture: `mocker.patch`, `mocker.AsyncMock`) for all mocking. The stdlib **`unittest`
   framework (`unittest.TestCase`) and `unittest.mock` imports are forbidden** — no
   `import unittest`, no `from unittest.mock import …`. See the `testing-pytest` skill.
-- **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA.
+- **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA — Lighthouse a11y score **≥ 90**,
+  full keyboard navigation (Tab/Esc/visible focus), contrast ≥ 4.5:1 (3:1 large text), screen-reader
+  tested on critical flows (signup, login, checkout).
 - **UI state survives reload & focus** — human-facing surfaces persist their navigation
   and view state (active tab/section, selected sub-view, active context/filters) so a
   **manual reload keeps the current page** — the user lands exactly where they were, never
@@ -181,6 +186,13 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   anything a user would bookmark, share, or reload into is a route. This complements
   *UI state survives reload & focus*: persisted view-state that has an addressable identity
   belongs in the URL, not only `localStorage`.
+- **Python packaging — `pyproject.toml` is the single source of truth.** `setup.py` and
+  `setup.cfg` are **forbidden** for Python packaging (`setup.cfg` allowed only for non-Python
+  tooling, e.g. uwsgi). Build backend is **`setuptools`** (never `hatchling`). All tool config
+  (`ruff`, `mypy`, `pytest`, `coverage`) lives in `[tool.*]` — external `ruff.toml`, `mypy.ini`,
+  `pytest.ini` are forbidden. Distributed libraries use a `src/` layout and follow the Public API
+  Contract (`docs/PUBLIC-API-CONTRACT.md`): sorted `__all__`, relative imports in `__init__`,
+  `__version__` via `importlib.metadata`, uniform `install()` entrypoint, shared types in `chrysa-lib`.
 - **No virtualenv in a repo — ever.** `venv/`, `.venv/`, `env/` are **forbidden** inside a
   project tree. Python runs in the Docker image (deps baked into the image layer, or a named
   volume for editable installs). A committed or on-disk virtualenv is a bug, not a setup step.
@@ -218,6 +230,27 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
      without `sudo` and are treated as a defect. Root user is allowed only for containers with
      **no** repo bind mount (e.g. `.:/code` absent).
   Regenerable artifacts already in a repo are purged with `scripts/purge-artifacts.sh`.
+- **Every tracked file and folder must earn its place — a repo holds only what is useful to it
+  now.** A repository contains its own source, its tests, config that is actually loaded, docs
+  that are current, and the templates it distributes — nothing else. Forbidden in the working
+  tree and in git:
+  1. **Superseded or archived documents** whose useful content has been folded elsewhere. Git
+     history *is* the archive — a file that "governs nothing", an "undistributed annex kept for
+     detail", or a `*_OLD` / `*_backup` copy is deleted, not retained "just in case". Recovering
+     it is one `git show` away.
+  2. **Scratch and one-off notes** — sprint notes, exported Notion/wiki pages, meeting dumps,
+     session scratch. Ephemeral state lives in the tracker (Notion is the source of truth), never
+     committed to the repo.
+  3. **Stray assets** — diagrams, images or files unrelated to *this* repo's own product (a
+     portfolio-wide diagram belongs in the portfolio repo, not a library).
+  4. **Idea stubs for projects that live elsewhere** — a placeholder README for a future/other
+     project is drift; the project gets its own repo when it starts.
+  5. **Generated reports that are not a CI baseline** — an audit/report output is gitignored, not
+     committed. Only a file diffed by CI as a drift baseline (e.g. `*.baseline`) is tracked.
+  The test is mechanical: a file that governs nothing, is loaded by nothing, and is read by no
+  current reader does not belong — delete it. When a deletion would leave dangling references,
+  the references are repointed in the same change, never left broken. Checked in PR review; a
+  file that fails the test is a defect, not clutter to tolerate.
 - **Dockerfiles are multi-stage, with a `production` and a `dev` stage — mandatory.** Every
   application Dockerfile uses named build stages so a single file yields both runtime and
   developer images (`docker build --target production` / `--target dev`). Minimum stages:
@@ -244,12 +277,51 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   autoreload), frontend the dev server with HMR (`vite`/`npm run dev`), watched via the compose
   `develop.watch` sync or a source bind mount. A `dev` image identical to `production` (no reload) is
   not a dev image.
+- **`.dockerignore` mandatory & exhaustive** — at minimum `.git`, `node_modules`, `__pycache__`,
+  `.env*`, `*.log`. Base images pin an explicit version or digest (never a bare `FROM …:latest`);
+  no secret in build args or image layers (BuildKit secrets or runtime env only). Every application
+  Dockerfile declares a `HEALTHCHECK`, and compose services set `restart: unless-stopped`.
+- **Setup wizard & config panel** (deployable web apps/services — not libs, CLIs, utilities). A
+  first-run **setup wizard** (CLI or web) covers DB, admin user, integrations, secrets and locale;
+  it is **idempotent**, detects missing prerequisites with explicit fixes, and offers a CI skip
+  (`SETUP_NON_INTERACTIVE=1`). On missing/invalid config at startup or runtime, the app **redirects
+  to `/setup`** rather than crashing or showing a generic error. An admin **configuration panel**
+  (auth-gated CRUD API) manages runtime config with a versioned audit trail, hot-reload where
+  possible (else a `RESTART_REQUIRED` flag), and JSON export/import for backup and cross-env cloning.
 
 ## Quality gates
 
 - Test coverage **>= 85%** by default. A repo may override upward, never below 80%.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
+
+## Design system
+
+Every human-facing surface is built from a shared design system — no ad-hoc style values in
+components. This complements *dark mode + WCAG 2.1 AA* and the `ui-ux` skill.
+
+- **Design tokens are the single source of style** — colours, typography, spacing, radii,
+  shadows, z-index live as tokens (JSON/CSS vars) consumed by code. **No** hardcoded style
+  literals in components (mirrors *no hardcoded constants*).
+- **Versioned brand kit** — primary/secondary/semantic palette, **≤ 2 type families**, logo
+  (variants + clear space), one icon set. Defined and versioned, not per-repo reinvented.
+- **Living component library** — reusable components with documented states and variants
+  (Storybook or equivalent); one canonical implementation per component.
+- **Systematic spacing scale & grid** — spacing on a fixed scale (4/8 px base), shared grid
+  and breakpoints; no arbitrary margins.
+- **Defined type hierarchy** — explicit type scale (size, weight, line-height, tracking) with
+  named roles (`display/title/body/caption`), never ad-hoc sizes.
+- **Systematic interaction states & feedback** — every interactive element exposes
+  hover/focus/active/disabled; every action gives visible feedback (< 100 ms); visible keyboard
+  focus is mandatory.
+- **Consistent UX writing** — voice-and-tone guide; error messages say what to do (no raw
+  codes); action-oriented labels and CTAs; terminology aligned to the domain glossary.
+- **Standardised motion** — tokenised durations and easing (e.g. 150/250 ms); animation is
+  functional (state transition, feedback), never gratuitous; honours `prefers-reduced-motion`.
+- **Mobile-first responsive** — mobile-first design, breakpoints from tokens, touch targets
+  **≥ 44 px**, no fixed widths.
+- **Design ↔ dev handoff contract** — design ships exported tokens, component specs (measures,
+  states, behaviours) and edge cases; dev consumes the tokens, never redefines the values.
 
 ## Makefile targets
 
@@ -267,6 +339,38 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   the Makefile (no `make type-check` when the target is `typecheck`).
 - **Recipe style** — prefix every recipe line with `@`; add `## Description` after each target so
   it appears in `make help`.
+
+## Container-runtime policy
+
+A project runs **only in a container** unless its nature genuinely forbids it. Convenience, "easier
+on the host", or "it's just a script" are **not** exemptions — when in doubt, classify `container`.
+Every repo carries a `runtime:` field in `repos.yml`, machine-checked by `audit-docker-compliance.sh`:
+
+- `container` — runs as a service. Provides Dockerfile(s) + `docker-compose*` + `HEALTHCHECK` +
+  `docker-up`/`docker-down`/`docker-test` targets.
+- `exempt:lib` — distributed/imported (library, plugin, pre-commit hook, GitHub Action, CLI). Runs
+  in the consumer's environment; provides a `docker-test` target (CI runs the suite in a container).
+- `exempt:config` — no executable runtime (config, knowledge base, deploy manifests). Nothing to run.
+- `exempt:native` — bound to a host OS, device, cloud platform, or editor (desktop integration,
+  hardware, Apps Script, VS Code extension, infra/Helm). Optional `Dockerfile.test` for CI.
+- `pending` — pre-code scaffold; flips to `container` at first code.
+
+## Release & changelog config (canonical)
+
+- **Versioning** is GitVersion (`GitVersion.yml`, flat `mode: ContinuousDeployment`) — never bump
+  manually. Legacy v5 schemas (`GitHubFlow`, no top-level `mode:`) are incompatible and must be
+  **replaced**, not version-bumped.
+- **Changelog** is generated by git-cliff (`cliff.toml`), Keep a Changelog format.
+- `GitVersion.yml` and `cliff.toml` are **canonical files** with a single source of truth in
+  shared-standards (repo root + byte-identical `templates/` copy). A `repo: local` pre-commit hook
+  (`gitversion-canonical-drift`, `cliff-canonical-drift`) blocks drift; `audit-canonical-conformance.sh`
+  audits the fleet.
+- **Docs** live in `docs/` (MkDocs), deployed to GitHub Pages via `pages.yml`. `README.md` reflects
+  the actual current state and is updated on each release.
+- **Registry** — application images publish to **private GHCR** (`ghcr.io/chrysa/{repo}`, tags mirror
+  the git tag + `:latest`); CI authenticates with the workflow `GITHUB_TOKEN` (or least-privilege
+  `packages:write`), never a plaintext PAT. Distributable libraries publish to public PyPI via
+  Trusted Publishing (OIDC), never a token in plaintext.
 
 ## Shared skills (load on demand from shared-standards/.claude/skills/)
 
@@ -307,6 +411,18 @@ Per-project activation checklist:
 3. The auto-issue alert rule exists (run the provisioning script, or add it in
    Alerts → Create Alert → Issues → action "Create a GitHub issue").
 4. The GitHub repo has a `sentry` label (CI label sync provides it).
+
+## Session lifecycle (primer + memory + hindsight)
+
+Every repo ships a session lifecycle so an AI agent keeps context across sessions. Bootstrap with
+`make memory-init`; scripts live in `shared-standards/scripts/`.
+
+- `primer.md` (committed) — current state, what to do NOW; read **before** `CLAUDE.md`.
+- `.claude/memory/session.md` — volatile session notes, **not** committed (reset each session).
+- `.claude/memory/decisions.md`, `known-issues.md`, `progress.md` (append-only history) — committed.
+- **Session start**: `make prepare` (`/prepare`) — shows primer + git context + open PRs.
+- **Session end**: `make hindsight` (`/hindsight`) — updates `primer.md` + `progress.md`, clears
+  `session.md`, optional Obsidian export (`OBSIDIAN=<path>`).
 
 ## Governance — strategic pillars & ADR format
 
