@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pytest_mock import MockerFixture
+
 import lifeos
 from lifeos import __author__, __version__
 
@@ -55,58 +57,54 @@ def test_main_module_importable() -> None:
     importlib.import_module("lifeos.__main__")
 
 
-def test_cli_run_headless_mocked() -> None:
-    from unittest.mock import MagicMock, patch
-
+def test_cli_run_headless_mocked(mocker: MockerFixture) -> None:
     from click.testing import CliRunner
 
     from lifeos.cli import main
 
-    mock_app = MagicMock()
+    mock_app = mocker.MagicMock()
     mock_app.run.return_value = None
-    mock_app_cls = MagicMock(return_value=mock_app)
-    mock_load_config = MagicMock(return_value=MagicMock())
+    mock_app_cls = mocker.MagicMock(return_value=mock_app)
+    mock_load_config = mocker.MagicMock(return_value=mocker.MagicMock())
 
-    with patch.dict(
+    mocker.patch.dict(
         "sys.modules",
         {
-            "lifeos.app": MagicMock(Application=mock_app_cls),
-            "lifeos.config": MagicMock(),
-            "lifeos.config.settings": MagicMock(load_config=mock_load_config),
+            "lifeos.app": mocker.MagicMock(Application=mock_app_cls),
+            "lifeos.config": mocker.MagicMock(),
+            "lifeos.config.settings": mocker.MagicMock(load_config=mock_load_config),
         },
-    ):
-        runner = CliRunner()
-        result = runner.invoke(main, ["--headless"])
+    )
+    runner = CliRunner()
+    result = runner.invoke(main, ["--headless"])
 
     assert result.exit_code == 0
 
 
-def test_cli_run_with_enable() -> None:
-    from unittest.mock import MagicMock, patch
-
+def test_cli_run_with_enable(mocker: MockerFixture) -> None:
     from click.testing import CliRunner
 
     from lifeos.cli import main
 
-    mock_plugin = MagicMock()
+    mock_plugin = mocker.MagicMock()
     mock_plugin.enabled = False
-    mock_plugins = MagicMock()
+    mock_plugins = mocker.MagicMock()
     mock_plugins.discord = mock_plugin
-    mock_settings = MagicMock()
+    mock_settings = mocker.MagicMock()
     mock_settings.plugins = mock_plugins
-    mock_load_config = MagicMock(return_value=mock_settings)
-    mock_app = MagicMock()
-    mock_app_cls = MagicMock(return_value=mock_app)
+    mock_load_config = mocker.MagicMock(return_value=mock_settings)
+    mock_app = mocker.MagicMock()
+    mock_app_cls = mocker.MagicMock(return_value=mock_app)
 
-    with patch.dict(
+    mocker.patch.dict(
         "sys.modules",
         {
-            "lifeos.app": MagicMock(Application=mock_app_cls),
-            "lifeos.config": MagicMock(),
-            "lifeos.config.settings": MagicMock(load_config=mock_load_config),
+            "lifeos.app": mocker.MagicMock(Application=mock_app_cls),
+            "lifeos.config": mocker.MagicMock(),
+            "lifeos.config.settings": mocker.MagicMock(load_config=mock_load_config),
         },
-    ):
-        runner = CliRunner()
-        result = runner.invoke(main, ["--headless", "--enable", "discord"])
+    )
+    runner = CliRunner()
+    result = runner.invoke(main, ["--headless", "--enable", "discord"])
 
     assert result.exit_code == 0
