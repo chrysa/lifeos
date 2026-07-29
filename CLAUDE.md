@@ -380,6 +380,47 @@ Every repo carries a `runtime:` field in `repos.yml`, machine-checked by `audit-
   `packages:write`), never a plaintext PAT. Distributable libraries publish to public PyPI via
   Trusted Publishing (OIDC), never a token in plaintext.
 
+## Pre-commit & git hooks (native, via pre-commit.com — never wrapped in make)
+
+The enforcement engine is **[pre-commit](https://pre-commit.com/)** itself, configured
+in `.pre-commit-config.yaml`. pre-commit is the authoritative runner; `make lint` /
+`make pre-commit` may exist as thin convenience aliases, but a hook that only runs
+through `make` is a defect — every hook MUST be runnable via `pre-commit run` directly,
+and CI invokes `pre-commit`, not `make`.
+
+- **The gate is host-native — no strong coupling to the project's containers.** pre-commit
+  runs with only `pre-commit` installed on the host (via `pipx`/`uv`, outside any repo); it
+  provisions each hook's isolated environment itself (`~/.cache/pre-commit`), so a commit
+  needs **no project image and no running container**. Local hooks are `language: system` /
+  `python` (or another native language) invoking **host** tools — **never** `docker compose
+  run`, and `language: docker` / `docker_image` is avoided. A check that genuinely needs the
+  project image (Django settings, a DB, a compiled tool) **degrades gracefully on the host**:
+  it probes for the tool and skips with a message when absent
+  (`command -v <tool> >/dev/null 2>&1 && <run> || echo 'skipping — runs in CI/Docker'`),
+  it does **not** spin up a container. Container-side enforcement is CI's job; locally the
+  gate is best-effort and never blocks on the Docker daemon being up. This does not
+  contradict the container-runtime policy — the *application* runs in a container; the
+  *commit gate*, like git, is a host tool.
+- **Two stages, two scopes — do not mix them:**
+  - **commit stage** (`pre-commit run`, default): auto-fixers + fast lints —
+    `ruff`, `end-of-file-fixer`, `trailing-whitespace`, `detect-secrets`/`gitleaks`,
+    `conventional-pre-commit` (commit-msg), `no-commit-to-branch --branch main`.
+    These **mutate** the tree, so they only ever run over the staged/committed diff.
+  - **pre-push stage** (`pre-commit run --hook-stage pre-push`): only hooks tagged
+    `stages: [pre-push]` (e.g. `regression-gate` from `chrysa/pre-commit-tools`), run
+    **natively over the pushed commit range** (`--from-ref <remote>` `--to-ref <local>`).
+    A push **verifies, it never mutates** the tree.
+- **Forbidden at push time:** `make lint`, and `pre-commit run --all-files`. Running the
+  full tree at push re-executes commit-stage **auto-fixers** on unrelated files, mutates
+  them, exits non-zero, and **rejects the push over a pre-existing defect in a file you
+  never touched**. `--all-files` belongs to CI (where a mutation surfaces as a diff) and
+  to a deliberate local audit — never to the push gate.
+- **The global pre-push hook** (`dotfiles/git-hooks-global/pre-push`) mirrors pre-commit's
+  own installed pre-push hook: it runs the `pre-push` stage over the range only, then the
+  SonarCloud quality gate. No `make`, no `--all-files`, no tree mutation.
+- Hooks are **pinned by `rev`**; shared hooks come from `chrysa/pre-commit-tools`.
+  `detect-secrets`/`gitleaks` respect the repo's secret allowlist.
+
 ## Shared skills (load on demand from shared-standards/.claude/skills/)
 
 - `testing-pytest` — pytest DDD + pytest-mock + constants (writing tests)
