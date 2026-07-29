@@ -72,6 +72,9 @@ repos:
   rev: v0.49.1
   hooks:
   - id: markdownlint
+    # `.claude/` holds managed copies distributed fleet-wide; this repo does not
+    # author them, so it must not be gated on their markdown style.
+    exclude: ^\.claude/
     args:
     - --disable
     - MD013
