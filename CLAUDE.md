@@ -141,6 +141,14 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
 - **Merge**: squash merge only · force push forbidden · auto-merge requires CI + owner.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
+- **Repo provenance — every code repo depends on `project-init`.** A repository is
+  **created by** the `project-init` / `chrysa-init` CLI (shared-standards) at birth **and
+  kept in sync** with it thereafter: the scaffolded socle (Makefile contract, docs skeleton,
+  this standards block, shared skills, CI templates) is re-applied by `distribute-standards.sh`,
+  never hand-diverged. The socle is modulated by the `repos.yml` `runtime:` tier (application
+  → full socle; `exempt:lib` / `exempt:native` → the relevant subset; pure `exempt:config` →
+  standards block only, no application scaffold), but no code repo opts out. A repo that is
+  neither scaffolded by nor kept in sync with `project-init` is a defect, not a variant.
 - **Tests: pytest only** — assert-style test functions and `pytest-mock` (`mocker`
   fixture: `mocker.patch`, `mocker.AsyncMock`) for all mocking. The stdlib **`unittest`
   framework (`unittest.TestCase`) and `unittest.mock` imports are forbidden** — no
