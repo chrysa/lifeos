@@ -72,6 +72,9 @@ repos:
   rev: v0.49.1
   hooks:
   - id: markdownlint
+    # CLAUDE.md, `.claude/` and `.chrysa/` are managed copies distributed fleet-wide;
+    # this repo does not author them, so it must not be gated on their markdown style.
+    exclude: ^(CLAUDE\.md$|\.claude/|\.chrysa/)
     args:
     - --disable
     - MD013
