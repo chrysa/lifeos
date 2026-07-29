@@ -106,6 +106,28 @@ Shared skills from `shared-standards/.claude/skills/`:
 These conventions are identical across every chrysa repo. Repo-specific rules live in the
 local `CLAUDE.md`; this file is the shared baseline imported by it.
 
+## Normative annexes
+
+This file is the **only** artifact inlined into consumer repos. The annexes below are
+**equally normative** — they detail rules stated here in short form. They are not inlined;
+read them at
+`https://github.com/chrysa/shared-standards/blob/main/standards/annexes/`.
+Where an annexe and this file disagree, **this file wins**.
+
+| Annexe                    | Scope                                                          |
+| ------------------------- | -------------------------------------------------------------- |
+| `FRONTEND.md`             | TypeScript config & rules · React layering · frontend architecture · frontend tests |
+| `ARCHITECTURE-DDD.md`     | project profiles · DDD levels · layers & aggregates · Python & C#/.NET structure |
+| `AGENTIC-CAPABILITIES.md` | agent actions: manifests, risk R0–R5, sandboxing, audit trail   |
+| `PROJECT-DECOUPLING.md`   | inter-project contracts, forbidden linkages, degradation        |
+| `CONTAINERS-K3S.md`       | reference stage shape · container responsibility · k3s workload baseline |
+| `TESTING.md`              | common test levels and rules across languages                   |
+| `GOVERNANCE.md`           | rule identity, maturity ladder, enforcement rollout, sources of truth |
+
+**Source of truth:** the canon lives in this repo. Notion is a governance and decision view
+of the standards corpus, not its authority (`GOVERNANCE.md` GV-000). `chrysa/standards` is
+deprecated and archived — nothing is added to it, nothing reads from it.
+
 ## Cross-cutting stack (settled ADRs — do not relitigate)
 
 | Layer            | Decision                                                        |
@@ -153,6 +175,32 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   fixture: `mocker.patch`, `mocker.AsyncMock`) for all mocking. The stdlib **`unittest`
   framework (`unittest.TestCase`) and `unittest.mock` imports are forbidden** — no
   `import unittest`, no `from unittest.mock import …`. See the `testing-pytest` skill.
+- **Frontend tests: Vitest + Testing Library + MSW — from the scaffold, not later.** The
+  *pytest only* rule governs Python; it never exempted the frontend from having tests.
+  Network is mocked at transport level (MSW/fakes), behaviour is asserted through the
+  accessible tree, and every fixed bug ships a regression test. E2E (Playwright) covers
+  critical journeys only; **its gate status is declared per repo** in the local `CLAUDE.md` —
+  fleet default is non-blocking. Detail: annexe `FRONTEND.md` §4, `TESTING.md`.
+- **TypeScript is strict by contract.** `strict`, `noUncheckedIndexedAccess`,
+  `exactOptionalPropertyTypes`, `noImplicitOverride`, `noImplicitReturns`,
+  `useUnknownInCatchVariables`, `isolatedModules` are **all** enabled (plus
+  `verbatimModuleSyntax` where the toolchain allows). No implicit `any`; `unknown` at
+  boundaries; external data validated at **runtime** even when typed; contract types
+  generated from OpenAPI/AsyncAPI, never hand-copied. One committed lockfile, frozen CI
+  installs, no `latest` dependency. Detail: annexe `FRONTEND.md` §1.
+- **React is a presentation layer, not the domain.** `domain/` and `application/` never
+  import React; no `fetch`, browser storage, or vendor SDK in `domain/`. Components and hooks
+  stay pure, props/state immutable, derived state computed rather than duplicated;
+  `useEffect` synchronises with an external system and does not orchestrate business logic;
+  `StrictMode` on for new apps. One API client singleton behind a service layer, one cache
+  library for all server state, a root error boundary, and an explicit loading/error/empty
+  triad per container. Anything outside the first meaningful paint loads lazily (split routes,
+  `loading="lazy"` media, on-demand heavy components) behind a **shape-accurate placeholder**
+  that reserves the final dimensions — a skeleton, not a spinner, so arrival shifts no layout.
+  Detail: annexe `FRONTEND.md` §2–§3, §7.
+- **Every repo declares its profile and DDD level** (`project_profile`, `ddd_level`,
+  `bounded_context`, `standards_version`) — architecture is proportionate to business
+  complexity, and small tools are not over-architected. Detail: annexe `ARCHITECTURE-DDD.md`.
 - **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA — Lighthouse a11y score **≥ 90**,
   full keyboard navigation (Tab/Esc/visible focus), contrast ≥ 4.5:1 (3:1 large text), screen-reader
   tested on critical flows (signup, login, checkout).
@@ -166,8 +214,20 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   never shows stale state after the user comes back. A reload that loses the user's place,
   or a change that fails to propagate on focus/reload, is a bug.
 - **Notion logging**: every advancement and modification (progress, decisions, state
-  changes) is logged in Notion — the single source of truth. Run `@notion-sync` after any
-  state change; in case of conflict between local docs and Notion, Notion wins.
+  changes) is logged in Notion — the single source of truth **for project state**. Run
+  `@notion-sync` after any state change; on conflict about project state, Notion wins.
+  This does **not** apply to the standards corpus: there the repo is the canon and Notion is
+  a governance view (annexe `GOVERNANCE.md` GV-000).
+- **Agent actions are governed.** Any feature where an agent *acts* (writes, calls, runs,
+  changes state) needs a versioned manifest with typed I/O and a business owner, least
+  privilege, a declared risk level R0–R5 with proportionate confirmation and dry-run,
+  and a documented idempotency/timeout/limits/circuit-breaker/rollback envelope. Untrusted
+  execution is sandboxed with network off by default; no agent auto-merges to `main`.
+  Detail: annexe `AGENTIC-CAPABILITIES.md`.
+- **Projects talk through versioned contracts only.** No import from a sibling repo, no path
+  dependency, no submodule used as a runtime link, no access to another project's database or
+  private models. Each consumer wraps the external contract in a local adapter and degrades
+  cleanly when the provider is gone. Detail: annexe `PROJECT-DECOUPLING.md`.
 - **No hardcoded constants** in code — neither backend (Python) nor frontend (TS).
   All constants and config values (thresholds, business rules, labels, URLs, magic
   numbers) live in **external YAML files** and are loaded at runtime. Code reads them
@@ -284,7 +344,9 @@ local `CLAUDE.md`; this file is the shared baseline imported by it.
   is reflected without a manual rebuild/restart: backend `uvicorn --reload` (or the framework's
   autoreload), frontend the dev server with HMR (`vite`/`npm run dev`), watched via the compose
   `develop.watch` sync or a source bind mount. A `dev` image identical to `production` (no reload) is
-  not a dev image.
+  not a dev image. Mechanised by the `compose-dev-hot-reload` hook
+  (`chrysa/pre-commit-tools`): a compose service targeting the `dev` stage with neither a bind
+  mount nor a `develop.watch` sync action is flagged at commit time.
 - **`.dockerignore` mandatory & exhaustive** — at minimum `.git`, `node_modules`, `__pycache__`,
   `.env*`, `*.log`. Base images pin an explicit version or digest (never a bare `FROM …:latest`);
   no secret in build args or image layers (BuildKit secrets or runtime env only). Every application
