@@ -139,7 +139,7 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 | State            | TanStack Query + Zustand                                        |
 | DB               | PostgreSQL 16 + Redis 7                                         |
 | ORM              | SQLAlchemy 2.0 async + Alembic                                  |
-| Auth             | 4 modes: Google OAuth2 · local (bcrypt) · LDAP · VCS OAuth      |
+| Auth             | Cluster SSO (OIDC) → external OAuth → local (bcrypt) · MFA-capable |
 | i18n             | react-i18next + fastapi-babel · FR + EN from V1                 |
 | Monorepo         | Turborepo + pnpm workspaces                                     |
 | Versioning       | GitVersion (semantic auto — never bump manually)               |
@@ -228,6 +228,15 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   dependency, no submodule used as a runtime link, no access to another project's database or
   private models. Each consumer wraps the external contract in a local adapter and degrades
   cleanly when the provider is gone. Detail: annexe `PROJECT-DECOUPLING.md`.
+- **Identity goes through the cluster SSO first.** Every interactive product deployed in the
+  cluster integrates the **common cluster SSO** as its primary sign-in. The priority protocol is
+  **OpenID Connect over OAuth 2.x** (SAML only where an enterprise context requires it), and the
+  connection hierarchy is fixed: **1. cluster SSO → 2. external OAuth provider → 3. local
+  account**. A local account is a fallback, never the default; where present it uses a modern
+  password hash (argon2/bcrypt) and MFA is enforceable through the SSO. This does **not** break
+  *projects talk through versioned contracts only* or *portable data*: identity sits behind an
+  adapter, so the product stays independently deployable against an alternative identity provider
+  (or a standalone local mode) by configuration, without touching the domain.
 - **No hardcoded constants** in code — neither backend (Python) nor frontend (TS).
   All constants and config values (thresholds, business rules, labels, URLs, magic
   numbers) live in **external YAML files** and are loaded at runtime. Code reads them
@@ -368,6 +377,16 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   top-level boundary), and every error carries a stable machine-readable code plus a message that
   says what to do. The public error taxonomy of a module is part of its contract — documented and
   versioned like its signatures. Detail: the `error-handling` skill.
+- **Failures are contained, and observable.** A *local* error must not become a *global* one: a
+  failing dependency, task, or request is isolated so the rest of the system keeps serving.
+  Beyond the type + stable `code`, an error carries the taxonomy fields it needs to be triaged —
+  `category`, `severity`, `retryable`, `scope`, a `correlation_id` threading it across services,
+  and both a user-facing and an operator-facing message. Every outbound call has an explicit
+  **timeout** and **bounded retries** (never an unbounded retry loop); a repeatedly-failing
+  dependency is fronted by a **circuit-breaker**, and independent workloads by a **bulkhead**, so
+  one saturated path cannot drown the others. Errors are emitted to the shared observability
+  backend (**Mirador** or a compatible one), correlation id included, not just written to a local
+  log. A surface's Definition of Done includes its error paths, not only its happy path.
 - **Prefer a lookup table to a state machine.** Branching on a value — dispatch, routing, parsing,
   handler/strategy selection, enum → behaviour, status → transition — is expressed as a **hash
   table** (`dict`/`Record`/`Map`) from key to handler or value, **not** as an `if/elif` ladder, a
