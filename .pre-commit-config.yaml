@@ -5,7 +5,7 @@ minimum_pre_commit_version: 4.1.0
 exclude: ^\.claude/
 repos:
 - repo: https://github.com/chrysa/pre-commit-tools
-  rev: v0.1.1-100
+  rev: v0.2.0-247
   hooks:
   - id: makefile-check
   - id: yaml-sorter
@@ -31,6 +31,10 @@ repos:
   - id: claude-mcp-config
   - id: python-no-unittest-import
   - id: claude-assets-present
+  - id: python-untyped-raise
+    exclude: ^tests?/
+  - id: python-mutable-default
+  - id: python-dispatch-ladder
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
   hooks:
