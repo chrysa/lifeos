@@ -358,6 +358,60 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to `/setup`** rather than crashing or showing a generic error. An admin **configuration panel**
   (auth-gated CRUD API) manages runtime config with a versioned audit trail, hot-reload where
   possible (else a `RESTART_REQUIRED` flag), and JSON export/import for backup and cross-env cloning.
+- **Raised errors are typed** — in any language whose type system allows it. Code raises a
+  **domain-specific exception class** (Python: a module `…Error(Exception)` hierarchy rooted in one
+  base per bounded context; TypeScript: `class XError extends Error` with a discriminant field, or a
+  typed `Result`/`Either`; C#: a derived `Exception`). **Forbidden**: raising a bare `Exception`/
+  `RuntimeError`/`Error`, `throw "string"`, `throw {code: …}` object literals, or signalling failure
+  by a magic return value (`None`/`-1`/`false`) where an error type is expressible. Catch sites match
+  the narrowest type (`except ValidationError`, never bare `except:`/`except Exception` outside a
+  top-level boundary), and every error carries a stable machine-readable code plus a message that
+  says what to do. The public error taxonomy of a module is part of its contract — documented and
+  versioned like its signatures. Detail: the `error-handling` skill.
+- **Prefer a lookup table to a state machine.** Branching on a value — dispatch, routing, parsing,
+  handler/strategy selection, enum → behaviour, status → transition — is expressed as a **hash
+  table** (`dict`/`Record`/`Map`) from key to handler or value, **not** as an `if/elif` ladder, a
+  `switch`/`match` cascade, or a hand-rolled state machine with a `self._state` variable. The
+  mapping is data: declared once, typed (`dict[Status, Handler]`), exhaustive over the key domain
+  (checked by the type system or a test), and extended by adding a row — never by editing control
+  flow. This keeps cyclomatic complexity flat and makes every branch independently testable. An
+  explicit state machine is legitimate only when the transitions genuinely carry state-dependent
+  semantics no table can express (concurrent protocol, long-running workflow, parser with a stack);
+  choosing one is a documented decision, and even then transitions themselves live in a
+  transition **table**, not in nested conditionals.
+- **Decompose into small, independently unit-testable methods.** A function does one thing at one
+  level of abstraction; anything with its own name, branch, or rule is extracted so it can be
+  called and asserted **in isolation, without I/O, without mocks of the whole world**. Concretely:
+  pure business rules are separated from orchestration and from I/O (compute in a pure function,
+  side effects at the edges), so a test needs no DB/HTTP/filesystem to exercise the rule; a private
+  helper that is hard to test in isolation is a signal the seam is in the wrong place, not a reason
+  to skip the test. This is what makes the *max function lines 50* / *complexity ≤ 10* gates
+  achievable rather than gamed, and it is the mechanism behind the coverage floor: coverage reached
+  only through end-to-end paths, with untestable god-functions underneath, does not satisfy this rule.
+- **Basic optimisations and known anti-patterns are caught in review and in CI.** Code is written
+  correct-then-obvious first — **no speculative micro-optimisation**, no premature caching, no
+  hand-tuned trick without a measurement (profile before optimising; `perf` claims come with
+  numbers). But the *basic* wins are non-negotiable because they are algorithmic, not clever:
+  1. **Right data structure** — membership test on a `set`/`Map` (O(1)), not a linear scan of a list;
+     index/dict lookup instead of a nested loop (O(n²) over a joinable key is a defect);
+     a single pass instead of repeated traversals of the same collection.
+  2. **No work in a loop that is loop-invariant** — hoist the constant computation, the compiled
+     regex, the config read, the connection setup.
+  3. **No N+1** — database queries and network/API calls are batched or eager-loaded
+     (`selectinload`/`joinedload`, bulk endpoints); a query inside a `for` over rows is a defect.
+     Frontend equivalent: no request per list item, no re-render per keystroke without debounce,
+     no unmemoised derived state recomputed on every render.
+  4. **Bounded resources** — no unbounded `SELECT *` / unpaginated list endpoint, no full-file read
+     of arbitrary-size input (stream it), explicit timeouts on every outbound call, connections and
+     file handles closed via context managers.
+  5. **Known anti-patterns are named and rejected**: god object/function, copy-paste duplication
+     (factor into `chrysa-lib` — see *no code duplication*), boolean trap parameters, primitive
+     obsession over a value object, deep nesting (guard clauses instead), mutable default arguments,
+     shared mutable global state, silent `except: pass` (see *typed errors*), stringly-typed domains,
+     circular imports, and dead code kept "just in case" (git is the archive).
+  Mechanisation: Ruff (`C901`, `PLR*`, `B`, `SIM`, `PERF`, `RUF`) + Mypy on Python, ESLint
+  (`complexity`, `no-await-in-loop`, `react-hooks/exhaustive-deps`) on TS, SonarCloud rating **A**
+  with 0 hotspot on both. A finding here is a defect to fix, not a warning to carry.
 
 ## Quality gates
 
