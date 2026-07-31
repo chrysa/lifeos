@@ -551,6 +551,14 @@ carries is a line that lives in the wrong repo.
   `contents:write` only on the job that needs it), never a plaintext PAT where the
   workflow `GITHUB_TOKEN` or OIDC works. Dependabot keeps the `github-actions` ecosystem
   up to date.
+- **Secrets are passed explicitly — `secrets: inherit` is banned.** A reusable workflow
+  receives only the secrets it actually uses, named one by one under `secrets:`
+  (`secrets: {SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}}`). `secrets: inherit` hands the
+  callee the caller's entire secret store, so a compromised or careless step reaches
+  credentials it was never meant to see, and no one can tell from the call site which
+  secrets a workflow consumes. The same rule applies to steps: scope `env:` to the step
+  that needs the value, never to the job or the workflow when a single step uses it. A
+  workflow whose secret list is not readable at the call site is a defect.
 
 ## Pre-commit & git hooks (native, via pre-commit.com — never wrapped in make)
 
@@ -613,6 +621,16 @@ and CI invokes `pre-commit`, not `make`.
   daemon being down.
 - Hooks are **pinned by `rev`**; shared hooks come from `chrysa/pre-commit-tools`.
   `detect-secrets`/`gitleaks` respect the repo's secret allowlist.
+- **Hook logic is centralised in `chrysa/pre-commit-tools` — `repo: local` is glue only.**
+  Every gate is declared in `.pre-commit-config.yaml`, and any hook carrying real logic
+  is published as a versioned hook id in `chrysa/pre-commit-tools`, consumed by `rev`.
+  `repo: local` is reserved for genuinely repo-specific glue (a path check tied to this
+  repo's layout) and stays a few lines; it is never a home for a check other repos could
+  want. As with GitHub Actions, the **second occurrence of the same hook anywhere in the
+  fleet is an extraction order**, not a copy: it moves to `chrysa/pre-commit-tools` and
+  both repos consume it from there. A hook duplicated across repos cannot be fixed once,
+  drifts silently, and is the reason a fleet-wide rule change costs sixty pull requests
+  instead of one.
 
 ## Shared skills (load on demand from shared-standards/.claude/skills/)
 
