@@ -173,13 +173,18 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   4. **The only way code reaches `main` is a pull request from `develop`** (or, for a
      production emergency, a `hotfix/` branch — which is merged back into `develop` in the
      same breath so the two never diverge). No other source branch may target `main`.
+     **The promotion PR is merged with a merge commit, never squashed** — squashing rewrites
+     it as a new commit, so `main` and `develop` diverge at every release and the next
+     promotion opens with conflicts. *Squash merge only* governs feature PRs into `develop`;
+     the release promotion is the documented exception.
   5. **Production is triggered by a new release**, not by a merge: merging `develop` → `main`
      lands the code, and the deployment is driven by the tagged release (GitVersion tag +
      git-cliff changelog + the release workflow). No manual deploy from a laptop, no push
      that silently ships.
   Protection is configured, not assumed: `main` requires a PR, blocks force-push and
   deletion, and is machine-checked across the fleet by `scripts/audit-branch-policy.sh`.
-- **Merge**: squash merge only · force push forbidden · auto-merge requires CI + owner.
+- **Merge**: squash merge only (exception: the `develop` → `main` release promotion, merged
+  with a merge commit) · force push forbidden · auto-merge requires CI + owner.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
 - **Repo provenance — every code repo depends on `project-init`.** A repository is
