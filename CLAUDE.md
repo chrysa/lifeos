@@ -494,6 +494,34 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      know" rather than inventing, and states what it did after acting.
   A desktop/overlay assistant (the `floating-agent` pattern) follows the same rules outside the
   browser: overlay-only, dismissible, no capture of surfaces the user did not consent to.
+- **The repository architecture is legible to an agent — optimised for Claude, not only for
+  humans.** An AI agent reads a repo through a narrow window: it cannot skim thirty files to
+  infer a convention. So the layout itself carries the answers, and a repo where an agent has
+  to guess is a defect.
+  1. **One entry point that says what to do now** — `CLAUDE.md` (repo-specific rules, layered
+     over the inlined standards block) plus `primer.md` (current state, next action), read
+     before anything else. `AGENTS.md`/`copilot-instructions.md` stay generated from the same
+     source, never hand-diverged.
+  2. **Every non-trivial folder carries a `README.md`** stating role, structure, what belongs
+     in it and — critically — **what must not**, so a file lands in the right layer at write
+     time instead of in review.
+  3. **Predictable, name-addressable structure** — layers named after the architecture
+     (`domain/`, `application/`, `infrastructure/`, `interfaces/`), one class per file with
+     the module named after it, test file mirroring the source path. Finding *where* something
+     lives is a naming derivation, never a search.
+  4. **Small units by contract** — the file/function/complexity gates (500 / 50 / 10) exist so
+     a unit fits in one read; the same reason bans god-objects and `utils.py` grab-bags.
+  5. **Machine-readable seams** — typed signatures, Pydantic/OpenAPI contracts, YAML config
+     with a typed loader, `docs/adr/` for the *why*. An agent should be able to answer "what
+     breaks if I change this" from types and contracts, not from tribal memory.
+  6. **Task-shaped tooling over prose** — the repeatable operations are `make` targets and
+     shared skills (`.claude/skills/`), so an agent invokes a named contract instead of
+     reconstructing a command line. Every documented command exists in the Makefile.
+  7. **Session continuity** — decisions, known issues and progress live in `.claude/memory/`
+     (see *Session lifecycle*), so the next session starts from state, not from scratch.
+  The test is mechanical: drop a fresh agent in the repo with no conversation history — it
+  must find the entry point, the layer to touch, the command to run and the gate to pass,
+  from committed files alone.
 - **Raised errors are typed** — in any language whose type system allows it. Code raises a
   **domain-specific exception class** (Python: a module `…Error(Exception)` hierarchy rooted in one
   base per bounded context; TypeScript: `class XError extends Error` with a discriminant field, or a
