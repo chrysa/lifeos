@@ -21,7 +21,7 @@ jobs:
     steps:
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: gregsdennis/dependencies-action@v1.4.2
+      uses: gregsdennis/dependencies-action@a8cccab69814b9b985496cf97cbfe154c96c03c7 # v1.4.2
     - uses: Levi-Lesches/blocking-issues@2eeffdc6b055341f635eb0f3e4aea671516a61dc
       with:
         use-label: Blocked
