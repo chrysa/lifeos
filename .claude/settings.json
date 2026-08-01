@@ -18,7 +18,7 @@
       {
         "hooks": [
           {
-            "command": "node .claude/hooks/verifiable-thresholds.cjs",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/.claude/hooks/verifiable-thresholds.cjs\"; [ ! -f \"$f\" ] || node \"$f\"'",
             "name": "verifiable-thresholds",
             "timeout": 10000,
             "type": "command"
@@ -42,13 +42,13 @@
       {
         "hooks": [
           {
-            "command": "node .claude/hooks/secret-scanner.cjs",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/.claude/hooks/secret-scanner.cjs\"; [ ! -f \"$f\" ] || node \"$f\"'",
             "name": "secret-scanner",
             "timeout": 10000,
             "type": "command"
           },
           {
-            "command": "node .claude/hooks/circuit-breaker.cjs",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/.claude/hooks/circuit-breaker.cjs\"; [ ! -f \"$f\" ] || node \"$f\"'",
             "name": "circuit-breaker",
             "timeout": 5000,
             "type": "command"
@@ -70,7 +70,7 @@
       {
         "hooks": [
           {
-            "command": "node .claude/hooks/frustration-detection.cjs",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/.claude/hooks/frustration-detection.cjs\"; [ ! -f \"$f\" ] || node \"$f\"'",
             "name": "frustration-detection",
             "timeout": 5000,
             "type": "command"
