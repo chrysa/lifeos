@@ -160,6 +160,25 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 - **Language**: English — all code, comments, docs, instructions, and config files.
 - **Commits**: Conventional Commits (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`).
 - **Branches**: `feature/`, `bugfix/`, `chore/`, `hotfix/`, `release/` · default branch `develop`.
+- **Branch model — `main` is production, `develop` is the workspace.** Every repo runs the
+  same two long-lived branches, and the mapping is literal, not decorative:
+  1. **`main` = the code deployed in production.** It is a **protected branch**: no direct
+     push, no force push, no branch deletion; every change arrives through a pull request.
+     Reading `main` answers "what is running in prod right now" — nothing else is on it.
+  2. **`develop` is the repository's default branch** (the GitHub default, what a clone
+     checks out) and the integration target for all work. A repo whose default branch is
+     `main` is a defect, not a variant.
+  3. **Every feature/bugfix/chore PR targets `develop`.** `feature/x` → PR → `develop`.
+     A feature PR opened against `main` is closed and retargeted.
+  4. **The only way code reaches `main` is a pull request from `develop`** (or, for a
+     production emergency, a `hotfix/` branch — which is merged back into `develop` in the
+     same breath so the two never diverge). No other source branch may target `main`.
+  5. **Production is triggered by a new release**, not by a merge: merging `develop` → `main`
+     lands the code, and the deployment is driven by the tagged release (GitVersion tag +
+     git-cliff changelog + the release workflow). No manual deploy from a laptop, no push
+     that silently ships.
+  Protection is configured, not assumed: `main` requires a PR, blocks force-push and
+  deletion, and is machine-checked across the fleet by `scripts/audit-branch-policy.sh`.
 - **Merge**: squash merge only · force push forbidden · auto-merge requires CI + owner.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
@@ -242,6 +261,31 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   numbers) live in **external YAML files** and are loaded at runtime. Code reads them
   through a typed loader (Pydantic Settings backend · generated typed module frontend),
   never as inline literals. Only language-level enums (e.g. `status.HTTP_*`) are exempt.
+- **No literal HTTP status codes — use the constants the framework already ships.** A bare
+  `200`, `404`, `422`, `500` in code or in a test is forbidden; the value comes from the
+  library that defines it: Python `fastapi.status.HTTP_404_NOT_FOUND` (or
+  `http.HTTPStatus.NOT_FOUND` outside FastAPI), Django `HTTPStatus`, TypeScript a typed
+  status enum/const from the HTTP client layer, C# `System.Net.HttpStatusCode`. This applies
+  everywhere the code names a status — route decorators (`status_code=status.HTTP_201_CREATED`),
+  raised errors, client-side branching, and **assertions in tests**
+  (`assert response.status_code == status.HTTP_403_FORBIDDEN`). The same rule generalises: when
+  a standard library or a framework already publishes the constant/enum for a protocol value
+  (HTTP methods, MIME types, headers, signal numbers, exit codes), import it — never retype the
+  literal. A magic number the reader has to look up is a defect, not a shortcut.
+- **No code duplication — the second occurrence is an extraction order.** Copy-pasting a
+  function, a fixture, a type, a config block, or a workflow step across files or repos is
+  forbidden. The rule is mechanical: the **first** occurrence is code, the **second** is a
+  factoring order — the logic moves to the transverse home for its kind and both call sites
+  consume it from there. The homes are fixed: shared Python code → **`chrysa-lib`** (or the
+  relevant `chrysa/*` library), CI logic → **`chrysa/github-actions`**, commit gates →
+  **`chrysa/pre-commit-tools`**, standards/templates → **`shared-standards`**, UI components →
+  the design system. Inside one repo, duplication is extracted to a shared module in the same
+  layer — never re-typed in a sibling. Rewriting the same logic in different words does not
+  make it a different implementation; a near-duplicate diverges silently and costs sixty PRs
+  to fix once. Mechanisation: SonarCloud duplication ratio and `jscpd`-class detectors; a
+  reported duplicate block is a defect to factor, not a warning to carry. Legitimate exception:
+  a deliberate copy that decouples two projects on purpose (see *projects talk through
+  versioned contracts only*) — documented as such, not left implicit.
 - **Semantic URLs & code** — URLs are resource-oriented and human-readable: lowercase,
   hyphenated, plural-noun collections, no verbs or actions in the path (`GET /invoices/42`,
   never `/getInvoice?id=42`); REST shapes follow the `api-design` skill. Code is
@@ -270,6 +314,60 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   `pytest.ini` are forbidden. Distributed libraries use a `src/` layout and follow the Public API
   Contract (`docs/PUBLIC-API-CONTRACT.md`): sorted `__all__`, relative imports in `__init__`,
   `__version__` via `importlib.metadata`, uniform `install()` entrypoint, shared types in `chrysa-lib`.
+- **Python is written object-oriented, one class per file.** Behaviour is carried by classes,
+  not by a bag of module-level functions sharing state through globals or long parameter
+  lists: a cohesive responsibility (a service, a repository, an adapter, a use case, a value
+  object) is a **class**, dependencies are injected through `__init__`, and state lives on
+  the instance. **One class per module, and the module is named after it** —
+  `vehicle_dispatcher.py` holds `VehicleDispatcher`, and nothing else of substance (private
+  helpers of that class and its own exception types may live beside it). Method order inside
+  a class is fixed: dunder → property → abstract → classmethod → staticmethod → public →
+  private, alphabetical within each group. Pure functions remain legitimate where there is
+  genuinely no state and no variation point — a stateless transformation, a validator, the
+  functional core called by the class — and Pydantic models, dataclasses, enums and
+  protocols are classes already. What is forbidden is a `utils.py` grab-bag, a module of
+  loosely related procedures threading the same objects through every signature, and two
+  unrelated public classes sharing one file.
+- **Import the item, not the module — `from x import y; y()`.** Python imports name the
+  symbol actually used (`from fastapi import status`, `from datetime import datetime`,
+  `from app.services.billing import BillingService`), so call sites read `datetime.now()`
+  and `BillingService(...)`, not `datetime.datetime.now()` or a chain of package prefixes.
+  Bare `import x` is reserved for the cases where it is genuinely better: a module used as a
+  namespace whose name carries meaning at the call site (`import numpy as np`,
+  `import json`), or breaking an import cycle. **Forbidden**: wildcard `from x import *`,
+  relative imports beyond a package's own `__init__` re-exports, and importing a module only
+  to reach one attribute through it. Imports sit at module top level (never inside a function
+  except to break a cycle, and that is commented), and are ordered/deduplicated by Ruff
+  (`I` rules) — the linter owns the ordering, no hand-sorting.
+- **Everything is machine-agnostic and portable — no rule, repo, or script is bound to one
+  machine.** A standard, a Makefile target, a script, a hook, a compose file, or a CI job must
+  behave identically on any developer machine, any runner, and the server, with nothing but a
+  clone and the sanctioned host tools. Concretely, **forbidden**: absolute paths tied to a user
+  or host (`/home/<user>/…`, `/Users/<name>/…`, `C:\Users\…`, a hardcoded workspace root), a
+  hostname/IP/mount point of a specific box baked into code or config, an assumption that a tool
+  was installed a particular way, and "works because my machine has it" reasoning. Instead:
+  paths are relative to the repo root (or resolved from `$(git rev-parse --show-toplevel)` /
+  the script's own directory), machine-specific values arrive through **environment variables
+  with documented defaults** (`.env.example` committed, `.env` never), and anything the code
+  needs is provided by the container image. The same portability applies to the standards
+  corpus itself: a rule names a *mechanism* (a hook id, a Makefile target, a workflow), never a
+  particular machine, user account, or local directory layout. The test is mechanical: a fresh
+  clone on an unknown machine, with git + Docker + pre-commit, must reach a green
+  `make ci` — if it needs a manual step that only the owner knows, that is a defect.
+- **External dependencies are installed in containers, never on the host.** A project's
+  runtime dependencies — language packages (pip/npm/cargo/nuget), databases, brokers, caches,
+  system libraries, compilers, CLIs a service shells out to — are declared in the image
+  (`Dockerfile`) or in a compose service, and installed **inside the container**. `sudo apt
+  install`, `pip install` into the system interpreter, a global `npm -g`, or a locally
+  installed Postgres/Redis "to make it work" are **defects**: they make the machine the
+  environment, so the build is unreproducible, the version drifts per-machine, and CI and prod
+  no longer run what the developer ran. A missing dependency is fixed by editing the image,
+  never by installing it on a developer machine. Three sanctioned host tools only, all repo-independent
+  and installed **outside** any project tree: **git**, **Docker** itself, and the commit gate
+  (`pipx`/`uv install pre-commit`, which provisions its own hook envs — see *the gate is
+  host-native*). Everything else runs through `docker compose run` / the `make docker-*`
+  targets. Host-bound repos (`exempt:native`: desktop, hardware, editor extensions) are the
+  documented exception, and only for the part genuinely bound to the host OS.
 - **No virtualenv in a repo — ever.** `venv/`, `.venv/`, `env/` are **forbidden** inside a
   project tree. Python runs in the Docker image (deps baked into the image layer, or a named
   volume for editable installs). A committed or on-disk virtualenv is a bug, not a setup step.
@@ -367,6 +465,35 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to `/setup`** rather than crashing or showing a generic error. An admin **configuration panel**
   (auth-gated CRUD API) manages runtime config with a versioned audit trail, hot-reload where
   possible (else a `RESTART_REQUIRED` flag), and JSON export/import for backup and cross-env cloning.
+- **A floating assistant where it earns its place — never as decoration.** Any human-facing
+  product whose users face a **non-obvious surface** (a dense cockpit, a multi-step form or
+  wizard, a query/graph/config console, an admin panel with domain jargon) ships an **in-app
+  floating assistant**: a persistent, dismissible affordance that answers "what am I looking
+  at / what do I do next" **in context**, without leaving the page. The value test comes
+  first — a product with two screens and no jargon does not get one, and shipping an empty
+  chat bubble is worse than shipping nothing. Where it is warranted, it obeys the same rules
+  as the rest of the app:
+  1. **Context-aware, not a generic chat box** — it receives the current route, selection and
+     visible state, and its opening move is a useful suggestion about *this* screen.
+  2. **Opt-in and reversible** — off by default behind a documented flag/config key
+     (`ASSISTANT_ENABLED`-style), dismissible, and its position/open state persists per user
+     (see *UI state survives reload & focus*). It never steals focus, never blocks the
+     underlying surface, and never auto-opens on every visit.
+  3. **Governed like any agent** — read-only Q&A is R0/R1; the moment it *acts* (writes, calls,
+     runs, changes state) the full agentic envelope applies: versioned manifest, typed I/O,
+     least privilege, risk level with proportionate confirmation and dry-run, audit trail.
+     Detail: annexe `AGENTIC-CAPABILITIES.md`.
+  4. **Provider-independent** — inference goes through the local port with ≥2 tested adapters
+     (strategic pillar 1); no vendor SDK in the product's business code, and the assistant
+     degrades to a documented help panel when no model is reachable.
+  5. **Accessible and quiet** — reachable and closable by keyboard (visible focus, `Esc`
+     closes), announced to assistive tech, honours `prefers-reduced-motion`, and respects the
+     WCAG 2.1 AA + design-token rules like every other surface. It is lazily loaded behind a
+     shape-accurate placeholder so it never delays first paint.
+  6. **Scoped and honest** — it answers from the product's own data and docs, says "I don't
+     know" rather than inventing, and states what it did after acting.
+  A desktop/overlay assistant (the `floating-agent` pattern) follows the same rules outside the
+  browser: overlay-only, dismissible, no capture of surfaces the user did not consent to.
 - **Raised errors are typed** — in any language whose type system allows it. Code raises a
   **domain-specific exception class** (Python: a module `…Error(Exception)` hierarchy rooted in one
   base per bounded context; TypeScript: `class XError extends Error` with a discriminant field, or a
@@ -482,6 +609,19 @@ components. This complements *dark mode + WCAG 2.1 AA* and the `ui-ux` skill.
   the Makefile (no `make type-check` when the target is `typecheck`).
 - **Recipe style** — prefix every recipe line with `@`; add `## Description` after each target so
   it appears in `make help`.
+- **Modular Makefiles — 500 lines max, split by domain.** No hand-maintained Makefile exceeds
+  **500 lines** (the same file gate as code). Approaching the limit, it is split into thematic
+  files under `make/` (`make/common.mk` for shared variables/functions, then `docker.mk`,
+  `test.mk`, `quality.mk`, `k8s.mk`, `docs.mk`… as the repo needs), loaded explicitly from the
+  root Makefile with `include` / `-include`. The **root Makefile stays an entry point and an
+  orchestrator**: it exposes the main commands, loads the thematic files, and serves the global
+  `make help`. A target exists **in exactly one file** — duplicates, near-identical variants and
+  copy-paste between thematic files are forbidden (*no code duplication* applies to Make too).
+  Inclusion is acyclic: a thematic file never includes back into its parent. Target names stay
+  predictable and grouped by domain (`test-unit`, `docker-build`, `k8s-deploy`), every public
+  target is documented in `make help` from its `## Description`, and any long or business-logic
+  recipe moves to a **versioned, testable script** — the Makefile is a command surface, not an
+  application language.
 
 ## Container-runtime policy
 
