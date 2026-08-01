@@ -286,12 +286,40 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   reported duplicate block is a defect to factor, not a warning to carry. Legitimate exception:
   a deliberate copy that decouples two projects on purpose (see *projects talk through
   versioned contracts only*) — documented as such, not left implicit.
-- **Semantic URLs & code** — URLs are resource-oriented and human-readable: lowercase,
-  hyphenated, plural-noun collections, no verbs or actions in the path (`GET /invoices/42`,
-  never `/getInvoice?id=42`); REST shapes follow the `api-design` skill. Code is
-  self-describing: intention-revealing names over comments, semantic HTML elements
-  (`<nav>`, `<button>`, `<main>`, `<header>`…) never a `<div>` wired as a control, and
-  ARIA used only to fill gaps native semantics cannot express.
+- **Everything is semantic — the markup, the data, and the URLs.** A surface must be
+  understandable by a machine that never sees the pixels: a screen reader, a crawler, an
+  AI agent, another service. Meaning lives in the markup and the address, never only in the
+  CSS or the JavaScript.
+  1. **Semantic URLs.** Resource-oriented and human-readable: lowercase, hyphenated,
+     plural-noun collections, a **noun path with no verb or action**
+     (`GET /invoices/42`, never `/getInvoice?id=42`, never `/page?id=7`). The path expresses
+     the hierarchy (`/projects/42/settings`), the query expresses filtering/pagination/
+     selection — not identity. Opaque ids stay out of the path when a stable readable slug
+     exists (`/articles/semantic-urls`, optionally `/articles/42-semantic-urls`). A URL is a
+     **permanent contract**: it is not renamed on a redesign, and when it must change the old
+     one answers `301`, never `404`. REST shapes follow the `api-design` skill; a navigable
+     view is always a real URL (see *URL-addressable frontend navigation*).
+  2. **Semantic HTML.** The right element for the meaning — `<nav>`, `<main>`, `<header>`,
+     `<article>`, `<section>`, `<button>`, `<a href>`, `<table>`, `<form>`, `<time
+     datetime>`, `<label for>` — never a `<div>` wired as a control, never a heading level
+     picked for its size. One `<h1>` per page and a heading outline with no skipped level;
+     images carry meaningful `alt` (or `alt=""` when purely decorative); every input has a
+     programmatic label; language is declared (`<html lang>`). **ARIA only fills gaps native
+     semantics cannot express** — a native element always beats `role="button"`.
+  3. **Structured, machine-readable data.** Any public or shareable page publishes
+     **schema.org JSON-LD** appropriate to its type (`Article`, `Product`, `Organization`,
+     `BreadcrumbList`, `SoftwareApplication`…), plus the metadata that makes a link
+     self-describing: `<title>`, `meta description`, canonical link, Open Graph/Twitter
+     cards, `hreflang` on localised pages, `sitemap.xml` and `robots.txt`. The structured
+     data **describes what is actually on the page** — mismatched markup is a defect, not
+     an SEO trick.
+  4. **Semantic code and data shapes.** Intention-revealing names over comments, typed
+     contracts over free-form dicts, ISO-8601 dates and explicit units/currency in payloads,
+     stable machine-readable codes on errors (see *typed errors*). A field named `data`,
+     `value`, or `flag` is a naming defect.
+  Mechanisation: the a11y gates already required (Lighthouse ≥ 90, keyboard, contrast) plus
+  an HTML-validity/structured-data check on public pages. A page that reads correctly only
+  because of CSS is not accessible, not crawlable, and not agent-readable.
 - **URL-addressable frontend navigation — mandatory.** Every navigable view/route/tab/
   detail is a **real, semantic URL** (`/projects/42/settings`, not `/#` or a modal with no
   address). Navigating **must change the URL** via the router (History API `pushState`), so:
@@ -586,6 +614,17 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   Mechanisation: Ruff (`C901`, `PLR*`, `B`, `SIM`, `PERF`, `RUF`) + Mypy on Python, ESLint
   (`complexity`, `no-await-in-loop`, `react-hooks/exhaustive-deps`) on TS, SonarCloud rating **A**
   with 0 hotspot on both. A finding here is a defect to fix, not a warning to carry.
+  The armed Ruff selection is the canonical set distributed by `scripts/pyproject-ruff-merge.py`
+  and merged into each repo's `[tool.ruff.lint] select` — the script is the source of truth for
+  which codes are on. Two rules that the `PLR*`/`RUF` shorthand above would otherwise imply are
+  **deliberately excluded**, and stay excluded until a decision says otherwise:
+  - `PLR2004` (magic-value-comparison) — 2519 findings across the 65 repos. Hardcoded constants
+    are a chantier with its own remediation (extract to an enum or external config), not a flag
+    to flip; arming it would turn every gate red at once.
+  - `RUF001` (ambiguous-unicode-character-string) — 493 findings concentrated on 4 repos, all of
+    them French user-facing copy using typographic characters (apostrophes, non-breaking spaces).
+    The rule is right about the codepoints and wrong about the intent. A repo that wants it may
+    arm it locally together with `lint.allowed-confusables`.
 
 ## Quality gates
 
