@@ -122,6 +122,7 @@ Where an annexe and this file disagree, **this file wins**.
 | `PROJECT-DECOUPLING.md`   | inter-project contracts, forbidden linkages, degradation        |
 | `CONTAINERS-K3S.md`       | reference stage shape · container responsibility · k3s workload baseline |
 | `TESTING.md`              | common test levels and rules across languages                   |
+| `CI-CD.md`                | pipeline architecture · action pinning · least privilege · cost · what the gate proves |
 | `GOVERNANCE.md`           | rule identity, maturity ladder, enforcement rollout, sources of truth |
 
 **Source of truth:** the canon lives in this repo. Notion is a governance and decision view
@@ -743,7 +744,25 @@ Every repo carries a `runtime:` field in `repos.yml`, machine-checked by `audit-
 
 CI is assembled from **existing actions**, not written. A workflow is glue — checkout,
 setup, invoke the repo's own gate (`pre-commit`, `make ci`) — and every line of logic it
-carries is a line that lives in the wrong repo.
+carries is a line that lives in the wrong repo. A pipeline has one job: **tell the truth
+about the code, fast, without becoming a codebase of its own**. Full rules, with ids and a
+review checklist: annexe [`CI-CD.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/CI-CD.md)
+(`CI-000`…`CI-052`) — pipeline architecture, supply-chain pinning, least privilege,
+cost/latency, what the gate must prove, feedback.
+
+Four of its rules are load-bearing enough to state here:
+
+- **A red check means the code is wrong** (`CI-040`). A gate that fails because a repo is not
+  onboarded, a tool is missing or billing lapsed trains everyone to ignore red — and the next
+  real failure is ignored too. Fix it or remove it the day it appears.
+- **A skipped job reports as skipped, never as passed** (`CI-032`). Path filters may skip work;
+  they must never turn a required check green without running it. A tick that means "not
+  executed" destroys trust in the whole pipeline.
+- **Build once, promote the artefact** (`CI-046`). The image digest that was tested is the one
+  deployed; rebuilding per environment means production runs something no test ever saw.
+- **Every job declares `timeout-minutes:` and every PR workflow a concurrency group**
+  (`CI-030`, `CI-031`) — cancelling superseded PR runs, and explicitly **not** cancelling
+  deployments.
 
 - **Reuse before writing — always.** The first choice is a **maintained public action**
   (`actions/checkout`, `actions/setup-python`, `actions/setup-node`, `astral-sh/setup-uv`,
