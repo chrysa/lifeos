@@ -2,6 +2,7 @@
 jobs:
   size-label:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
