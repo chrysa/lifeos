@@ -16,7 +16,3 @@ jobs:
         remove_label_when_approval_missing: 'false'
         require_committers_approval: 'true'
         token: ${{ github.token }}
-name: Label when approved
-permissions:
-  contents: read
-  pull-requests: write

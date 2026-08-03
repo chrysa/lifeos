@@ -34,7 +34,3 @@ jobs:
 
           '
         title: '[SKIP CI] [pre-commit] Autoupdate weekly'
-name: Auto-update pre-commit hooks
-permissions:
-  contents: write
-  pull-requests: write
