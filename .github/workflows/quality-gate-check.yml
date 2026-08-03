@@ -75,8 +75,3 @@ jobs:
             -f state="${STATE}" \
             -f context="quality-gate" \
             -f description="${DESCRIPTION}"
-name: Quality Gate Check
-permissions:
-  checks: write
-  contents: read
-  statuses: write

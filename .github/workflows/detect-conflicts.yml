@@ -46,8 +46,3 @@ jobs:
           \ repo: context.repo.repo,\n    issue_number: prNumber,\n    body: `\u2705\
           \ Conflits r\xE9solus.`\n  });\n}\n"
     timeout-minutes: 5
-name: Check Conflicts
-permissions:
-  contents: read
-  pull-requests: write
-run-name: Check Conflicts

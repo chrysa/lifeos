@@ -39,7 +39,3 @@ jobs:
           \ detected \u2014 skipping update.');\n    return;\n}\n\nawait github.rest.pulls.update({\n\
           \    owner: context.repo.owner,\n    repo: context.repo.repo,\n    pull_number:\
           \ prNumber,\n    body: updatedBody,\n});\n\nconsole.log('PR body updated.');\n"
-name: Update PR body
-permissions:
-  contents: read
-  pull-requests: write
