@@ -15,7 +15,3 @@ jobs:
         m_max_size: 200
         s_max_size: 50
         xs_max_size: 20
-name: Label Pull Request Size
-permissions:
-  contents: read
-  pull-requests: write
