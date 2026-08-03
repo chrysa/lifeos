@@ -3,8 +3,8 @@
   workflow_call: null
   workflow_dispatch: null
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   labels:
