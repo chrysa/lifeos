@@ -320,6 +320,41 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   *projects talk through versioned contracts only* or *portable data*: identity sits behind an
   adapter, so the product stays independently deployable against an alternative identity provider
   (or a standalone local mode) by configuration, without touching the domain.
+- **Every form is a hostile input surface — validate on the server, always.** A form is the
+  place where an unknown person hands the product data of their choosing; the browser is their
+  machine, so **nothing enforced only in the client is enforced at all**. `required`,
+  `maxlength`, `type="email"`, a disabled button, a hidden field, a client-side schema: those
+  are ergonomics, and every one of them is re-checked server-side against a typed schema
+  (Pydantic on the backend) that is the single authority on what is acceptable.
+  1. **Bind to an explicit allowlist of fields.** The handler names the fields it accepts and
+     ignores the rest — no mass assignment, no spreading the payload into a model. A user who
+     adds `"is_admin": true` to the request body must change nothing.
+  2. **State-changing submissions are protected against cross-site forgery** — an anti-CSRF
+     token for cookie-based sessions (with `SameSite=Lax|Strict`, `HttpOnly`, `Secure`), or a
+     bearer token deliberately sent by the client. A `GET` never changes state, and secrets
+     never travel in a URL: query strings land in browser history, logs, and referrers.
+  3. **Submission endpoints are rate-limited and bot-resistant** — per-account and per-IP
+     limits on anything that sends mail, creates an account, resets a password, or writes to
+     the database, with lockout/backoff on repeated authentication failures. Prefer a
+     timing-based or honeypot check to a CAPTCHA that punishes the accessible path.
+  4. **Errors say what to fix, and nothing about the system.** Field-level messages, all
+     failures returned at once rather than one per round trip, and no stack trace, SQL
+     fragment, or internal path leaked to the user. Authentication failures stay generic
+     ("invalid credentials"), never "unknown email" — enumeration is a data leak.
+  5. **Errors are announced, not just coloured.** The invalid field is programmatically
+     associated with its message (`aria-describedby`), the error summary receives focus, and
+     the failure is conveyed without relying on colour alone — a form that cannot report its
+     own errors to a screen reader is broken for the people most likely to be blocked by it.
+  6. **The submission is idempotent and the user's work survives failure.** Double submission
+     is blocked (idempotency key or POST-redirect-GET), a rejected form re-renders with the
+     entered values, and a network failure does not silently discard a long draft.
+  7. **What goes in the form is minimised, and what comes out is escaped.** Collect only the
+     fields the feature actually needs (GDPR data minimisation), never log a payload with
+     credentials or personal data, mark sensitive inputs `autocomplete="off"` only where it
+     genuinely helps, and render user-supplied content escaped by default — a stored value is
+     an XSS payload until proven otherwise. File fields additionally follow *if a user can
+     supply a file, the product accepts an upload* — type, size and content are validated
+     server-side there too.
 - **No hardcoded constants** in code — neither backend (Python) nor frontend (TS).
   All constants and config values (thresholds, business rules, labels, URLs, magic
   numbers) live in **external YAML files** and are loaded at runtime. Code reads them
