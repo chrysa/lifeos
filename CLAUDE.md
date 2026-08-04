@@ -642,6 +642,66 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to `/setup`** rather than crashing or showing a generic error. An admin **configuration panel**
   (auth-gated CRUD API) manages runtime config with a versioned audit trail, hot-reload where
   possible (else a `RESTART_REQUIRED` flag), and JSON export/import for backup and cross-env cloning.
+- **Every product that is operated ships a management backoffice.** As soon as a product has
+  users, content, or work that someone has to *run* — accounts to unlock, an import that
+  failed, a job stuck in a queue, a flag to flip — it ships an authenticated **admin
+  backoffice** covering that work. The test is blunt: **if operating the product in practice
+  means SSH, `psql`, or a hand-written script, the backoffice is missing** — and the day a
+  real incident lands, the operator improvises a `UPDATE` on production at 23:00.
+  1. **It covers the operations the product actually needs**, not a generic table browser:
+     accounts (invite, roles, deactivate, delete with their data), the domain entities support
+     is asked about, moderation/quarantine where content is user-supplied, runtime config and
+     feature flags (see *setup wizard & config panel*), background jobs and queues with a
+     **retry** and a visible failure reason, and the deployed versions of the running pieces.
+  2. **Admin power is a role, not a person.** Access is gated by an explicit permission set
+     behind the identity hierarchy — never a shared login, never "the first account created",
+     never an environment variable holding a master password. Sensitive operations
+     (impersonation, export, deletion) are separately granted, and impersonation is announced
+     in the UI and terminated by an explicit exit.
+  3. **Every admin action is audited** — who, what, when, on which record, with the before and
+     after. The audit trail is written by the same path that performs the action, not
+     reconstructed from logs, and it is readable *in* the backoffice: an admin surface that
+     cannot answer "who changed this and when" is where accountability quietly ends.
+  4. **Destructive actions are confirmed, scoped and reversible** — a typed confirmation for
+     the irreversible ones, soft delete or quarantine over hard delete, bulk operations bounded
+     and previewed before they run. "Delete all" without a preview is an incident generator.
+  5. **It shows the least data that answers the question.** A support view surfaces what the
+     operator needs and masks the rest; secrets and credentials are never displayed, only
+     rotated. Reading a person's data through the backoffice is itself an audited act.
+  6. **It is a product surface, held to the product's standards** — same design system, dark
+     mode, WCAG 2.1 AA, semantic URLs, i18n, tests and error handling. An admin panel treated
+     as a throwaway becomes the least reliable part of the system, operated under stress, by
+     the people with the most destructive permissions.
+- **The container is versioned separately from the application it hosts, and an admin can see
+  what is actually deployed.** An image and an app are two artefacts with two lifecycles: a
+  rebuild that only picks up a new base image, a patched OS library or a changed entrypoint
+  produces a **new image version carrying the same application version** — and a redeploy of
+  the same app on a fresh image is exactly the change an incident review needs to see. So the
+  two versions are recorded and surfaced side by side; conflating them turns "we redeployed"
+  into an untraceable event.
+  1. **Both identities travel with the image.** Every image carries OCI labels — at minimum
+     `org.opencontainers.image.version` (the image's own version),
+     `org.opencontainers.image.revision` (git SHA), `org.opencontainers.image.created`, plus
+     the application version it packages. They are build arguments injected by CI, never
+     hand-edited.
+  2. **Deployments pin a digest, never a moving tag.** `:latest` is not a version; a
+     manifest or compose file references `image@sha256:…` (or an immutable tag) so what runs
+     is exactly what was tested — see *build once, promote the artefact* (`CI-046`).
+  3. **The service publishes what it is** — a small, unauthenticated-safe endpoint
+     (`/version` or the health payload) returning the **application version**, the **image
+     tag and digest**, the git SHA, the build timestamp and the environment name. No secret,
+     no dependency inventory: enough to answer "which build is this?" and nothing more.
+  4. **The frontend shows it to admins, and knows its own.** The admin surface (config panel,
+     about screen, footer of an admin page) displays the **frontend build version** — embedded
+     at build time, not read at runtime — next to the backend's application version, image
+     digest and environment. A support conversation that starts with "which version are you
+     on?" and cannot be answered from the interface is a defect.
+  5. **A version mismatch is surfaced, not silently tolerated.** When the frontend detects
+     that the backend's version changed under it, or that its own build no longer matches the
+     API it is talking to, it tells the user and offers a reload rather than failing in
+     obscure ways. Deployed versions per environment are also visible from the platform side
+     (release notes, deployment log), so "what is in production" never requires a shell.
+||||||| f7b98e2
 - **If a user can supply a file, the product accepts an upload.** Wherever the workflow
   involves a file the user already has — an import (CSV, JSON, GPX, ICS…), an avatar or image,
   an attachment or supporting document, a configuration or dataset, a log or a crash dump sent
