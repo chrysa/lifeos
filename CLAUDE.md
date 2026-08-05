@@ -642,6 +642,20 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to `/setup`** rather than crashing or showing a generic error. An admin **configuration panel**
   (auth-gated CRUD API) manages runtime config with a versioned audit trail, hot-reload where
   possible (else a `RESTART_REQUIRED` flag), and JSON export/import for backup and cross-env cloning.
+- **A game is DRM-free and fully playable solo offline.** The single-player experience is
+  complete **without a network, an account, or a licence check** — unplug the machine and the
+  game still starts, saves, loads, and can be finished. **No DRM of any kind**: no licence
+  server, no phone-home activation, no online entitlement check, no always-on requirement, no
+  third-party wrapper gating launch. A copy someone owns keeps working when the servers are
+  gone, the company is gone, or the network is down; a build that will not start offline is a
+  defect, not an anti-piracy measure. Saves are **local, open and portable** (JSON/SQLite in
+  the platform's user directory, copyable, not encrypted against their owner) — the
+  *portable personalisation data* pillar applied to a save file. Online features (multiplayer,
+  leaderboards, cloud sync, telemetry, stores) are **additive layers over a complete offline
+  game**: losing one degrades a feature, never the ability to play. The offline path is
+  **tested with the network disabled**, on a machine that never signed in — an offline mode
+  nobody exercises is one that has already stopped working. Detail: annexe
+  `ARCHITECTURE-DDD.md` AR-045.
 - **Every product that is operated ships a management backoffice.** As soon as a product has
   users, content, or work that someone has to *run* — accounts to unlock, an import that
   failed, a job stuck in a queue, a flag to flip — it ships an authenticated **admin
