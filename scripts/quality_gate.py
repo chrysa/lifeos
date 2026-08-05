@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -33,15 +34,45 @@ class QualityGate:
         except Exception as e:
             return 127, f"Error: {e}"
 
+    # Ordered: the first pattern that matches wins, so the measured coverage is read
+    # before any threshold that shares the line. Taking "the first % on a line
+    # mentioning coverage" reads `Required test coverage of 85%` as the result — a repo
+    # at 42% then reports 85 and its gate passes (shared-standards#274).
+    COVERAGE_PATTERNS = (
+        r"^TOTAL\s+.*?(\d+(?:\.\d+)?)%",  # pytest-cov / coverage term report
+        r"Total coverage:\s*(\d+(?:\.\d+)?)%",  # --cov-fail-under summary line
+        r"All files\s*\|\s*(\d+(?:\.\d+)?)",  # jest / istanbul text summary
+        r"^Statements\s*:\s*(\d+(?:\.\d+)?)%",  # nyc text-summary
+    )
+
     def _parse_coverage(self, output: str) -> float:
-        for line in output.split("\n"):
-            if "coverage" in line.lower():
-                for word in line.split():
-                    if word.endswith("%"):
-                        try:
-                            return float(word.rstrip("%"))
-                        except ValueError:
-                            continue
+        for pattern in self.COVERAGE_PATTERNS:
+            match = re.search(pattern, output, flags=re.IGNORECASE | re.MULTILINE)
+            if match:
+                try:
+                    return float(match.group(1))
+                except ValueError:
+                    continue
+        return self._parse_coverage_report()
+
+    def _parse_coverage_report(self) -> float:
+        """Read the coverage percentage from a written XML report.
+
+        `make test-cov` may emit only `--cov-report=xml`, in which case stdout
+        carries no summary at all and the textual patterns above find nothing.
+        """
+        for candidate in (Path("reports/coverage.xml"), Path("coverage.xml")):
+            if not candidate.is_file():
+                continue
+            match = re.search(
+                r'<coverage[^>]*\bline-rate="([0-9.]+)"',
+                candidate.read_text(encoding="utf-8", errors="replace"),
+            )
+            if match:
+                try:
+                    return round(float(match.group(1)) * 100, 2)
+                except ValueError:
+                    continue
         return -1.0
 
     def _parse_passed_tests(self, output: str) -> int:
