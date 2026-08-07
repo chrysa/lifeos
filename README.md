@@ -1,14 +1,14 @@
-# my-assistant
+# lifeos
 
 > Floating AI assistant multi-OS — system monitoring, messaging interactions, AI integrations, and external service connectivity.
 
-[![CI](https://github.com/chrysa/my-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/chrysa/my-assistant/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/chrysa/lifeos/actions/workflows/ci.yml/badge.svg)](https://github.com/chrysa/lifeos/actions/workflows/ci.yml)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Overview
 
-`my-assistant` is a configurable floating AI assistant that runs as a desktop overlay on Linux and Windows. It aggregates data from your system, messaging platforms, AI providers, and external services (Notion, GitHub, …) into a single, always-accessible interface.
+`lifeos` is a configurable floating AI assistant that runs as a desktop overlay on Linux and Windows. It aggregates data from your system, messaging platforms, AI providers, and external services (Notion, GitHub, …) into a single, always-accessible interface.
 
 ## Features
 
@@ -24,7 +24,7 @@
 ## Architecture
 
 ```
-my_assistant/
+lifeos/
 ├── cli.py              # Click entry point (--ui / --headless / --enable)
 ├── app.py              # Application lifecycle + plugin registry
 ├── config/
@@ -53,20 +53,20 @@ pip install -e .
 pip install -e ".[ui,discord]"
 
 # Copy and edit config
-mkdir -p ~/.config/my-assistant
-cp config/config.example.toml ~/.config/my-assistant/config.toml
-$EDITOR ~/.config/my-assistant/config.toml
+mkdir -p ~/.config/lifeos
+cp config/config.example.toml ~/.config/lifeos/config.toml
+$EDITOR ~/.config/lifeos/config.toml
 
 # Run
-my-assistant --ui            # float overlay + tray
-my-assistant --headless      # tray only (background mode)
+lifeos --ui            # float overlay + tray
+lifeos --headless      # tray only (background mode)
 ```
 
 ## Configuration
 
 Config file is resolved in this order:
 1. `--config <path>` CLI flag
-2. `~/.config/my-assistant/config.toml`
+2. `~/.config/lifeos/config.toml`
 3. `./config/config.toml`
 
 Environment variables can be injected anywhere in the config using `"${ENV_VAR_NAME}"` syntax:
@@ -110,7 +110,7 @@ make format       # ruff format
 
 ## Stack
 
-- **Python** 3.12+
+- **Python** 3.14+
 - **PySide6** (Qt6) — floating overlay UI (optional)
 - **psutil** — system monitoring
 - **httpx** — async HTTP (AI providers, Notion, GitHub)
