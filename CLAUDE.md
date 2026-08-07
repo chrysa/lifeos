@@ -453,9 +453,11 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      **schema.org JSON-LD** appropriate to its type (`Article`, `Product`, `Organization`,
      `BreadcrumbList`, `SoftwareApplication`…), plus the metadata that makes a link
      self-describing: `<title>`, `meta description`, canonical link, Open Graph/Twitter
-     cards, `hreflang` on localised pages, `sitemap.xml` and `robots.txt`. The structured
+     cards, `hreflang` on localised pages, a **favicon + app icons + web app manifest**
+     (`theme-color` included), and `sitemap.xml` and `robots.txt`. The structured
      data **describes what is actually on the page** — mismatched markup is a defect, not
-     an SEO trick.
+     an SEO trick. A tab left with the browser's default globe icon is an unfinished page
+     (FE-052).
   4. **Semantic code and data shapes.** Intention-revealing names over comments, typed
      contracts over free-form dicts, ISO-8601 dates and explicit units/currency in payloads,
      stable machine-readable codes on errors (see *typed errors*). A field named `data`,
@@ -1042,11 +1044,17 @@ setup, invoke the repo's own gate (`pre-commit`, `make ci`) — and every line o
 carries is a line that lives in the wrong repo. A pipeline has one job: **tell the truth
 about the code, fast, without becoming a codebase of its own**. Full rules, with ids and a
 review checklist: annexe [`CI-CD.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/CI-CD.md)
-(`CI-000`…`CI-052`) — pipeline architecture, supply-chain pinning, least privilege,
+(`CI-000`…`CI-053`) — pipeline architecture, supply-chain pinning, least privilege,
 cost/latency, what the gate must prove, feedback.
 
-Four of its rules are load-bearing enough to state here:
+Five of its rules are load-bearing enough to state here:
 
+- **Every repo runs CI, and every deployable product ships CD** (`CI-006`, `CI-047`). There is
+  no repository without a pipeline: CI runs the repo's own gate (`make ci` / `pre-commit`) on
+  every push and PR, scaled to the `runtime:` tier. A deployable product (`runtime: container`)
+  or a published library delivers through an **automated, environment-gated** pipeline — never a
+  laptop deploy — and what CD ships **announces its version** in production (the `/version`
+  endpoint + admin surface already required below).
 - **A red check means the code is wrong** (`CI-040`). A gate that fails because a repo is not
   onboarded, a tool is missing or billing lapsed trains everyone to ignore red — and the next
   real failure is ignored too. Fix it or remove it the day it appears.
