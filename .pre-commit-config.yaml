@@ -110,6 +110,6 @@ repos:
     - revert
     - ci
 - repo: https://github.com/chrysa/guideline-checker
-  rev: v1.30.10
+  rev: v1.30.16
   hooks:
   - id: guideline-check
