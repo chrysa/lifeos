@@ -264,6 +264,15 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   and a documented idempotency/timeout/limits/circuit-breaker/rollback envelope. Untrusted
   execution is sandboxed with network off by default; no agent auto-merges to `main`.
   Detail: annexe `AGENTIC-CAPABILITIES.md`.
+- **An AI feature is evaluated, not just shipped.** An agent *acting* is governed above; an
+  AI feature's *output quality* is a separate obligation. Prompts, models, parameters and
+  tools are **versioned**; every critical AI task carries an **evaluation dataset** and
+  non-regression tests measuring quality, hallucinations, refusals, latency and cost; each
+  answer records the model, its version, the prompt and the sources it used, so it can be
+  reproduced and audited; and the product degrades to a **fallback model or a no-AI mode**,
+  with human validation proportionate to the risk and an explicit policy for what data is
+  sent to a model. A feature whose quality is asserted by feel rather than measured is a
+  defect. Detail: annexe `AGENTIC-CAPABILITIES.md` AG-012–AG-015.
 - **An agent writes only where the owner owns.** An AI agent may open issues, pull requests,
   comments, branches and releases **only on repositories the owner owns** — the `chrysa`
   account and the organisations under the owner's control. On any third-party repository
@@ -355,7 +364,6 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   Values live in external config (`SESSION_IDLE_TIMEOUT`, `SESSION_ABSOLUTE_LIFETIME`) like
   every other constant — a timeout hardcoded in a middleware is both a *no hardcoded constants*
   violation and a security parameter nobody can tune without a deploy.
-||||||| d9f6b8f
 - **Every form is a hostile input surface — validate on the server, always.** A form is the
   place where an unknown person hands the product data of their choosing; the browser is their
   machine, so **nothing enforced only in the client is enforced at all**. `required`,
@@ -729,7 +737,6 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      API it is talking to, it tells the user and offers a reload rather than failing in
      obscure ways. Deployed versions per environment are also visible from the platform side
      (release notes, deployment log), so "what is in production" never requires a shell.
-||||||| f7b98e2
 - **If a user can supply a file, the product accepts an upload.** Wherever the workflow
   involves a file the user already has — an import (CSV, JSON, GPX, ICS…), an avatar or image,
   an attachment or supporting document, a configuration or dataset, a log or a crash dump sent
@@ -929,6 +936,12 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 - Test coverage **>= 85%** by default. A repo may override upward, never below 80%.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
+- **Performance and cost budgets are declared per profile and enforced.** Frontend bundle,
+  Docker image size, startup time, memory, CPU, latency, throughput, storage and log volume
+  each carry a budget; AI paths additionally budget tokens, cost, latency, concurrency and
+  cache. CI measures them and **blocks significant regressions** (info → warning → error); an
+  overrun carries a justification, an impact measurement and a reduction plan — never a silent
+  pass. Detail: annexe `CI-CD.md` CI-053.
 
 ## Design system
 
@@ -1208,6 +1221,27 @@ Every repo ships a session lifecycle so an AI agent keeps context across session
 - **Session start**: `make prepare` (`/prepare`) — shows primer + git context + open PRs.
 - **Session end**: `make hindsight` (`/hindsight`) — updates `primer.md` + `progress.md`, clears
   `session.md`, optional Obsidian export (`OBSIDIAN=<path>`).
+
+## Compliance targets
+
+The fleet is held to two external compliance frameworks. Neither is a separate corpus — each
+is operationalised by rules already in this canon; declaring the target names the obligation
+those rules must satisfy, and certification is a governance program on top, not a code change.
+
+- **GDPR / RGPD — by construction.** Every product that touches personal data records its
+  lawful basis and purpose, minimises and time-bounds what it stores, keeps PII out of logs
+  and test data, and supports export / rectification / erasure by a documented command. This
+  is *per-person data implies a user account* and *portable personalisation data* applied to a
+  legal obligation. Detail: annexe `GOVERNANCE.md` GV-040.
+- **ISO/IEC 27001 — the security baseline.** Information security is a governed, documented
+  ISMS, not ad-hoc practice. Access control, cryptography, logging and audit, operations and
+  change control, supplier security, and incident management each map onto an existing canon
+  rule (cluster SSO & session security, secrets handling, observability & audit trail, CI
+  gates & protected `main`, project decoupling & supply-chain pinning, typed/contained errors),
+  so conformance is reached by satisfying those — not a parallel checklist. The organizational
+  artefacts ISO 27001 also demands (ISMS scope, risk assessment & treatment, Statement of
+  Applicability, internal audit) are a versioned governance backlog under `docs/`. Detail:
+  annexe `GOVERNANCE.md` GV-041.
 
 ## Governance — strategic pillars & ADR format
 
