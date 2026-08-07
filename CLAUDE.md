@@ -624,6 +624,20 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   `Service` is `ClusterIP` except the ingress-fronted entry point; `NodePort`, `LoadBalancer`,
   `hostPort` and `hostNetwork` need an ADR (a `hostPort` also bypasses `NetworkPolicy`).
   Detail: annexe `CONTAINERS-K3S.md` CT-015.
+- **A compose file is minimal — declare only what the stack needs, default the rest.** A
+  `docker-compose*.yml` is a description of *this* stack, not a copy of Compose's defaults. It
+  declares the services, their `build.target`/`image`, `depends_on`, `environment`, volumes,
+  `healthcheck` and `restart` — and **nothing Compose already does for you**. Forbidden as
+  noise: an explicit `networks:` block re-declaring the default bridge and wiring every service
+  to it (Compose already puts all services on a shared default network with service-name DNS —
+  see the ports rule), a redundant `container_name`, a `version:` top-level key (obsolete in
+  Compose v2), commented-out dead services, copy-pasted blocks that a YAML anchor or an
+  `extends`/override file would fold, and env values inlined where an `.env` / `env_file`
+  belongs. Environment- or developer-specific settings (a loopback port bind, a source bind
+  mount for hot-reload, debug flags) live in `docker-compose.override.yml` or a `*.dev.yml`,
+  never in the committed base stack. The test is mechanical: every line in the base compose
+  file is one a reader could not have inferred from Compose's defaults — a line that only
+  restates a default is deleted. Detail: annexe `CONTAINERS-K3S.md` CT-019.
 - **Dev stage must hot-reload.** The `dev` target/service provides live auto-reload so a source edit
   is reflected without a manual rebuild/restart: backend `uvicorn --reload` (or the framework's
   autoreload), frontend the dev server with HMR (`vite`/`npm run dev`), watched via the compose
