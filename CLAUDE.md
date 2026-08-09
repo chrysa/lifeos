@@ -238,6 +238,20 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   (`role="alert"` / `role="status"`) and its behaviour is tested against a network error and a
   503. A frontend Definition of Done includes its **API-down state**. Detail: annexe
   `FRONTEND.md` FE-050.
+- **The frontend is reactive and real-time by default.** A human-facing surface reflects the
+  true state of the system as soon as it changes — the user never stares at stale data and never
+  reaches for a manual refresh to find out what happened. Server state is owned by the cache layer
+  (TanStack Query) and kept fresh: a mutation invalidates or optimistically updates the queries it
+  affects, and data that a *different* actor (another user, a job, a device) can change is
+  **pushed, not polled** — a live transport (WebSocket / SSE) updates the UI in place, with polling
+  as a bounded fallback only where a push channel is genuinely unavailable. The interface reacts
+  immediately to input (optimistic UI, debounced derived state, no blocking spinner for a
+  sub-second action) and reconciles with the server result, rolling back visibly on failure. Live
+  updates propagate across the app's own tabs and on refocus (see *UI state survives reload &
+  focus*). Real-time is **layered over a correct offline/degraded state**, not a substitute for it:
+  losing the live channel degrades to the last known state with the API-down banner (FE-050), never
+  to a frozen or lying screen. A surface that shows data a refresh would change is a defect. Detail:
+  annexe `FRONTEND.md` FE-080.
 - **Every repo declares its profile and DDD level** (`project_profile`, `ddd_level`,
   `bounded_context`, `standards_version`) — architecture is proportionate to business
   complexity, and small tools are not over-architected. Detail: annexe `ARCHITECTURE-DDD.md`.
@@ -527,6 +541,21 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   particular machine, user account, or local directory layout. The test is mechanical: a fresh
   clone on an unknown machine, with git + Docker + pre-commit, must reach a green
   `make ci` — if it needs a manual step that only the owner knows, that is a defect.
+- **Every external server the service talks to is addressed through the environment — never
+  hardcoded.** The location and credentials of anything the service does not itself own — a
+  database, cache, broker, object store, another chrysa service's API, a third-party endpoint, an
+  SSO/OIDC issuer, an LLM or inference host — arrive as **environment variables** (host, port, URL,
+  DSN, region, secret), read once through the typed config loader (Pydantic Settings on the
+  backend, the generated typed env module on the frontend), with a committed `.env.example`
+  documenting every key and safe local defaults. A hostname, IP, port, or connection string of an
+  external server written as a literal in code, a compose file, or a manifest is a defect: it pins
+  the build to one environment and breaks *build once, promote the artefact* — the same image can
+  no longer travel from local to CI to prod, because its endpoints are baked in. This is the
+  transport-level twin of *no hardcoded constants* and of the *adaptation layer*: the endpoint is
+  configuration, the client wrapping it is an adapter, and between two chrysa projects the endpoint
+  still resolves to a versioned contract, not a private address (*projects talk through versioned
+  contracts only*). Secrets travel by env or a secrets manager, never committed (see the `.env`
+  rules) — the variable holds the value, the repo holds only the documented key.
 - **External dependencies are installed in containers, never on the host.** A project's
   runtime dependencies — language packages (pip/npm/cargo/nuget), databases, brokers, caches,
   system libraries, compilers, CLIs a service shells out to — are declared in the image
@@ -577,6 +606,17 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      **never `user: root`** — root-owned artifacts written into a bind mount are unremovable
      without `sudo` and are treated as a defect. Root user is allowed only for containers with
      **no** repo bind mount (e.g. `.:/code` absent).
+  4. **Dependency directories are a build output, never a source artifact.** `node_modules` and
+     its per-ecosystem equivalents — `vendor/` (Go/PHP), `target/` (Rust/Maven), `.gradle/`,
+     `Pods/` (CocoaPods), `bin/`+`obj/` (.NET), and `.venv`/`site-packages` (already forbidden in
+     the tree by *no virtualenv in a repo*) — are **generated at build time**, either baked into
+     the image layer (`RUN npm ci` / `pip install` / `cargo build` in the `builder` stage) or
+     mounted from a **named volume that shadows the bind mount** (`node-modules:/code/node_modules`
+     above). They are **never materialised in the working copy on the host**: a `node_modules/`
+     (or equivalent) sitting in the project tree is a defect — machine-specific, unreproducible,
+     and it shadows the container's own install. The **lockfile is committed; the resolved tree is
+     not**, and a fresh clone reaches a green `make ci` without ever running an install on the
+     host (see *external dependencies are installed in containers*).
   Regenerable artifacts already in a repo are purged with `scripts/purge-artifacts.sh`.
 - **Every tracked file and folder must earn its place — a repo holds only what is useful to it
   now.** A repository contains its own source, its tests, config that is actually loaded, docs
