@@ -1298,7 +1298,11 @@ requires an ADR with a kill-test, not a shrug.
 
 1. **LLM-provider independence** — no vendor SDK in business code; inference goes through a
    local port with **≥2 real, tested adapters** (e.g. Claude + a local model). A prompt that
-   only works on one vendor is a bug, not a feature.
+   only works on one vendor is a bug, not a feature. **"Local model" means a model running on
+   the machine or self-hosted** — an interpreter/weights the owner runs (Ollama, llama.cpp, a
+   vLLM/TGI server on chrysa infrastructure), never a third-party hosted API dressed up as
+   "local". The independence is only proven when one of the tested adapters needs no external
+   provider to answer.
 2. **GAFAM independence** — every managed-cloud dependency has a documented self-hosted exit
    path; the cloud SDK stays confined to an adapter (`BlobStore`, not `S3Client`).
 3. **Portable personalisation data** — all user/personal data is exportable to an open format
