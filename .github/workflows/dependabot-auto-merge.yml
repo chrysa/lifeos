@@ -11,4 +11,4 @@ concurrency:
 
 jobs:
   call:
-    uses: chrysa/github-actions/.github/workflows/dependabot-auto-merge.yml@v1.6.0
+    uses: chrysa/github-actions/.github/workflows/dependabot-auto-merge.yml@v1.8.0
