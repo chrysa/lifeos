@@ -121,6 +121,9 @@ Where an annexe and this file disagree, **this file wins**.
 | `AGENTIC-CAPABILITIES.md` | agent actions: manifests, risk R0–R5, sandboxing, audit trail   |
 | `PROJECT-DECOUPLING.md`   | inter-project contracts, forbidden linkages, degradation        |
 | `CONTAINERS-K3S.md`       | reference stage shape · container responsibility · k3s workload baseline |
+| `DATA-MIGRATIONS.md`      | data ownership & classification · versioned schemas · safe migrations · rollback · retention/export |
+| `OBSERVABILITY-OPS.md`    | probes · OpenTelemetry (replaceable backend) · alerts+runbooks · SLI/SLO · resource envelope · `/version` · production-ready gate |
+| `API-CONTRACTS.md`        | machine-readable contract · versioning & deprecation · typed errors · cursor pagination · idempotency · contract tests · events/webhooks |
 | `TESTING.md`              | common test levels and rules across languages                   |
 | `CI-CD.md`                | pipeline architecture · action pinning · least privilege · cost · what the gate proves |
 | `GOVERNANCE.md`           | rule identity, maturity ladder, enforcement rollout, sources of truth |
@@ -616,6 +619,32 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   still resolves to a versioned contract, not a private address (*projects talk through versioned
   contracts only*). Secrets travel by env or a secrets manager, never committed (see the `.env`
   rules) — the variable holds the value, the repo holds only the documented key.
+- **Data, persistence & migrations follow the `STD-DATA-001` contract.** Every data category
+  declares its owner, system of record and classification; schemas and events are versioned and
+  migrations are reproducible, ordered, tested, and safe (`expand → migrate → contract`, snapshot
+  before destructive change, a rollback or documented restore per migration); backups are
+  restore-tested, and data is exportable to an open format with no vendor lock-in. Full rules and
+  gates: annexe [`DATA-MIGRATIONS.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/DATA-MIGRATIONS.md)
+  (`DA-nnn`).
+- **Observability & production readiness follow the `STD-OPS-001` contract.** A deployable
+  service exposes startup/liveness/readiness probes, emits structured logs + metrics + traces
+  correlated through a common id via **OpenTelemetry with a replaceable backend**, and ships an
+  actionable alert + owner + runbook per principal incident. Resource limits and saturation
+  behaviour are explicit; graceful shutdown, restart recovery and dependency-loss are tested;
+  backup/restore/rollback/degraded mode are documented before the first prod deploy; and the
+  service publishes `/version`. Full rules and the Production-Ready gate: annexe
+  [`OBSERVABILITY-OPS.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/OBSERVABILITY-OPS.md)
+  (`OP-nnn`).
+- **APIs, SDKs & public contracts follow the `STD-API-001` contract.** A machine-readable
+  contract (OpenAPI/AsyncAPI/JSON Schema) is the canonical interface; public versions are
+  explicit with a backward-compatibility guarantee and a dated deprecation policy; errors are
+  typed with a machine code + correlation id; collections paginate by cursor; critical writes
+  are idempotent; guards (timeouts, sizes, authz) live in the contract; inter-project contracts
+  are tested provider **and** consumer side; SDKs track the public contract, never internal
+  models; and events/webhooks are identified, versioned, signed, replay-protected, with bounded
+  retry + dead-letter. Full rules and gates: annexe
+  [`API-CONTRACTS.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/API-CONTRACTS.md)
+  (`AP-nnn`) and the `api-design` skill.
 - **External dependencies are installed in containers, never on the host.** A project's
   runtime dependencies — language packages (pip/npm/cargo/nuget), databases, brokers, caches,
   system libraries, compilers, CLIs a service shells out to — are declared in the image
