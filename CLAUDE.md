@@ -213,6 +213,19 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   boundaries; external data validated at **runtime** even when typed; contract types
   generated from OpenAPI/AsyncAPI, never hand-copied. One committed lockfile, frozen CI
   installs, no `latest` dependency. Detail: annexe `FRONTEND.md` §1.
+- **The JS/TS package manager is `pnpm` — `npm` and `yarn` are forbidden.** Every
+  Node/TypeScript repo (app, library, workspace, tooling) installs, runs scripts, and
+  resolves dependencies with **pnpm**. Concretely: the committed lockfile is
+  **`pnpm-lock.yaml`** (a `package-lock.json` or `yarn.lock` in the tree is a defect — delete
+  it and regenerate with pnpm), workspaces are pnpm workspaces (`pnpm-workspace.yaml`) under
+  Turborepo, CI installs with **`pnpm install --frozen-lockfile`** (never `npm ci`), images
+  install with pnpm in the builder stage, and scripts run as `pnpm <script>` / `pnpm dlx`
+  (never `npm run` / `npx`). The version is pinned via `packageManager` in `package.json` and
+  provisioned by Corepack, so every machine and runner resolves the same pnpm. This makes
+  *one committed lockfile* and *no host installs* concrete for the JS side: the lockfile is
+  `pnpm-lock.yaml`, `node_modules` stays a pnpm-managed build output (see *dependency
+  directories are a build output*), never materialised on the host. The only `npm` left
+  anywhere is the registry it talks to; the command is always `pnpm`.
 - **React is a presentation layer, not the domain.** `domain/` and `application/` never
   import React; no `fetch`, browser storage, or vendor SDK in `domain/`. Components and hooks
   stay pure, props/state immutable, derived state computed rather than duplicated;
@@ -258,6 +271,32 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 - **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA — Lighthouse a11y score **≥ 90**,
   full keyboard navigation (Tab/Esc/visible focus), contrast ≥ 4.5:1 (3:1 large text), screen-reader
   tested on critical flows (signup, login, checkout).
+- **Every site is usable by the majority of disabilities — not only the screen-reader case.**
+  WCAG 2.1 AA is the floor; the obligation is that a real person from each major disability
+  category can actually complete the product's core tasks. The categories are named and each
+  carries a concrete, testable requirement:
+  1. **Visual** (blind, low-vision, colour-blind) — screen-reader operable end to end (semantic
+     markup + labels + live regions), reflows to 400% zoom and 320 px with no loss of content or
+     function, honours `prefers-contrast`, and **never encodes meaning by colour alone** (icon,
+     text, or pattern too).
+  2. **Motor** (limited dexterity, no pointer, switch/voice control) — fully keyboard-operable
+     with a visible focus order and no keyboard trap, touch targets **≥ 44 px**, no action that
+     requires a drag, a precise gesture, or a hover-only reveal, and no timeout the user cannot
+     extend.
+  3. **Auditory** (deaf, hard-of-hearing) — captions on every video, transcript for audio, and
+     no information conveyed by sound alone (a visual equivalent for every audio cue).
+  4. **Cognitive** (attention, memory, literacy, dyslexia) — plain language, consistent and
+     predictable navigation, errors that say what to fix (see *every form is a hostile input
+     surface*), no unavoidable time pressure, and progress that survives reload (see *UI state
+     survives reload & focus*).
+  5. **Vestibular / photosensitivity** — honours `prefers-reduced-motion`, no auto-playing or
+     looping motion the user cannot stop, and nothing that flashes more than three times a second.
+  A public micro-site or generated page is held to the same bar as the app — accessibility is not
+  waived because a surface is small, auto-generated, or "just a showcase". The Definition of Done
+  for any human-facing surface includes exercising these five paths, mechanised by the a11y gates
+  already required (Lighthouse ≥ 90, axe/keyboard/contrast) plus manual screen-reader and
+  keyboard-only passes on the core flow. Detail: annexe `FRONTEND.md`, the `accessibility` skill
+  (per-category contract + testable DoD), and the `ui-ux` skill.
 - **UI state survives reload & focus** — human-facing surfaces persist their navigation
   and view state (active tab/section, selected sub-view, active context/filters) so a
   **manual reload keeps the current page** — the user lands exactly where they were, never
@@ -526,6 +565,27 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to reach one attribute through it. Imports sit at module top level (never inside a function
   except to break a cycle, and that is commented), and are ordered/deduplicated by Ruff
   (`I` rules) — the linter owns the ordering, no hand-sorting.
+- **Functions and methods are called with named arguments — positional call sites are the
+  exception, not the rule.** A call reads `create_user(name="Ada", role=Role.ADMIN,
+  active=True)`, never `create_user("Ada", Role.ADMIN, True)`: the argument names are part of
+  what the reader needs, and a bare positional value (especially a bool, a number, or a `None`)
+  is a *boolean trap* / magic value the reader has to jump to the signature to decode. So:
+  1. **Definitions force it where it matters.** Any function/method taking more than one
+     parameter, or **any** boolean/optional/`None`-defaulted parameter, declares them
+     **keyword-only** with a bare `*` (`def build(*, source: Source, strict: bool = False)`),
+     so callers *must* name them and arguments cannot be silently reordered. Adding a parameter
+     then never shifts an existing positional meaning.
+  2. **Call sites name their arguments.** Even when a signature still allows positional passing,
+     call sites pass by keyword. The narrow, allowed exceptions where positional is clearer:
+     a single obvious argument (`len(items)`, `Path(raw)`, `str(value)`), the receiver of a
+     dunder, and genuine `*args`/`**kwargs` pass-through.
+  3. **Not a substitute for value objects.** Naming four primitives at the call site is better
+     than four bare positionals, but a signature that needs many named primitives is still
+     *primitive obsession* — the fix is a value object / Pydantic model, then one named argument
+     carries it.
+  Mechanisation: Ruff `FBT001`/`FBT002` (boolean-positional) already flag the worst case; the
+  keyword-only `*` in definitions is the enforcement mechanism the reviewer checks. A public
+  API added with a multi-parameter positional signature is a defect.
 - **Everything is machine-agnostic and portable — no rule, repo, or script is bound to one
   machine.** A standard, a Makefile target, a script, a hook, a compose file, or a CI job must
   behave identically on any developer machine, any runner, and the server, with nothing but a
@@ -1229,6 +1289,7 @@ and CI invokes `pre-commit`, not `make`.
 - `contract-testing` — library contract / breaking-change tests (@chrysa/* releases)
 - `agent-patterns` — LangGraph + PydanticAI + Claude API (building agents)
 - `ui-ux` — UX/UI/ergonomics + WCAG 2.1 AA + dark mode + i18n (human-facing surfaces)
+- `accessibility` — per-disability-category contract + testable DoD (any surface, incl. public micro-sites)
 
 ## Error handling pattern (all automations)
 
@@ -1302,7 +1363,23 @@ requires an ADR with a kill-test, not a shrug.
    the machine or self-hosted** — an interpreter/weights the owner runs (Ollama, llama.cpp, a
    vLLM/TGI server on chrysa infrastructure), never a third-party hosted API dressed up as
    "local". The independence is only proven when one of the tested adapters needs no external
-   provider to answer.
+   provider to answer. **Every LLM call — internal or external — goes through the `chrysa-LLM`
+   gateway**, never a vendor SDK or raw provider endpoint called directly from a product's
+   business code. `chrysa-LLM` *is* the local port of this pillar made concrete across the
+   fleet: it owns provider selection and the ≥2 tested adapters, and it is the one place where
+   routing, fallback, prompt/model/version pinning, evaluation, cost and token budgets, caching,
+   rate limiting and observability live (satisfying the *AI feature is evaluated* and *agent
+   actions are governed* obligations once, not per repo). A product calls it as a **versioned
+   contract** through a thin local adapter (*projects talk through versioned contracts only*)
+   and degrades to a documented no-AI / fallback mode when it is unreachable — it never reaches
+   a model by any other path. A direct call to Claude, OpenAI, Ollama, or any inference endpoint
+   that bypasses `chrysa-LLM` is a defect, not a shortcut; the single documented exception is
+   `chrysa-LLM` itself, which owns the real adapters. Products built *on top of* the gateway —
+   e.g. `ai-aggregator`, a showcase/front consuming `chrysa-LLM` — are consumers of this
+   contract, not alternative gateways: they route through `chrysa-LLM` like everything else and
+   never re-implement provider access. This is the transport-level application of *no code
+   duplication* and *external servers addressed through the environment*: the gateway's endpoint
+   arrives by env, and the adapters exist once, there.
 2. **GAFAM independence** — every managed-cloud dependency has a documented self-hosted exit
    path; the cloud SDK stays confined to an adapter (`BlobStore`, not `S3Client`).
 3. **Portable personalisation data** — all user/personal data is exportable to an open format
