@@ -1350,15 +1350,22 @@ Per-project activation checklist:
 
 ## Session lifecycle (primer + memory + hindsight)
 
-Every repo ships a session lifecycle so an AI agent keeps context across sessions. Bootstrap with
-`make memory-init`; scripts live in `shared-standards/scripts/`.
+A repo **may** carry a session lifecycle so an AI agent keeps context across sessions. The
+substance is a set of **committed files**, not a required Make target — the convention below is
+what matters; any `make`/slash-command wrappers are an **optional convenience** provided where a
+repo has them, not a universal socle target every Makefile must expose.
 
 - `primer.md` (committed) — current state, what to do NOW; read **before** `CLAUDE.md`.
 - `.claude/memory/session.md` — volatile session notes, **not** committed (reset each session).
 - `.claude/memory/decisions.md`, `known-issues.md`, `progress.md` (append-only history) — committed.
-- **Session start**: `make prepare` (`/prepare`) — shows primer + git context + open PRs.
-- **Session end**: `make hindsight` (`/hindsight`) — updates `primer.md` + `progress.md`, clears
-  `session.md`, optional Obsidian export (`OBSIDIAN=<path>`).
+- **Session start** — surface the primer + git context + open PRs (a `prepare` wrapper where present).
+- **Session end** — update `primer.md` + `progress.md`, clear `session.md` (a `hindsight` wrapper
+  where present), optional Obsidian export.
+
+> **Not a mandated Make target.** `memory-init` / `prepare` / `hindsight` are convenience
+> wrappers, not part of the canonical Makefile socle contract (*Makefile targets*), and are not
+> assumed to exist in every repo. A repo governs its session state through the committed files
+> above; the wrappers and their scripts are added per repo when useful.
 
 ## Compliance targets
 
