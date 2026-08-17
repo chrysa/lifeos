@@ -66,3 +66,6 @@ quality-gate-baseline: ## Record baseline metrics for regression detection
 
 quality-gate-verify: ## Verify no regression since baseline
 	@python3 scripts/quality_gate.py verify
+
+.PHONY: ci
+ci: lint typecheck test  ## CI: run all checks (lint + typecheck + test)
