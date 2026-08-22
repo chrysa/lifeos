@@ -93,7 +93,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/ape/ape_hook.py --spec .claude/ape/ape-transform-v2.md"
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/.claude/ape/ape_hook.py\"; s=\"$CLAUDE_PROJECT_DIR/.claude/ape/ape-transform-v2.md\"; [ ! -f \"$f\" ] || python3 \"$f\" --spec \"$s\"'"
           }
         ]
       }
