@@ -126,6 +126,8 @@ Where an annexe and this file disagree, **this file wins**.
 | `API-CONTRACTS.md`        | machine-readable contract · versioning & deprecation · typed errors · cursor pagination · idempotency · contract tests · events/webhooks |
 | `TESTING.md`              | common test levels and rules across languages                   |
 | `CI-CD.md`                | pipeline architecture · action pinning · least privilege · cost · what the gate proves |
+| `SCM.md`                  | type-driven issues & pull requests · taxonomy & labels · per-type templates · shape gates |
+| `EVENTING.md`             | real-time channels · typed channel contracts · non-blocking bounded buffers · fail-safe external access · delivery semantics · transport-as-adapter |
 | `GOVERNANCE.md`           | rule identity, maturity ladder, enforcement rollout, sources of truth |
 
 **Source of truth:** the canon lives in this repo. Notion is a governance and decision view
@@ -191,6 +193,14 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   with a merge commit) · force push forbidden · auto-merge requires CI + owner.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
+- **Issues and PRs are type-driven.** Every issue declares exactly one **type** from a fixed
+  taxonomy (bug · feature · enhancement · chore · docs · ci · security · research · epic),
+  carried as a canonical label and backed by a committed per-type issue form; every PR's type is
+  its Conventional Commit type, and its body carries the fields that type needs (a `fix` shows the
+  root cause + a regression test, a `feat` its acceptance criteria + a UI proof, a `refactor` a
+  no-behaviour-change attestation, a `perf` a before/after measurement). Templates and labels are
+  socle-distributed, not per-repo inventions, and the shape is machine-checked (info-first). A
+  free-text issue or a one-line PR is a defect. Detail: annexe `SCM.md` (`SC-nnn`).
 - **Repo provenance — every code repo depends on `project-init`.** A repository is
   **created by** the `project-init` / `chrysa-init` CLI (shared-standards) at birth **and
   kept in sync** with it thereafter: the scaffolded socle (Makefile contract, docs skeleton,
@@ -268,6 +278,15 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   losing the live channel degrades to the last known state with the API-down banner (FE-050), never
   to a frozen or lying screen. A surface that shows data a refresh would change is a defect. Detail:
   annexe `FRONTEND.md` FE-080.
+- **A real-time backend has channel contracts and never blocks.** The producer/consumer side of a
+  real-time system is governed too: every channel carries a **name and a typed, versioned
+  contract**; **subscription is decoupled from processing by a bounded buffer** so the receiver
+  never blocks on I/O and a slow consumer cannot stall the transport (backlog is a metric with an
+  alert); **every call to external infra is guarded** and degrades safely when the dependency is
+  down (dependency health is probed on-demand and cached, not hot-polled); **delivery semantics are
+  declared** and at-least-once consumers are idempotent; and the **transport is an adapter behind
+  the domain's port** (WebSocket/SSE/broker chosen by config, not wired into business code). This is
+  the backend twin of the reactive-frontend rule above. Detail: annexe `EVENTING.md` (`EV-nnn`).
 - **Every repo declares its profile and DDD level** (`project_profile`, `ddd_level`,
   `bounded_context`, `standards_version`) — architecture is proportionate to business
   complexity, and small tools are not over-architected. Detail: annexe `ARCHITECTURE-DDD.md`.
@@ -1035,13 +1054,19 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      a single pass instead of repeated traversals of the same collection.
   2. **No work in a loop that is loop-invariant** — hoist the constant computation, the compiled
      regex, the config read, the connection setup.
-  3. **No N+1** — database queries and network/API calls are batched or eager-loaded
-     (`selectinload`/`joinedload`, bulk endpoints); a query inside a `for` over rows is a defect.
-     Frontend equivalent: no request per list item, no re-render per keystroke without debounce,
-     no unmemoised derived state recomputed on every render.
+  3. **No N+1, and query the store efficiently** — database queries and network/API calls are
+     batched or eager-loaded (`selectinload`/`joinedload`, bulk endpoints); a query inside a `for`
+     over rows is a defect. In the same spirit: an **existence check** uses a dedicated exists-query,
+     never a full fetch then a length; **writes are batched** (bulk create/update) instead of a loop
+     of single-row writes; only the **columns/fields actually used** are selected (projection, not
+     `SELECT *` into an object graph); and **aggregation runs in the store**, not a Python/JS loop
+     summing rows the app just pulled over the wire. Frontend equivalent: no request per list item,
+     no re-render per keystroke without debounce, no unmemoised derived state recomputed on every
+     render.
   4. **Bounded resources** — no unbounded `SELECT *` / unpaginated list endpoint, no full-file read
      of arbitrary-size input (stream it), explicit timeouts on every outbound call, connections and
-     file handles closed via context managers.
+     file handles closed via context managers. Every column used to **filter or sort a large table
+     is indexed** — an unindexed predicate on a growing table is a latent full scan.
   5. **Known anti-patterns are named and rejected**: god object/function, copy-paste duplication
      (factor into `chrysa-lib` — see *no code duplication*), boolean trap parameters, primitive
      obsession over a value object, deep nesting (guard clauses instead), mutable default arguments,
@@ -1061,6 +1086,31 @@ deprecated and archived — nothing is added to it, nothing reads from it.
     them French user-facing copy using typographic characters (apostrophes, non-breaking spaces).
     The rule is right about the codepoints and wrong about the intent. A repo that wants it may
     arm it locally together with `lint.allowed-confusables`.
+- **A cache is a correctness contract, not a sprinkle of speed.** The moment a value is cached,
+  three questions must have answers, or the cache is a bug: **how it expires**, **how it is
+  invalidated**, and **what it may not hold**. Concretely: caching is **read-through / cache-aside**
+  behind the data-access layer, never scattered `get`/`set` calls in business code; every entry has
+  a **TTL taken from the per-repo contract** (*no hardcoded constants* — a literal `3600` in a
+  decorator is the defect), and the store is **bounded** (a max size / eviction policy — an
+  unbounded cache is a memory leak with latency). A **write invalidates or updates** the entries it
+  affects in the same path (a read-your-writes guarantee — a stale cache after a mutation is the
+  same defect as FE-080's stale screen), and a cache miss under load is **stampede-protected**
+  (single-flight / lock / jittered TTL) so an expiry does not turn one slow query into a thousand.
+  What is **never cached** is as governed as what is: an **authorization decision** is not cached
+  across principals, and **personal/secret data** is cached only within its classification
+  (`DA-001`, `GV-040`) with an owner. Cache keys are namespaced and versioned so a shape change
+  cannot serve a poisoned old value. A cache nobody can explain the invalidation of is removed.
+- **Deferred work is a governed job, not a fire-and-forget.** Any work pushed to a background
+  queue / worker / scheduler is, by contract: **idempotent** (safe to run twice — a redelivered or
+  retried job produces no double effect, mirroring `EV-030`); **bounded** — an explicit **timeout**,
+  a **bounded retry** with backoff, and a **dead-letter / failure sink** so a poison job neither
+  retries forever nor vanishes; and **observable** — a failed or stuck job **surfaces** (a metric,
+  an alert, an admin-visible state), it is never swallowed silently. A **scheduled** task has a
+  named **owner** and a runbook like any incident source (`OP-020`). No **business capability is
+  reachable only through a job with no manual/admin trigger** — an operator must be able to inspect,
+  retry, and cancel it from the backoffice (*every product ships a management backoffice*). Jobs are
+  deferred *work*; a real-time *stream* is `EVENTING.md` — related, not the same. The queue/broker
+  is reached through an adapter (pillar 5), its endpoint from the environment.
 
 ## Quality gates
 
