@@ -42,13 +42,13 @@ clean:  ## Remove build artefacts
 	rm -rf .coverage coverage.xml .pytest_cache dist build
 
 run:  ## Start with floating overlay UI
-	$(PYTHON) -m my_assistant --ui
+	$(PYTHON) -m $(PKG) --ui
 
 run-headless:  ## Start headless (system tray only, no overlay)
-	$(PYTHON) -m my_assistant --headless
+	$(PYTHON) -m $(PKG) --headless
 
 run-discord:  ## Start with Discord plugin enabled
-	$(PYTHON) -m my_assistant --ui --enable discord
+	$(PYTHON) -m $(PKG) --ui --enable discord
 
 typecheck: ## Run mypy type checking
 	mypy $(PKG) tests
@@ -66,3 +66,6 @@ quality-gate-baseline: ## Record baseline metrics for regression detection
 
 quality-gate-verify: ## Verify no regression since baseline
 	@python3 scripts/quality_gate.py verify
+
+.PHONY: ci
+ci: lint typecheck test  ## CI: run all checks (lint + typecheck + test)

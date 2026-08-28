@@ -6,6 +6,7 @@ jobs:
   label-when-approved:
     name: Label when approved
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
     - name: Label when approved by committers
       uses: TobKed/label-when-approved-action@0058d0094da27e116fad6e0da516ebe1107f26de
@@ -15,7 +16,3 @@ jobs:
         remove_label_when_approval_missing: 'false'
         require_committers_approval: 'true'
         token: ${{ github.token }}
-name: Label when approved
-permissions:
-  contents: read
-  pull-requests: write

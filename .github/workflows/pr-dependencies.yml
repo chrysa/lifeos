@@ -14,10 +14,15 @@
   - cron: 0 0 * * *
   workflow_call: null
   workflow_dispatch: null
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check_dependencies:
     name: Check Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
     - env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,8 +30,3 @@ jobs:
     - uses: Levi-Lesches/blocking-issues@2eeffdc6b055341f635eb0f3e4aea671516a61dc
       with:
         use-label: Blocked
-name: Check PR dependencies
-permissions:
-  contents: read
-  pull-requests: write
-run-name: ${{ github.workflow }} by ${{ github.actor }}

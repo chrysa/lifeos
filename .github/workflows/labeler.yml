@@ -2,10 +2,15 @@
   pull_request: null
   workflow_call: null
   workflow_dispatch: null
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   labels:
     name: Apply labels on pull request
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
     - name: Get Code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -16,8 +21,3 @@ jobs:
       uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13
       with:
         sync-labels: true
-name: Pull Request Labels
-permissions:
-  contents: read
-  pull-requests: write
-run-name: "\U0001F3F7\uFE0F apply labeler by ${{ github.actor }}"

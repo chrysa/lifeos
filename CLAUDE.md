@@ -121,7 +121,13 @@ Where an annexe and this file disagree, **this file wins**.
 | `AGENTIC-CAPABILITIES.md` | agent actions: manifests, risk R0–R5, sandboxing, audit trail   |
 | `PROJECT-DECOUPLING.md`   | inter-project contracts, forbidden linkages, degradation        |
 | `CONTAINERS-K3S.md`       | reference stage shape · container responsibility · k3s workload baseline |
+| `DATA-MIGRATIONS.md`      | data ownership & classification · versioned schemas · safe migrations · rollback · retention/export |
+| `OBSERVABILITY-OPS.md`    | probes · OpenTelemetry (replaceable backend) · alerts+runbooks · SLI/SLO · resource envelope · `/version` · production-ready gate |
+| `API-CONTRACTS.md`        | machine-readable contract · versioning & deprecation · typed errors · cursor pagination · idempotency · contract tests · events/webhooks |
 | `TESTING.md`              | common test levels and rules across languages                   |
+| `CI-CD.md`                | pipeline architecture · action pinning · least privilege · cost · what the gate proves |
+| `SCM.md`                  | type-driven issues & pull requests · taxonomy & labels · per-type templates · shape gates |
+| `EVENTING.md`             | real-time channels · typed channel contracts · non-blocking bounded buffers · fail-safe external access · delivery semantics · transport-as-adapter |
 | `GOVERNANCE.md`           | rule identity, maturity ladder, enforcement rollout, sources of truth |
 
 **Source of truth:** the canon lives in this repo. Notion is a governance and decision view
@@ -142,7 +148,7 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 | Auth             | Cluster SSO (OIDC) → external OAuth → local (bcrypt) · MFA-capable |
 | i18n             | react-i18next + fastapi-babel · FR + EN from V1                 |
 | Monorepo         | Turborepo + pnpm workspaces                                     |
-| Versioning       | GitVersion (semantic auto — never bump manually)               |
+| Versioning       | [GitVersion](https://gitversion.net/) (semantic auto — never bump manually) |
 | Quality CI       | SonarCloud (0 hotspot · rating A)                               |
 | Linting          | Ruff + Mypy (Python) · ESLint (TS)                             |
 | Pre-commit       | detect-secrets + ruff + mypy + commitlint                      |
@@ -153,16 +159,48 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 | Orchestration    | LangGraph (stateful) · PydanticAI (structured outputs)         |
 | Registry         | GHCR private `ghcr.io/chrysa/{repo}` — never public            |
 | Docs             | MkDocs → GitHub Pages (`pages.yml`) · ADRs in `docs/adr/`       |
-| Changelog        | git-cliff (`cliff.toml`) · Keep a Changelog                    |
+| Changelog        | [git-cliff](https://git-cliff.org/) (`cliff.toml`) · Keep a Changelog |
 
 ## Non-negotiable conventions
 
 - **Language**: English — all code, comments, docs, instructions, and config files.
 - **Commits**: Conventional Commits (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`).
 - **Branches**: `feature/`, `bugfix/`, `chore/`, `hotfix/`, `release/` · default branch `develop`.
-- **Merge**: squash merge only · force push forbidden · auto-merge requires CI + owner.
+- **Branch model — `main` is production, `develop` is the workspace.** Every repo runs the
+  same two long-lived branches, and the mapping is literal, not decorative:
+  1. **`main` = the code deployed in production.** It is a **protected branch**: no direct
+     push, no force push, no branch deletion; every change arrives through a pull request.
+     Reading `main` answers "what is running in prod right now" — nothing else is on it.
+  2. **`develop` is the repository's default branch** (the GitHub default, what a clone
+     checks out) and the integration target for all work. A repo whose default branch is
+     `main` is a defect, not a variant.
+  3. **Every feature/bugfix/chore PR targets `develop`.** `feature/x` → PR → `develop`.
+     A feature PR opened against `main` is closed and retargeted.
+  4. **The only way code reaches `main` is a pull request from `develop`** (or, for a
+     production emergency, a `hotfix/` branch — which is merged back into `develop` in the
+     same breath so the two never diverge). No other source branch may target `main`.
+     **The promotion PR is merged with a merge commit, never squashed** — squashing rewrites
+     it as a new commit, so `main` and `develop` diverge at every release and the next
+     promotion opens with conflicts. *Squash merge only* governs feature PRs into `develop`;
+     the release promotion is the documented exception.
+  5. **Production is triggered by a new release**, not by a merge: merging `develop` → `main`
+     lands the code, and the deployment is driven by the tagged release (GitVersion tag +
+     git-cliff changelog + the release workflow). No manual deploy from a laptop, no push
+     that silently ships.
+  Protection is configured, not assumed: `main` requires a PR, blocks force-push and
+  deletion, and is machine-checked across the fleet by `scripts/audit-branch-policy.sh`.
+- **Merge**: squash merge only (exception: the `develop` → `main` release promotion, merged
+  with a merge commit) · force push forbidden · auto-merge requires CI + owner.
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
+- **Issues and PRs are type-driven.** Every issue declares exactly one **type** from a fixed
+  taxonomy (bug · feature · enhancement · chore · docs · ci · security · research · epic),
+  carried as a canonical label and backed by a committed per-type issue form; every PR's type is
+  its Conventional Commit type, and its body carries the fields that type needs (a `fix` shows the
+  root cause + a regression test, a `feat` its acceptance criteria + a UI proof, a `refactor` a
+  no-behaviour-change attestation, a `perf` a before/after measurement). Templates and labels are
+  socle-distributed, not per-repo inventions, and the shape is machine-checked (info-first). A
+  free-text issue or a one-line PR is a defect. Detail: annexe `SCM.md` (`SC-nnn`).
 - **Repo provenance — every code repo depends on `project-init`.** A repository is
   **created by** the `project-init` / `chrysa-init` CLI (shared-standards) at birth **and
   kept in sync** with it thereafter: the scaffolded socle (Makefile contract, docs skeleton,
@@ -188,6 +226,19 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   boundaries; external data validated at **runtime** even when typed; contract types
   generated from OpenAPI/AsyncAPI, never hand-copied. One committed lockfile, frozen CI
   installs, no `latest` dependency. Detail: annexe `FRONTEND.md` §1.
+- **The JS/TS package manager is `pnpm` — `npm` and `yarn` are forbidden.** Every
+  Node/TypeScript repo (app, library, workspace, tooling) installs, runs scripts, and
+  resolves dependencies with **pnpm**. Concretely: the committed lockfile is
+  **`pnpm-lock.yaml`** (a `package-lock.json` or `yarn.lock` in the tree is a defect — delete
+  it and regenerate with pnpm), workspaces are pnpm workspaces (`pnpm-workspace.yaml`) under
+  Turborepo, CI installs with **`pnpm install --frozen-lockfile`** (never `npm ci`), images
+  install with pnpm in the builder stage, and scripts run as `pnpm <script>` / `pnpm dlx`
+  (never `npm run` / `npx`). The version is pinned via `packageManager` in `package.json` and
+  provisioned by Corepack, so every machine and runner resolves the same pnpm. This makes
+  *one committed lockfile* and *no host installs* concrete for the JS side: the lockfile is
+  `pnpm-lock.yaml`, `node_modules` stays a pnpm-managed build output (see *dependency
+  directories are a build output*), never materialised on the host. The only `npm` left
+  anywhere is the registry it talks to; the command is always `pnpm`.
 - **React is a presentation layer, not the domain.** `domain/` and `application/` never
   import React; no `fetch`, browser storage, or vendor SDK in `domain/`. Components and hooks
   stay pure, props/state immutable, derived state computed rather than duplicated;
@@ -198,12 +249,76 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   `loading="lazy"` media, on-demand heavy components) behind a **shape-accurate placeholder**
   that reserves the final dimensions — a skeleton, not a spinner, so arrival shifts no layout.
   Detail: annexe `FRONTEND.md` §2–§3, §7.
+- **The frontend says when the backend is unreachable or unstable.** Silence is the worst
+  failure mode: a spinner that never resolves, a list that stays empty, a form that swallows a
+  submit all read as "the app is broken and lying about it". The API client classifies every
+  failure into application state — `unreachable`, `unstable`, `degraded`, `unauthorised`
+  (a session problem, not an outage), `offline` (the browser's fault, worded as such) — and a
+  **persistent, non-blocking banner in the root shell** states it for the whole app, while each
+  container still resolves its own error state. The message says what happened and what to do
+  (*"Server unreachable — reconnecting in 12 s"*, never a raw status code), keeps a manual
+  **Retry** available, **disables destructive or unsaved actions** instead of failing silently
+  on submit, and **preserves in-progress form input** for re-submission on recovery. Reconnection
+  uses bounded exponential backoff with jitter — an unbounded retry loop against a struggling
+  backend is a defect — and success clears the state and refetches. The banner is a live region
+  (`role="alert"` / `role="status"`) and its behaviour is tested against a network error and a
+  503. A frontend Definition of Done includes its **API-down state**. Detail: annexe
+  `FRONTEND.md` FE-050.
+- **The frontend is reactive and real-time by default.** A human-facing surface reflects the
+  true state of the system as soon as it changes — the user never stares at stale data and never
+  reaches for a manual refresh to find out what happened. Server state is owned by the cache layer
+  (TanStack Query) and kept fresh: a mutation invalidates or optimistically updates the queries it
+  affects, and data that a *different* actor (another user, a job, a device) can change is
+  **pushed, not polled** — a live transport (WebSocket / SSE) updates the UI in place, with polling
+  as a bounded fallback only where a push channel is genuinely unavailable. The interface reacts
+  immediately to input (optimistic UI, debounced derived state, no blocking spinner for a
+  sub-second action) and reconciles with the server result, rolling back visibly on failure. Live
+  updates propagate across the app's own tabs and on refocus (see *UI state survives reload &
+  focus*). Real-time is **layered over a correct offline/degraded state**, not a substitute for it:
+  losing the live channel degrades to the last known state with the API-down banner (FE-050), never
+  to a frozen or lying screen. A surface that shows data a refresh would change is a defect. Detail:
+  annexe `FRONTEND.md` FE-080.
+- **A real-time backend has channel contracts and never blocks.** The producer/consumer side of a
+  real-time system is governed too: every channel carries a **name and a typed, versioned
+  contract**; **subscription is decoupled from processing by a bounded buffer** so the receiver
+  never blocks on I/O and a slow consumer cannot stall the transport (backlog is a metric with an
+  alert); **every call to external infra is guarded** and degrades safely when the dependency is
+  down (dependency health is probed on-demand and cached, not hot-polled); **delivery semantics are
+  declared** and at-least-once consumers are idempotent; and the **transport is an adapter behind
+  the domain's port** (WebSocket/SSE/broker chosen by config, not wired into business code). This is
+  the backend twin of the reactive-frontend rule above. Detail: annexe `EVENTING.md` (`EV-nnn`).
 - **Every repo declares its profile and DDD level** (`project_profile`, `ddd_level`,
   `bounded_context`, `standards_version`) — architecture is proportionate to business
   complexity, and small tools are not over-architected. Detail: annexe `ARCHITECTURE-DDD.md`.
 - **Dark mode** mandatory from V1. **Accessibility** WCAG 2.1 AA — Lighthouse a11y score **≥ 90**,
   full keyboard navigation (Tab/Esc/visible focus), contrast ≥ 4.5:1 (3:1 large text), screen-reader
   tested on critical flows (signup, login, checkout).
+- **Every site is usable by the majority of disabilities — not only the screen-reader case.**
+  WCAG 2.1 AA is the floor; the obligation is that a real person from each major disability
+  category can actually complete the product's core tasks. The categories are named and each
+  carries a concrete, testable requirement:
+  1. **Visual** (blind, low-vision, colour-blind) — screen-reader operable end to end (semantic
+     markup + labels + live regions), reflows to 400% zoom and 320 px with no loss of content or
+     function, honours `prefers-contrast`, and **never encodes meaning by colour alone** (icon,
+     text, or pattern too).
+  2. **Motor** (limited dexterity, no pointer, switch/voice control) — fully keyboard-operable
+     with a visible focus order and no keyboard trap, touch targets **≥ 44 px**, no action that
+     requires a drag, a precise gesture, or a hover-only reveal, and no timeout the user cannot
+     extend.
+  3. **Auditory** (deaf, hard-of-hearing) — captions on every video, transcript for audio, and
+     no information conveyed by sound alone (a visual equivalent for every audio cue).
+  4. **Cognitive** (attention, memory, literacy, dyslexia) — plain language, consistent and
+     predictable navigation, errors that say what to fix (see *every form is a hostile input
+     surface*), no unavoidable time pressure, and progress that survives reload (see *UI state
+     survives reload & focus*).
+  5. **Vestibular / photosensitivity** — honours `prefers-reduced-motion`, no auto-playing or
+     looping motion the user cannot stop, and nothing that flashes more than three times a second.
+  A public micro-site or generated page is held to the same bar as the app — accessibility is not
+  waived because a surface is small, auto-generated, or "just a showcase". The Definition of Done
+  for any human-facing surface includes exercising these five paths, mechanised by the a11y gates
+  already required (Lighthouse ≥ 90, axe/keyboard/contrast) plus manual screen-reader and
+  keyboard-only passes on the core flow. Detail: annexe `FRONTEND.md`, the `accessibility` skill
+  (per-category contract + testable DoD), and the `ui-ux` skill.
 - **UI state survives reload & focus** — human-facing surfaces persist their navigation
   and view state (active tab/section, selected sub-view, active context/filters) so a
   **manual reload keeps the current page** — the user lands exactly where they were, never
@@ -224,10 +339,62 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   and a documented idempotency/timeout/limits/circuit-breaker/rollback envelope. Untrusted
   execution is sandboxed with network off by default; no agent auto-merges to `main`.
   Detail: annexe `AGENTIC-CAPABILITIES.md`.
+- **An AI feature is evaluated, not just shipped.** An agent *acting* is governed above; an
+  AI feature's *output quality* is a separate obligation. Prompts, models, parameters and
+  tools are **versioned**; every critical AI task carries an **evaluation dataset** and
+  non-regression tests measuring quality, hallucinations, refusals, latency and cost; each
+  answer records the model, its version, the prompt and the sources it used, so it can be
+  reproduced and audited; and the product degrades to a **fallback model or a no-AI mode**,
+  with human validation proportionate to the risk and an explicit policy for what data is
+  sent to a model. A feature whose quality is asserted by feel rather than measured is a
+  defect. Detail: annexe `AGENTIC-CAPABILITIES.md` AG-012–AG-015.
+- **An agent writes only where the owner owns.** An AI agent may open issues, pull requests,
+  comments, branches and releases **only on repositories the owner owns** — the `chrysa`
+  account and the organisations under the owner's control. On any third-party repository
+  (an upstream project, a dependency, a fork's source, a client's repo) an agent **does not
+  file an issue, does not comment, does not open a PR**: it drafts the content locally and
+  hands it to the owner, who decides whether and how to send it. This is not a permissions
+  detail — an issue is a **public act under a human's name**, and a wrong or noisy one costs
+  reputation in a community the agent cannot read. The same limit applies to any outward
+  channel an agent could reach (email, chat, social, package registries): drafting is free,
+  publishing outside the owner's own perimeter is the owner's call. Inside the perimeter,
+  the normal rules still hold — one issue per real problem, no duplicate of an open one, and
+  every PR references its issue.
 - **Projects talk through versioned contracts only.** No import from a sibling repo, no path
   dependency, no submodule used as a runtime link, no access to another project's database or
   private models. Each consumer wraps the external contract in a local adapter and degrades
   cleanly when the provider is gone. Detail: annexe `PROJECT-DECOUPLING.md`.
+- **Per-person data implies a user account — no exceptions dressed up as simplicity.** The
+  moment a product stores or manipulates anything whose *value depends on who is looking*
+  — preferences, saved filters and views, favourites, drafts, history, progress, notes,
+  annotations, uploads, notification settings, API keys, per-person results — it has **real
+  user accounts** behind the identity hierarchy above. The trigger is the data, not the size
+  of the app: a "small internal tool" that remembers your filters is already storing personal
+  data for several people.
+  1. **Ownership is modelled, not implied.** Every per-person row carries its owner
+     (`user_id` foreign key), and every read/write is scoped by it in the repository layer —
+     not filtered in the UI, not trusted from a request parameter. An endpoint that returns
+     another user's row because the id was guessed is the same defect whether the data is a
+     medical record or a colour theme.
+  2. **`localStorage` is a cache, never the system of record.** Browser storage holds what
+     the user can afford to lose on a new device; anything they would be upset to lose lives
+     server-side under their account. A product whose personalisation exists only in one
+     browser has no personalisation — it has a cookie.
+  3. **A shared password is not an account.** One credential handed to several people makes
+     every action unattributable, every revocation a fleet-wide password change, and every
+     export meaningless. Same for "profiles" selected from a dropdown with no authentication:
+     that is a preference switch pretending to be identity.
+  4. **Account plumbing is part of the feature, not a later epic** — sign-up/invite, sign-in,
+     password or SSO recovery, session expiry, and **deletion of the account with its data**
+     ship together with the first per-person field. Retrofitting ownership onto a table that
+     already holds everyone's rows is a migration, an audit, and an apology.
+  5. **Anonymous stays anonymous.** A genuinely public, read-only surface (a landing page, a
+     public catalogue) needs no account — and therefore must not quietly accumulate
+     per-person state either. If a feature needs to remember the visitor, it needs an account;
+     "we'll just key it by browser fingerprint" is tracking, not architecture.
+  This is the precondition of *portable personalisation data* (strategic pillar 3): an export
+  command only means something when the data has an owner. Detail on the identity path itself:
+  the rule below.
 - **Identity goes through the cluster SSO first.** Every interactive product deployed in the
   cluster integrates the **common cluster SSO** as its primary sign-in. The priority protocol is
   **OpenID Connect over OAuth 2.x** (SAML only where an enterprise context requires it), and the
@@ -237,17 +404,142 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   *projects talk through versioned contracts only* or *portable data*: identity sits behind an
   adapter, so the product stays independently deployable against an alternative identity provider
   (or a standalone local mode) by configuration, without touching the domain.
+- **A session is secured and it expires.** Authenticating is not the end of the security
+  story: the *session* is the credential from then on, and a session that never ends is a
+  password that can never be changed. Every authenticated product declares, in config, how
+  long a session lives — and enforces it **server-side**, because an expiry the client is
+  trusted to honour is not an expiry.
+  1. **Two bounds, both mandatory.** An **idle timeout** (inactivity, ~15–30 min for admin and
+     sensitive surfaces, longer for low-risk ones) *and* an **absolute lifetime** after which
+     re-authentication is required whatever the activity (a working day for a normal product,
+     shorter for privileged access). Idle alone lets a stolen session live forever under a
+     keep-alive; absolute alone leaves an abandoned browser open all afternoon.
+  2. **The session token is opaque and server-revocable.** Sign-out, password change, role
+     change and account deletion **invalidate the existing sessions immediately** — a
+     stateless token that stays valid until its own expiry is a revocation you cannot perform.
+     Where JWTs are used, access tokens stay short-lived (minutes) and the long-lived refresh
+     token is stored server-side, rotated on use, with **reuse detection** killing the whole
+     family.
+  3. **Cookies over `localStorage`.** A session cookie is `HttpOnly`, `Secure`, `SameSite=Lax`
+     (or `Strict`), host-scoped, with `Path=/` and no broader domain than needed — so a single
+     XSS cannot read it. A token in `localStorage` is readable by every script on the page,
+     including the one a compromised dependency injected. State-changing requests carry CSRF
+     protection.
+  4. **The session id is regenerated at every privilege change** — sign-in, elevation, MFA
+     completion — which is what closes session fixation. The identifier is generated by a CSPRNG,
+     never derived from the user id, an email, or a timestamp.
+  5. **Expiry is a first-class experience, not an error.** The app warns before an idle
+     timeout, preserves in-progress work, and returns the user to where they were after
+     re-authentication (see *UI state survives reload & focus*). A silent redirect to a login
+     screen that discards a half-written form is a defect, not a security measure.
+  6. **Sessions are observable and revocable by their owner.** An account surface lists the
+     active sessions (device, location, last seen) and can end them — including "sign out
+     everywhere". Session creation, renewal, expiry and revocation are logged with a
+     correlation id, and the log **never** records the token itself.
+  Values live in external config (`SESSION_IDLE_TIMEOUT`, `SESSION_ABSOLUTE_LIFETIME`) like
+  every other constant — a timeout hardcoded in a middleware is both a *no hardcoded constants*
+  violation and a security parameter nobody can tune without a deploy.
+- **Every form is a hostile input surface — validate on the server, always.** A form is the
+  place where an unknown person hands the product data of their choosing; the browser is their
+  machine, so **nothing enforced only in the client is enforced at all**. `required`,
+  `maxlength`, `type="email"`, a disabled button, a hidden field, a client-side schema: those
+  are ergonomics, and every one of them is re-checked server-side against a typed schema
+  (Pydantic on the backend) that is the single authority on what is acceptable.
+  1. **Bind to an explicit allowlist of fields.** The handler names the fields it accepts and
+     ignores the rest — no mass assignment, no spreading the payload into a model. A user who
+     adds `"is_admin": true` to the request body must change nothing.
+  2. **State-changing submissions are protected against cross-site forgery** — an anti-CSRF
+     token for cookie-based sessions (with `SameSite=Lax|Strict`, `HttpOnly`, `Secure`), or a
+     bearer token deliberately sent by the client. A `GET` never changes state, and secrets
+     never travel in a URL: query strings land in browser history, logs, and referrers.
+  3. **Submission endpoints are rate-limited and bot-resistant** — per-account and per-IP
+     limits on anything that sends mail, creates an account, resets a password, or writes to
+     the database, with lockout/backoff on repeated authentication failures. Prefer a
+     timing-based or honeypot check to a CAPTCHA that punishes the accessible path.
+  4. **Errors say what to fix, and nothing about the system.** Field-level messages, all
+     failures returned at once rather than one per round trip, and no stack trace, SQL
+     fragment, or internal path leaked to the user. Authentication failures stay generic
+     ("invalid credentials"), never "unknown email" — enumeration is a data leak.
+  5. **Errors are announced, not just coloured.** The invalid field is programmatically
+     associated with its message (`aria-describedby`), the error summary receives focus, and
+     the failure is conveyed without relying on colour alone — a form that cannot report its
+     own errors to a screen reader is broken for the people most likely to be blocked by it.
+  6. **The submission is idempotent and the user's work survives failure.** Double submission
+     is blocked (idempotency key or POST-redirect-GET), a rejected form re-renders with the
+     entered values, and a network failure does not silently discard a long draft.
+  7. **What goes in the form is minimised, and what comes out is escaped.** Collect only the
+     fields the feature actually needs (GDPR data minimisation), never log a payload with
+     credentials or personal data, mark sensitive inputs `autocomplete="off"` only where it
+     genuinely helps, and render user-supplied content escaped by default — a stored value is
+     an XSS payload until proven otherwise. File fields additionally follow *if a user can
+     supply a file, the product accepts an upload* — type, size and content are validated
+     server-side there too.
 - **No hardcoded constants** in code — neither backend (Python) nor frontend (TS).
   All constants and config values (thresholds, business rules, labels, URLs, magic
   numbers) live in **external YAML files** and are loaded at runtime. Code reads them
   through a typed loader (Pydantic Settings backend · generated typed module frontend),
   never as inline literals. Only language-level enums (e.g. `status.HTTP_*`) are exempt.
-- **Semantic URLs & code** — URLs are resource-oriented and human-readable: lowercase,
-  hyphenated, plural-noun collections, no verbs or actions in the path (`GET /invoices/42`,
-  never `/getInvoice?id=42`); REST shapes follow the `api-design` skill. Code is
-  self-describing: intention-revealing names over comments, semantic HTML elements
-  (`<nav>`, `<button>`, `<main>`, `<header>`…) never a `<div>` wired as a control, and
-  ARIA used only to fill gaps native semantics cannot express.
+- **No literal HTTP status codes — use the constants the framework already ships.** A bare
+  `200`, `404`, `422`, `500` in code or in a test is forbidden; the value comes from the
+  library that defines it: Python `fastapi.status.HTTP_404_NOT_FOUND` (or
+  `http.HTTPStatus.NOT_FOUND` outside FastAPI), Django `HTTPStatus`, TypeScript a typed
+  status enum/const from the HTTP client layer, C# `System.Net.HttpStatusCode`. This applies
+  everywhere the code names a status — route decorators (`status_code=status.HTTP_201_CREATED`),
+  raised errors, client-side branching, and **assertions in tests**
+  (`assert response.status_code == status.HTTP_403_FORBIDDEN`). The same rule generalises: when
+  a standard library or a framework already publishes the constant/enum for a protocol value
+  (HTTP methods, MIME types, headers, signal numbers, exit codes), import it — never retype the
+  literal. A magic number the reader has to look up is a defect, not a shortcut.
+- **No code duplication — the second occurrence is an extraction order.** Copy-pasting a
+  function, a fixture, a type, a config block, or a workflow step across files or repos is
+  forbidden. The rule is mechanical: the **first** occurrence is code, the **second** is a
+  factoring order — the logic moves to the transverse home for its kind and both call sites
+  consume it from there. The homes are fixed: shared Python code → **`chrysa-lib`** (or the
+  relevant `chrysa/*` library), CI logic → **`chrysa/github-actions`**, commit gates →
+  **`chrysa/pre-commit-tools`**, standards/templates → **`shared-standards`**, UI components →
+  the design system. Inside one repo, duplication is extracted to a shared module in the same
+  layer — never re-typed in a sibling. Rewriting the same logic in different words does not
+  make it a different implementation; a near-duplicate diverges silently and costs sixty PRs
+  to fix once. Mechanisation: SonarCloud duplication ratio and `jscpd`-class detectors; a
+  reported duplicate block is a defect to factor, not a warning to carry. Legitimate exception:
+  a deliberate copy that decouples two projects on purpose (see *projects talk through
+  versioned contracts only*) — documented as such, not left implicit.
+- **Everything is semantic — the markup, the data, and the URLs.** A surface must be
+  understandable by a machine that never sees the pixels: a screen reader, a crawler, an
+  AI agent, another service. Meaning lives in the markup and the address, never only in the
+  CSS or the JavaScript.
+  1. **Semantic URLs.** Resource-oriented and human-readable: lowercase, hyphenated,
+     plural-noun collections, a **noun path with no verb or action**
+     (`GET /invoices/42`, never `/getInvoice?id=42`, never `/page?id=7`). The path expresses
+     the hierarchy (`/projects/42/settings`), the query expresses filtering/pagination/
+     selection — not identity. Opaque ids stay out of the path when a stable readable slug
+     exists (`/articles/semantic-urls`, optionally `/articles/42-semantic-urls`). A URL is a
+     **permanent contract**: it is not renamed on a redesign, and when it must change the old
+     one answers `301`, never `404`. REST shapes follow the `api-design` skill; a navigable
+     view is always a real URL (see *URL-addressable frontend navigation*).
+  2. **Semantic HTML.** The right element for the meaning — `<nav>`, `<main>`, `<header>`,
+     `<article>`, `<section>`, `<button>`, `<a href>`, `<table>`, `<form>`, `<time
+     datetime>`, `<label for>` — never a `<div>` wired as a control, never a heading level
+     picked for its size. One `<h1>` per page and a heading outline with no skipped level;
+     images carry meaningful `alt` (or `alt=""` when purely decorative); every input has a
+     programmatic label; language is declared (`<html lang>`). **ARIA only fills gaps native
+     semantics cannot express** — a native element always beats `role="button"`.
+  3. **Structured, machine-readable data.** Any public or shareable page publishes
+     **schema.org JSON-LD** appropriate to its type (`Article`, `Product`, `Organization`,
+     `BreadcrumbList`, `SoftwareApplication`…), plus the metadata that makes a link
+     self-describing: `<title>`, `meta description`, canonical link, Open Graph/Twitter
+     cards, `hreflang` on localised pages, a **favicon + app icons + web app manifest**
+     (`theme-color` included), and `sitemap.xml` and `robots.txt`. The structured
+     data **describes what is actually on the page** — mismatched markup is a defect, not
+     an SEO trick. A tab left with the browser's default globe icon is an unfinished page
+     (FE-052).
+  4. **Semantic code and data shapes.** Intention-revealing names over comments, typed
+     contracts over free-form dicts, ISO-8601 dates and explicit units/currency in payloads,
+     stable machine-readable codes on errors (see *typed errors*). A field named `data`,
+     `value`, or `flag` is a naming defect.
+  Mechanisation: the a11y gates already required (Lighthouse ≥ 90, keyboard, contrast) plus
+  an HTML-validity/structured-data check on public pages. A page that reads correctly only
+  because of CSS is not accessible, not crawlable, and not agent-readable.
 - **URL-addressable frontend navigation — mandatory.** Every navigable view/route/tab/
   detail is a **real, semantic URL** (`/projects/42/settings`, not `/#` or a modal with no
   address). Navigating **must change the URL** via the router (History API `pushState`), so:
@@ -270,6 +562,122 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   `pytest.ini` are forbidden. Distributed libraries use a `src/` layout and follow the Public API
   Contract (`docs/PUBLIC-API-CONTRACT.md`): sorted `__all__`, relative imports in `__init__`,
   `__version__` via `importlib.metadata`, uniform `install()` entrypoint, shared types in `chrysa-lib`.
+- **Python is written object-oriented, one class per file.** Behaviour is carried by classes,
+  not by a bag of module-level functions sharing state through globals or long parameter
+  lists: a cohesive responsibility (a service, a repository, an adapter, a use case, a value
+  object) is a **class**, dependencies are injected through `__init__`, and state lives on
+  the instance. **One class per module, and the module is named after it** —
+  `vehicle_dispatcher.py` holds `VehicleDispatcher`, and nothing else of substance (private
+  helpers of that class and its own exception types may live beside it). Method order inside
+  a class is fixed: dunder → property → abstract → classmethod → staticmethod → public →
+  private, alphabetical within each group. Pure functions remain legitimate where there is
+  genuinely no state and no variation point — a stateless transformation, a validator, the
+  functional core called by the class — and Pydantic models, dataclasses, enums and
+  protocols are classes already. What is forbidden is a `utils.py` grab-bag, a module of
+  loosely related procedures threading the same objects through every signature, and two
+  unrelated public classes sharing one file.
+- **Import the item, not the module — `from x import y; y()`.** Python imports name the
+  symbol actually used (`from fastapi import status`, `from datetime import datetime`,
+  `from app.services.billing import BillingService`), so call sites read `datetime.now()`
+  and `BillingService(...)`, not `datetime.datetime.now()` or a chain of package prefixes.
+  Bare `import x` is reserved for the cases where it is genuinely better: a module used as a
+  namespace whose name carries meaning at the call site (`import numpy as np`,
+  `import json`), or breaking an import cycle. **Forbidden**: wildcard `from x import *`,
+  relative imports beyond a package's own `__init__` re-exports, and importing a module only
+  to reach one attribute through it. Imports sit at module top level (never inside a function
+  except to break a cycle, and that is commented), and are ordered/deduplicated by Ruff
+  (`I` rules) — the linter owns the ordering, no hand-sorting.
+- **Functions and methods are called with named arguments — positional call sites are the
+  exception, not the rule.** A call reads `create_user(name="Ada", role=Role.ADMIN,
+  active=True)`, never `create_user("Ada", Role.ADMIN, True)`: the argument names are part of
+  what the reader needs, and a bare positional value (especially a bool, a number, or a `None`)
+  is a *boolean trap* / magic value the reader has to jump to the signature to decode. So:
+  1. **Definitions force it where it matters.** Any function/method taking more than one
+     parameter, or **any** boolean/optional/`None`-defaulted parameter, declares them
+     **keyword-only** with a bare `*` (`def build(*, source: Source, strict: bool = False)`),
+     so callers *must* name them and arguments cannot be silently reordered. Adding a parameter
+     then never shifts an existing positional meaning.
+  2. **Call sites name their arguments.** Even when a signature still allows positional passing,
+     call sites pass by keyword. The narrow, allowed exceptions where positional is clearer:
+     a single obvious argument (`len(items)`, `Path(raw)`, `str(value)`), the receiver of a
+     dunder, and genuine `*args`/`**kwargs` pass-through.
+  3. **Not a substitute for value objects.** Naming four primitives at the call site is better
+     than four bare positionals, but a signature that needs many named primitives is still
+     *primitive obsession* — the fix is a value object / Pydantic model, then one named argument
+     carries it.
+  Mechanisation: Ruff `FBT001`/`FBT002` (boolean-positional) already flag the worst case; the
+  keyword-only `*` in definitions is the enforcement mechanism the reviewer checks. A public
+  API added with a multi-parameter positional signature is a defect.
+- **Everything is machine-agnostic and portable — no rule, repo, or script is bound to one
+  machine.** A standard, a Makefile target, a script, a hook, a compose file, or a CI job must
+  behave identically on any developer machine, any runner, and the server, with nothing but a
+  clone and the sanctioned host tools. Concretely, **forbidden**: absolute paths tied to a user
+  or host (`/home/<user>/…`, `/Users/<name>/…`, `C:\Users\…`, a hardcoded workspace root), a
+  hostname/IP/mount point of a specific box baked into code or config, an assumption that a tool
+  was installed a particular way, and "works because my machine has it" reasoning. Instead:
+  paths are relative to the repo root (or resolved from `$(git rev-parse --show-toplevel)` /
+  the script's own directory), machine-specific values arrive through **environment variables
+  with documented defaults** (`.env.example` committed, `.env` never), and anything the code
+  needs is provided by the container image. The same portability applies to the standards
+  corpus itself: a rule names a *mechanism* (a hook id, a Makefile target, a workflow), never a
+  particular machine, user account, or local directory layout. The test is mechanical: a fresh
+  clone on an unknown machine, with git + Docker + pre-commit, must reach a green
+  `make ci` — if it needs a manual step that only the owner knows, that is a defect.
+- **Every external server the service talks to is addressed through the environment — never
+  hardcoded.** The location and credentials of anything the service does not itself own — a
+  database, cache, broker, object store, another chrysa service's API, a third-party endpoint, an
+  SSO/OIDC issuer, an LLM or inference host — arrive as **environment variables** (host, port, URL,
+  DSN, region, secret), read once through the typed config loader (Pydantic Settings on the
+  backend, the generated typed env module on the frontend), with a committed `.env.example`
+  documenting every key and safe local defaults. A hostname, IP, port, or connection string of an
+  external server written as a literal in code, a compose file, or a manifest is a defect: it pins
+  the build to one environment and breaks *build once, promote the artefact* — the same image can
+  no longer travel from local to CI to prod, because its endpoints are baked in. This is the
+  transport-level twin of *no hardcoded constants* and of the *adaptation layer*: the endpoint is
+  configuration, the client wrapping it is an adapter, and between two chrysa projects the endpoint
+  still resolves to a versioned contract, not a private address (*projects talk through versioned
+  contracts only*). Secrets travel by env or a secrets manager, never committed (see the `.env`
+  rules) — the variable holds the value, the repo holds only the documented key.
+- **Data, persistence & migrations follow the `STD-DATA-001` contract.** Every data category
+  declares its owner, system of record and classification; schemas and events are versioned and
+  migrations are reproducible, ordered, tested, and safe (`expand → migrate → contract`, snapshot
+  before destructive change, a rollback or documented restore per migration); backups are
+  restore-tested, and data is exportable to an open format with no vendor lock-in. Full rules and
+  gates: annexe [`DATA-MIGRATIONS.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/DATA-MIGRATIONS.md)
+  (`DA-nnn`).
+- **Observability & production readiness follow the `STD-OPS-001` contract.** A deployable
+  service exposes startup/liveness/readiness probes, emits structured logs + metrics + traces
+  correlated through a common id via **OpenTelemetry with a replaceable backend**, and ships an
+  actionable alert + owner + runbook per principal incident. Resource limits and saturation
+  behaviour are explicit; graceful shutdown, restart recovery and dependency-loss are tested;
+  backup/restore/rollback/degraded mode are documented before the first prod deploy; and the
+  service publishes `/version`. Full rules and the Production-Ready gate: annexe
+  [`OBSERVABILITY-OPS.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/OBSERVABILITY-OPS.md)
+  (`OP-nnn`).
+- **APIs, SDKs & public contracts follow the `STD-API-001` contract.** A machine-readable
+  contract (OpenAPI/AsyncAPI/JSON Schema) is the canonical interface; public versions are
+  explicit with a backward-compatibility guarantee and a dated deprecation policy; errors are
+  typed with a machine code + correlation id; collections paginate by cursor; critical writes
+  are idempotent; guards (timeouts, sizes, authz) live in the contract; inter-project contracts
+  are tested provider **and** consumer side; SDKs track the public contract, never internal
+  models; and events/webhooks are identified, versioned, signed, replay-protected, with bounded
+  retry + dead-letter. Full rules and gates: annexe
+  [`API-CONTRACTS.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/API-CONTRACTS.md)
+  (`AP-nnn`) and the `api-design` skill.
+- **External dependencies are installed in containers, never on the host.** A project's
+  runtime dependencies — language packages (pip/npm/cargo/nuget), databases, brokers, caches,
+  system libraries, compilers, CLIs a service shells out to — are declared in the image
+  (`Dockerfile`) or in a compose service, and installed **inside the container**. `sudo apt
+  install`, `pip install` into the system interpreter, a global `npm -g`, or a locally
+  installed Postgres/Redis "to make it work" are **defects**: they make the machine the
+  environment, so the build is unreproducible, the version drifts per-machine, and CI and prod
+  no longer run what the developer ran. A missing dependency is fixed by editing the image,
+  never by installing it on a developer machine. Three sanctioned host tools only, all repo-independent
+  and installed **outside** any project tree: **git**, **Docker** itself, and the commit gate
+  (`pipx`/`uv install pre-commit`, which provisions its own hook envs — see *the gate is
+  host-native*). Everything else runs through `docker compose run` / the `make docker-*`
+  targets. Host-bound repos (`exempt:native`: desktop, hardware, editor extensions) are the
+  documented exception, and only for the part genuinely bound to the host OS.
 - **No virtualenv in a repo — ever.** `venv/`, `.venv/`, `env/` are **forbidden** inside a
   project tree. Python runs in the Docker image (deps baked into the image layer, or a named
   volume for editable installs). A committed or on-disk virtualenv is a bug, not a setup step.
@@ -306,6 +714,17 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      **never `user: root`** — root-owned artifacts written into a bind mount are unremovable
      without `sudo` and are treated as a defect. Root user is allowed only for containers with
      **no** repo bind mount (e.g. `.:/code` absent).
+  4. **Dependency directories are a build output, never a source artifact.** `node_modules` and
+     its per-ecosystem equivalents — `vendor/` (Go/PHP), `target/` (Rust/Maven), `.gradle/`,
+     `Pods/` (CocoaPods), `bin/`+`obj/` (.NET), and `.venv`/`site-packages` (already forbidden in
+     the tree by *no virtualenv in a repo*) — are **generated at build time**, either baked into
+     the image layer (`RUN npm ci` / `pip install` / `cargo build` in the `builder` stage) or
+     mounted from a **named volume that shadows the bind mount** (`node-modules:/code/node_modules`
+     above). They are **never materialised in the working copy on the host**: a `node_modules/`
+     (or equivalent) sitting in the project tree is a defect — machine-specific, unreproducible,
+     and it shadows the container's own install. The **lockfile is committed; the resolved tree is
+     not**, and a fresh clone reaches a green `make ci` without ever running an install on the
+     host (see *external dependencies are installed in containers*).
   Regenerable artifacts already in a repo are purged with `scripts/purge-artifacts.sh`.
 - **Every tracked file and folder must earn its place — a repo holds only what is useful to it
   now.** A repository contains its own source, its tests, config that is actually loaded, docs
@@ -349,6 +768,34 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   frontend may use a minimal internal web server to serve its own built assets, but it does **not**
   proxy other services. Baking a reverse proxy into an app container is a defect (couples the app to
   infra, duplicates the platform, and breaks the ownership boundary).
+- **Only a publicly useful port is published — everything else stays on the container network.**
+  A `ports:` entry exists **only** for what a human or an external system outside the stack
+  genuinely consumes: in practice the product's public entry point, and nothing else. Databases,
+  caches, brokers and their management UIs, search engines, object storage, internal APIs,
+  metrics/`/debug` endpoints and dev tooling communicate **by service name over the container
+  network** (`expose:`, or nothing at all — service DNS is enough); publishing one is a defect.
+  This is not hygiene, it is exposure: on a Docker host a published port is inserted into
+  `nftables`/`iptables` **ahead of** `ufw`/`firewalld`, so `ports: "5432:5432"` puts the database
+  on the public internet even when the host firewall denies everything. When a host-side tool
+  genuinely needs access, bind the loopback explicitly (`127.0.0.1:5432:5432`) in a local
+  override — never in the committed base stack. In Kubernetes the same rule reads: every
+  `Service` is `ClusterIP` except the ingress-fronted entry point; `NodePort`, `LoadBalancer`,
+  `hostPort` and `hostNetwork` need an ADR (a `hostPort` also bypasses `NetworkPolicy`).
+  Detail: annexe `CONTAINERS-K3S.md` CT-015.
+- **A compose file is minimal — declare only what the stack needs, default the rest.** A
+  `docker-compose*.yml` is a description of *this* stack, not a copy of Compose's defaults. It
+  declares the services, their `build.target`/`image`, `depends_on`, `environment`, volumes,
+  `healthcheck` and `restart` — and **nothing Compose already does for you**. Forbidden as
+  noise: an explicit `networks:` block re-declaring the default bridge and wiring every service
+  to it (Compose already puts all services on a shared default network with service-name DNS —
+  see the ports rule), a redundant `container_name`, a `version:` top-level key (obsolete in
+  Compose v2), commented-out dead services, copy-pasted blocks that a YAML anchor or an
+  `extends`/override file would fold, and env values inlined where an `.env` / `env_file`
+  belongs. Environment- or developer-specific settings (a loopback port bind, a source bind
+  mount for hot-reload, debug flags) live in `docker-compose.override.yml` or a `*.dev.yml`,
+  never in the committed base stack. The test is mechanical: every line in the base compose
+  file is one a reader could not have inferred from Compose's defaults — a line that only
+  restates a default is deleted. Detail: annexe `CONTAINERS-K3S.md` CT-019.
 - **Dev stage must hot-reload.** The `dev` target/service provides live auto-reload so a source edit
   is reflected without a manual rebuild/restart: backend `uvicorn --reload` (or the framework's
   autoreload), frontend the dev server with HMR (`vite`/`npm run dev`), watched via the compose
@@ -367,6 +814,164 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to `/setup`** rather than crashing or showing a generic error. An admin **configuration panel**
   (auth-gated CRUD API) manages runtime config with a versioned audit trail, hot-reload where
   possible (else a `RESTART_REQUIRED` flag), and JSON export/import for backup and cross-env cloning.
+- **A game is DRM-free and fully playable solo offline.** The single-player experience is
+  complete **without a network, an account, or a licence check** — unplug the machine and the
+  game still starts, saves, loads, and can be finished. **No DRM of any kind**: no licence
+  server, no phone-home activation, no online entitlement check, no always-on requirement, no
+  third-party wrapper gating launch. A copy someone owns keeps working when the servers are
+  gone, the company is gone, or the network is down; a build that will not start offline is a
+  defect, not an anti-piracy measure. Saves are **local, open and portable** (JSON/SQLite in
+  the platform's user directory, copyable, not encrypted against their owner) — the
+  *portable personalisation data* pillar applied to a save file. Online features (multiplayer,
+  leaderboards, cloud sync, telemetry, stores) are **additive layers over a complete offline
+  game**: losing one degrades a feature, never the ability to play. The offline path is
+  **tested with the network disabled**, on a machine that never signed in — an offline mode
+  nobody exercises is one that has already stopped working. Detail: annexe
+  `ARCHITECTURE-DDD.md` AR-045.
+- **Every product that is operated ships a management backoffice.** As soon as a product has
+  users, content, or work that someone has to *run* — accounts to unlock, an import that
+  failed, a job stuck in a queue, a flag to flip — it ships an authenticated **admin
+  backoffice** covering that work. The test is blunt: **if operating the product in practice
+  means SSH, `psql`, or a hand-written script, the backoffice is missing** — and the day a
+  real incident lands, the operator improvises a `UPDATE` on production at 23:00.
+  1. **It covers the operations the product actually needs**, not a generic table browser:
+     accounts (invite, roles, deactivate, delete with their data), the domain entities support
+     is asked about, moderation/quarantine where content is user-supplied, runtime config and
+     feature flags (see *setup wizard & config panel*), background jobs and queues with a
+     **retry** and a visible failure reason, and the deployed versions of the running pieces.
+  2. **Admin power is a role, not a person.** Access is gated by an explicit permission set
+     behind the identity hierarchy — never a shared login, never "the first account created",
+     never an environment variable holding a master password. Sensitive operations
+     (impersonation, export, deletion) are separately granted, and impersonation is announced
+     in the UI and terminated by an explicit exit.
+  3. **Every admin action is audited** — who, what, when, on which record, with the before and
+     after. The audit trail is written by the same path that performs the action, not
+     reconstructed from logs, and it is readable *in* the backoffice: an admin surface that
+     cannot answer "who changed this and when" is where accountability quietly ends.
+  4. **Destructive actions are confirmed, scoped and reversible** — a typed confirmation for
+     the irreversible ones, soft delete or quarantine over hard delete, bulk operations bounded
+     and previewed before they run. "Delete all" without a preview is an incident generator.
+  5. **It shows the least data that answers the question.** A support view surfaces what the
+     operator needs and masks the rest; secrets and credentials are never displayed, only
+     rotated. Reading a person's data through the backoffice is itself an audited act.
+  6. **It is a product surface, held to the product's standards** — same design system, dark
+     mode, WCAG 2.1 AA, semantic URLs, i18n, tests and error handling. An admin panel treated
+     as a throwaway becomes the least reliable part of the system, operated under stress, by
+     the people with the most destructive permissions.
+- **The container is versioned separately from the application it hosts, and an admin can see
+  what is actually deployed.** An image and an app are two artefacts with two lifecycles: a
+  rebuild that only picks up a new base image, a patched OS library or a changed entrypoint
+  produces a **new image version carrying the same application version** — and a redeploy of
+  the same app on a fresh image is exactly the change an incident review needs to see. So the
+  two versions are recorded and surfaced side by side; conflating them turns "we redeployed"
+  into an untraceable event.
+  1. **Both identities travel with the image.** Every image carries OCI labels — at minimum
+     `org.opencontainers.image.version` (the image's own version),
+     `org.opencontainers.image.revision` (git SHA), `org.opencontainers.image.created`, plus
+     the application version it packages. They are build arguments injected by CI, never
+     hand-edited.
+  2. **Deployments pin a digest, never a moving tag.** `:latest` is not a version; a
+     manifest or compose file references `image@sha256:…` (or an immutable tag) so what runs
+     is exactly what was tested — see *build once, promote the artefact* (`CI-046`).
+  3. **The service publishes what it is** — a small, unauthenticated-safe endpoint
+     (`/version` or the health payload) returning the **application version**, the **image
+     tag and digest**, the git SHA, the build timestamp and the environment name. No secret,
+     no dependency inventory: enough to answer "which build is this?" and nothing more.
+  4. **The frontend shows it to admins, and knows its own.** The admin surface (config panel,
+     about screen, footer of an admin page) displays the **frontend build version** — embedded
+     at build time, not read at runtime — next to the backend's application version, image
+     digest and environment. A support conversation that starts with "which version are you
+     on?" and cannot be answered from the interface is a defect.
+  5. **A version mismatch is surfaced, not silently tolerated.** When the frontend detects
+     that the backend's version changed under it, or that its own build no longer matches the
+     API it is talking to, it tells the user and offers a reload rather than failing in
+     obscure ways. Deployed versions per environment are also visible from the platform side
+     (release notes, deployment log), so "what is in production" never requires a shell.
+- **If a user can supply a file, the product accepts an upload.** Wherever the workflow
+  involves a file the user already has — an import (CSV, JSON, GPX, ICS…), an avatar or image,
+  an attachment or supporting document, a configuration or dataset, a log or a crash dump sent
+  for support — the surface ships a **real upload path**. Telling the user to paste the
+  contents into a textarea, to drop the file on the server themselves, to send it by mail, or
+  to re-type what they already hold is a defect, not a simplification: it moves work onto the
+  person who has the least tooling for it.
+  1. **A real control, not a styled `<div>`** — a native `<input type="file">` with a
+     programmatic label (accept multiple only when the flow does), reachable and operable by
+     keyboard, plus drag-and-drop as an *addition* for pointer users, never as the only way in.
+     Accepted formats and the size limit are stated **before** the user picks, not discovered
+     through a rejection.
+  2. **Feedback while it travels** — visible progress, a cancel, and a result state per file
+     (accepted / rejected with the reason / retryable). Anything that can take more than a
+     couple of seconds is resumable or chunked, and a failed upload never silently loses the
+     user's selection.
+  3. **The server trusts nothing the client says.** Type is determined by inspecting the
+     content, not the extension nor the client-provided MIME; size is capped server-side;
+     the filename is sanitised and never used as a filesystem path; archives are bounded
+     (decompression limits). Rejections come back as typed errors with a message that says
+     what to do.
+  4. **Stored behind a port, not in the tree** — files go to an object store or a dedicated
+     volume through a `BlobStore`-style adapter (strategic pillar 5), never into the repo,
+     the web root, or a path the user can traverse. Content is served through the
+     application's authorisation, or by a signed, expiring URL — never by guessable path.
+  5. **What comes in must be able to come out.** Every uploaded file is listable, replaceable,
+     downloadable and deletable by the user who owns it, and is included in the data export
+     (strategic pillar 3). An upload with no delete and no export is lock-in with a progress bar.
+- **A floating assistant where it earns its place — never as decoration.** Any human-facing
+  product whose users face a **non-obvious surface** (a dense cockpit, a multi-step form or
+  wizard, a query/graph/config console, an admin panel with domain jargon) ships an **in-app
+  floating assistant**: a persistent, dismissible affordance that answers "what am I looking
+  at / what do I do next" **in context**, without leaving the page. The value test comes
+  first — a product with two screens and no jargon does not get one, and shipping an empty
+  chat bubble is worse than shipping nothing. Where it is warranted, it obeys the same rules
+  as the rest of the app:
+  1. **Context-aware, not a generic chat box** — it receives the current route, selection and
+     visible state, and its opening move is a useful suggestion about *this* screen.
+  2. **Opt-in and reversible** — off by default behind a documented flag/config key
+     (`ASSISTANT_ENABLED`-style), dismissible, and its position/open state persists per user
+     (see *UI state survives reload & focus*). It never steals focus, never blocks the
+     underlying surface, and never auto-opens on every visit.
+  3. **Governed like any agent** — read-only Q&A is R0/R1; the moment it *acts* (writes, calls,
+     runs, changes state) the full agentic envelope applies: versioned manifest, typed I/O,
+     least privilege, risk level with proportionate confirmation and dry-run, audit trail.
+     Detail: annexe `AGENTIC-CAPABILITIES.md`.
+  4. **Provider-independent** — inference goes through the local port with ≥2 tested adapters
+     (strategic pillar 1); no vendor SDK in the product's business code, and the assistant
+     degrades to a documented help panel when no model is reachable.
+  5. **Accessible and quiet** — reachable and closable by keyboard (visible focus, `Esc`
+     closes), announced to assistive tech, honours `prefers-reduced-motion`, and respects the
+     WCAG 2.1 AA + design-token rules like every other surface. It is lazily loaded behind a
+     shape-accurate placeholder so it never delays first paint.
+  6. **Scoped and honest** — it answers from the product's own data and docs, says "I don't
+     know" rather than inventing, and states what it did after acting.
+  A desktop/overlay assistant (the `floating-agent` pattern) follows the same rules outside the
+  browser: overlay-only, dismissible, no capture of surfaces the user did not consent to.
+- **The repository architecture is legible to an agent — optimised for Claude, not only for
+  humans.** An AI agent reads a repo through a narrow window: it cannot skim thirty files to
+  infer a convention. So the layout itself carries the answers, and a repo where an agent has
+  to guess is a defect.
+  1. **One entry point that says what to do now** — `CLAUDE.md` (repo-specific rules, layered
+     over the inlined standards block) plus `primer.md` (current state, next action), read
+     before anything else. `AGENTS.md`/`copilot-instructions.md` stay generated from the same
+     source, never hand-diverged.
+  2. **Every non-trivial folder carries a `README.md`** stating role, structure, what belongs
+     in it and — critically — **what must not**, so a file lands in the right layer at write
+     time instead of in review.
+  3. **Predictable, name-addressable structure** — layers named after the architecture
+     (`domain/`, `application/`, `infrastructure/`, `interfaces/`), one class per file with
+     the module named after it, test file mirroring the source path. Finding *where* something
+     lives is a naming derivation, never a search.
+  4. **Small units by contract** — the file/function/complexity gates (500 / 50 / 10) exist so
+     a unit fits in one read; the same reason bans god-objects and `utils.py` grab-bags.
+  5. **Machine-readable seams** — typed signatures, Pydantic/OpenAPI contracts, YAML config
+     with a typed loader, `docs/adr/` for the *why*. An agent should be able to answer "what
+     breaks if I change this" from types and contracts, not from tribal memory.
+  6. **Task-shaped tooling over prose** — the repeatable operations are `make` targets and
+     shared skills (`.claude/skills/`), so an agent invokes a named contract instead of
+     reconstructing a command line. Every documented command exists in the Makefile.
+  7. **Session continuity** — decisions, known issues and progress live in `.claude/memory/`
+     (see *Session lifecycle*), so the next session starts from state, not from scratch.
+  The test is mechanical: drop a fresh agent in the repo with no conversation history — it
+  must find the entry point, the layer to touch, the command to run and the gate to pass,
+  from committed files alone.
 - **Raised errors are typed** — in any language whose type system allows it. Code raises a
   **domain-specific exception class** (Python: a module `…Error(Exception)` hierarchy rooted in one
   base per bounded context; TypeScript: `class XError extends Error` with a discriminant field, or a
@@ -407,6 +1012,39 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   to skip the test. This is what makes the *max function lines 50* / *complexity ≤ 10* gates
   achievable rather than gamed, and it is the mechanism behind the coverage floor: coverage reached
   only through end-to-end paths, with untestable god-functions underneath, does not satisfy this rule.
+- **Code is read far more often than it is written — optimise for the reader, and standardise
+  the form.** Two properties, and both are reviewable:
+  1. **Readable.** A reader — human or agent — understands *what* a unit does from its name and
+     signature, and *why* from the surrounding names, without reconstructing it line by line.
+     Concretely: intention-revealing names (`is_dispatchable`, not `check`, `flag`, `tmp`, `data`,
+     `d`, `x`), no abbreviation that is not domain vocabulary, guard clauses instead of nested
+     `if`s, one idea per line, explicit over clever. A comment explains a *why* that the code
+     cannot carry; a comment that restates the code is noise, and a comment that compensates for
+     an unreadable line is the wrong fix — rename or extract instead.
+  2. **Standardised.** The same intent is written the same way everywhere: the formatter and the
+     linter own the form (Ruff format + Ruff lint on Python, ESLint + Prettier on TS), and their
+     verdict is not negotiated in review. Style is never a review topic — the tool already
+     decided. Two files solving the same problem in two different shapes is a defect even when
+     both work.
+- **Avoid lambdas and anonymous constructs — a named function is the default.** An anonymous
+  function has no name, so it cannot be described, called from a test, or found in a traceback:
+  the stack frame reads `<lambda>` and the reviewer reads a puzzle. Rules:
+  - **Python: a `lambda` is only ever an inline key/predicate that fits on the line it is used
+    on** (`sorted(items, key=lambda i: i.rank)`). Assigning a lambda to a name is forbidden —
+    `f = lambda x: …` is a `def` written badly (Ruff `E731`). Anything with a branch, a call
+    chain, or its own rule becomes a `def` with a name, and prefer `operator.attrgetter`/
+    `itemgetter` where they say it more plainly.
+  - **TypeScript/JS: arrows stay as short callbacks** (`map`/`filter`/`reduce`, one-to-three-line
+    predicates) or as a component's inline handler when it merely forwards. A handler carrying
+    logic is a named function, hoisted out of the render path.
+  - **Forbidden in every language**: an anonymous function longer than ~3 lines, a nested named
+    function over 5 lines (extract it to the top level), a lambda used to defer or fake a
+    dependency where an injected object belongs, and clever one-liners — a nested comprehension
+    with two `for`s and a condition, a chained ternary — that trade a reader's minute for a
+    writer's second.
+  The test is mechanical: if you cannot give the expression a name that fits in three words, it
+  is doing too much to stay anonymous. Mechanisation: Ruff (`E731`, `C901`, `PLR0912`, `SIM`),
+  ESLint (`func-style: declaration`, `max-nested-callbacks: 2`, `complexity`).
 - **Basic optimisations and known anti-patterns are caught in review and in CI.** Code is written
   correct-then-obvious first — **no speculative micro-optimisation**, no premature caching, no
   hand-tuned trick without a measurement (profile before optimising; `perf` claims come with
@@ -416,13 +1054,19 @@ deprecated and archived — nothing is added to it, nothing reads from it.
      a single pass instead of repeated traversals of the same collection.
   2. **No work in a loop that is loop-invariant** — hoist the constant computation, the compiled
      regex, the config read, the connection setup.
-  3. **No N+1** — database queries and network/API calls are batched or eager-loaded
-     (`selectinload`/`joinedload`, bulk endpoints); a query inside a `for` over rows is a defect.
-     Frontend equivalent: no request per list item, no re-render per keystroke without debounce,
-     no unmemoised derived state recomputed on every render.
+  3. **No N+1, and query the store efficiently** — database queries and network/API calls are
+     batched or eager-loaded (`selectinload`/`joinedload`, bulk endpoints); a query inside a `for`
+     over rows is a defect. In the same spirit: an **existence check** uses a dedicated exists-query,
+     never a full fetch then a length; **writes are batched** (bulk create/update) instead of a loop
+     of single-row writes; only the **columns/fields actually used** are selected (projection, not
+     `SELECT *` into an object graph); and **aggregation runs in the store**, not a Python/JS loop
+     summing rows the app just pulled over the wire. Frontend equivalent: no request per list item,
+     no re-render per keystroke without debounce, no unmemoised derived state recomputed on every
+     render.
   4. **Bounded resources** — no unbounded `SELECT *` / unpaginated list endpoint, no full-file read
      of arbitrary-size input (stream it), explicit timeouts on every outbound call, connections and
-     file handles closed via context managers.
+     file handles closed via context managers. Every column used to **filter or sort a large table
+     is indexed** — an unindexed predicate on a growing table is a latent full scan.
   5. **Known anti-patterns are named and rejected**: god object/function, copy-paste duplication
      (factor into `chrysa-lib` — see *no code duplication*), boolean trap parameters, primitive
      obsession over a value object, deep nesting (guard clauses instead), mutable default arguments,
@@ -431,12 +1075,54 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   Mechanisation: Ruff (`C901`, `PLR*`, `B`, `SIM`, `PERF`, `RUF`) + Mypy on Python, ESLint
   (`complexity`, `no-await-in-loop`, `react-hooks/exhaustive-deps`) on TS, SonarCloud rating **A**
   with 0 hotspot on both. A finding here is a defect to fix, not a warning to carry.
+  The armed Ruff selection is the canonical set distributed by `scripts/pyproject-ruff-merge.py`
+  and merged into each repo's `[tool.ruff.lint] select` — the script is the source of truth for
+  which codes are on. Two rules that the `PLR*`/`RUF` shorthand above would otherwise imply are
+  **deliberately excluded**, and stay excluded until a decision says otherwise:
+  - `PLR2004` (magic-value-comparison) — 2519 findings across the 65 repos. Hardcoded constants
+    are a chantier with its own remediation (extract to an enum or external config), not a flag
+    to flip; arming it would turn every gate red at once.
+  - `RUF001` (ambiguous-unicode-character-string) — 493 findings concentrated on 4 repos, all of
+    them French user-facing copy using typographic characters (apostrophes, non-breaking spaces).
+    The rule is right about the codepoints and wrong about the intent. A repo that wants it may
+    arm it locally together with `lint.allowed-confusables`.
+- **A cache is a correctness contract, not a sprinkle of speed.** The moment a value is cached,
+  three questions must have answers, or the cache is a bug: **how it expires**, **how it is
+  invalidated**, and **what it may not hold**. Concretely: caching is **read-through / cache-aside**
+  behind the data-access layer, never scattered `get`/`set` calls in business code; every entry has
+  a **TTL taken from the per-repo contract** (*no hardcoded constants* — a literal `3600` in a
+  decorator is the defect), and the store is **bounded** (a max size / eviction policy — an
+  unbounded cache is a memory leak with latency). A **write invalidates or updates** the entries it
+  affects in the same path (a read-your-writes guarantee — a stale cache after a mutation is the
+  same defect as FE-080's stale screen), and a cache miss under load is **stampede-protected**
+  (single-flight / lock / jittered TTL) so an expiry does not turn one slow query into a thousand.
+  What is **never cached** is as governed as what is: an **authorization decision** is not cached
+  across principals, and **personal/secret data** is cached only within its classification
+  (`DA-001`, `GV-040`) with an owner. Cache keys are namespaced and versioned so a shape change
+  cannot serve a poisoned old value. A cache nobody can explain the invalidation of is removed.
+- **Deferred work is a governed job, not a fire-and-forget.** Any work pushed to a background
+  queue / worker / scheduler is, by contract: **idempotent** (safe to run twice — a redelivered or
+  retried job produces no double effect, mirroring `EV-030`); **bounded** — an explicit **timeout**,
+  a **bounded retry** with backoff, and a **dead-letter / failure sink** so a poison job neither
+  retries forever nor vanishes; and **observable** — a failed or stuck job **surfaces** (a metric,
+  an alert, an admin-visible state), it is never swallowed silently. A **scheduled** task has a
+  named **owner** and a runbook like any incident source (`OP-020`). No **business capability is
+  reachable only through a job with no manual/admin trigger** — an operator must be able to inspect,
+  retry, and cancel it from the backoffice (*every product ships a management backoffice*). Jobs are
+  deferred *work*; a real-time *stream* is `EVENTING.md` — related, not the same. The queue/broker
+  is reached through an adapter (pillar 5), its endpoint from the environment.
 
 ## Quality gates
 
 - Test coverage **>= 85%** by default. A repo may override upward, never below 80%.
 - Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
+- **Performance and cost budgets are declared per profile and enforced.** Frontend bundle,
+  Docker image size, startup time, memory, CPU, latency, throughput, storage and log volume
+  each carry a budget; AI paths additionally budget tokens, cost, latency, concurrency and
+  cache. CI measures them and **blocks significant regressions** (info → warning → error); an
+  overrun carries a justification, an impact measurement and a reduction plan — never a silent
+  pass. Detail: annexe `CI-CD.md` CI-053.
 
 ## Design system
 
@@ -482,6 +1168,19 @@ components. This complements *dark mode + WCAG 2.1 AA* and the `ui-ux` skill.
   the Makefile (no `make type-check` when the target is `typecheck`).
 - **Recipe style** — prefix every recipe line with `@`; add `## Description` after each target so
   it appears in `make help`.
+- **Modular Makefiles — 500 lines max, split by domain.** No hand-maintained Makefile exceeds
+  **500 lines** (the same file gate as code). Approaching the limit, it is split into thematic
+  files under `make/` (`make/common.mk` for shared variables/functions, then `docker.mk`,
+  `test.mk`, `quality.mk`, `k8s.mk`, `docs.mk`… as the repo needs), loaded explicitly from the
+  root Makefile with `include` / `-include`. The **root Makefile stays an entry point and an
+  orchestrator**: it exposes the main commands, loads the thematic files, and serves the global
+  `make help`. A target exists **in exactly one file** — duplicates, near-identical variants and
+  copy-paste between thematic files are forbidden (*no code duplication* applies to Make too).
+  Inclusion is acyclic: a thematic file never includes back into its parent. Target names stay
+  predictable and grouped by domain (`test-unit`, `docker-build`, `k8s-deploy`), every public
+  target is documented in `make help` from its `## Description`, and any long or business-logic
+  recipe moves to a **versioned, testable script** — the Makefile is a command surface, not an
+  application language.
 
 ## Container-runtime policy
 
@@ -503,7 +1202,9 @@ Every repo carries a `runtime:` field in `repos.yml`, machine-checked by `audit-
 - **Versioning** is GitVersion (`GitVersion.yml`, flat `mode: ContinuousDeployment`) — never bump
   manually. Legacy v5 schemas (`GitHubFlow`, no top-level `mode:`) are incompatible and must be
   **replaced**, not version-bumped.
-- **Changelog** is generated by git-cliff (`cliff.toml`), Keep a Changelog format.
+- **Changelog** is generated by [git-cliff](https://git-cliff.org/) (`cliff.toml`), Keep a
+  Changelog format, from Conventional Commits — a non-conventional message is silently
+  absent from the changelog, which is why the commit convention is a commit-gate hook.
 - `GitVersion.yml` and `cliff.toml` are **canonical files** with a single source of truth in
   shared-standards (repo root + byte-identical `templates/` copy). A `repo: local` pre-commit hook
   (`gitversion-canonical-drift`, `cliff-canonical-drift`) blocks drift; `audit-canonical-conformance.sh`
@@ -519,7 +1220,31 @@ Every repo carries a `runtime:` field in `repos.yml`, machine-checked by `audit-
 
 CI is assembled from **existing actions**, not written. A workflow is glue — checkout,
 setup, invoke the repo's own gate (`pre-commit`, `make ci`) — and every line of logic it
-carries is a line that lives in the wrong repo.
+carries is a line that lives in the wrong repo. A pipeline has one job: **tell the truth
+about the code, fast, without becoming a codebase of its own**. Full rules, with ids and a
+review checklist: annexe [`CI-CD.md`](https://github.com/chrysa/shared-standards/blob/main/standards/annexes/CI-CD.md)
+(`CI-000`…`CI-053`) — pipeline architecture, supply-chain pinning, least privilege,
+cost/latency, what the gate must prove, feedback.
+
+Five of its rules are load-bearing enough to state here:
+
+- **Every repo runs CI, and every deployable product ships CD** (`CI-006`, `CI-047`). There is
+  no repository without a pipeline: CI runs the repo's own gate (`make ci` / `pre-commit`) on
+  every push and PR, scaled to the `runtime:` tier. A deployable product (`runtime: container`)
+  or a published library delivers through an **automated, environment-gated** pipeline — never a
+  laptop deploy — and what CD ships **announces its version** in production (the `/version`
+  endpoint + admin surface already required below).
+- **A red check means the code is wrong** (`CI-040`). A gate that fails because a repo is not
+  onboarded, a tool is missing or billing lapsed trains everyone to ignore red — and the next
+  real failure is ignored too. Fix it or remove it the day it appears.
+- **A skipped job reports as skipped, never as passed** (`CI-032`). Path filters may skip work;
+  they must never turn a required check green without running it. A tick that means "not
+  executed" destroys trust in the whole pipeline.
+- **Build once, promote the artefact** (`CI-046`). The image digest that was tested is the one
+  deployed; rebuilding per environment means production runs something no test ever saw.
+- **Every job declares `timeout-minutes:` and every PR workflow a concurrency group**
+  (`CI-030`, `CI-031`) — cancelling superseded PR runs, and explicitly **not** cancelling
+  deployments.
 
 - **Reuse before writing — always.** The first choice is a **maintained public action**
   (`actions/checkout`, `actions/setup-python`, `actions/setup-node`, `astral-sh/setup-uv`,
@@ -643,6 +1368,7 @@ and CI invokes `pre-commit`, not `make`.
 - `contract-testing` — library contract / breaking-change tests (@chrysa/* releases)
 - `agent-patterns` — LangGraph + PydanticAI + Claude API (building agents)
 - `ui-ux` — UX/UI/ergonomics + WCAG 2.1 AA + dark mode + i18n (human-facing surfaces)
+- `accessibility` — per-disability-category contract + testable DoD (any surface, incl. public micro-sites)
 
 ## Error handling pattern (all automations)
 
@@ -674,15 +1400,43 @@ Per-project activation checklist:
 
 ## Session lifecycle (primer + memory + hindsight)
 
-Every repo ships a session lifecycle so an AI agent keeps context across sessions. Bootstrap with
-`make memory-init`; scripts live in `shared-standards/scripts/`.
+A repo **may** carry a session lifecycle so an AI agent keeps context across sessions. The
+substance is a set of **committed files**, not a required Make target — the convention below is
+what matters; any `make`/slash-command wrappers are an **optional convenience** provided where a
+repo has them, not a universal socle target every Makefile must expose.
 
 - `primer.md` (committed) — current state, what to do NOW; read **before** `CLAUDE.md`.
 - `.claude/memory/session.md` — volatile session notes, **not** committed (reset each session).
 - `.claude/memory/decisions.md`, `known-issues.md`, `progress.md` (append-only history) — committed.
-- **Session start**: `make prepare` (`/prepare`) — shows primer + git context + open PRs.
-- **Session end**: `make hindsight` (`/hindsight`) — updates `primer.md` + `progress.md`, clears
-  `session.md`, optional Obsidian export (`OBSIDIAN=<path>`).
+- **Session start** — surface the primer + git context + open PRs (a `prepare` wrapper where present).
+- **Session end** — update `primer.md` + `progress.md`, clear `session.md` (a `hindsight` wrapper
+  where present), optional Obsidian export.
+
+> **Not a mandated Make target.** `memory-init` / `prepare` / `hindsight` are convenience
+> wrappers, not part of the canonical Makefile socle contract (*Makefile targets*), and are not
+> assumed to exist in every repo. A repo governs its session state through the committed files
+> above; the wrappers and their scripts are added per repo when useful.
+
+## Compliance targets
+
+The fleet is held to two external compliance frameworks. Neither is a separate corpus — each
+is operationalised by rules already in this canon; declaring the target names the obligation
+those rules must satisfy, and certification is a governance program on top, not a code change.
+
+- **GDPR / RGPD — by construction.** Every product that touches personal data records its
+  lawful basis and purpose, minimises and time-bounds what it stores, keeps PII out of logs
+  and test data, and supports export / rectification / erasure by a documented command. This
+  is *per-person data implies a user account* and *portable personalisation data* applied to a
+  legal obligation. Detail: annexe `GOVERNANCE.md` GV-040.
+- **ISO/IEC 27001 — the security baseline.** Information security is a governed, documented
+  ISMS, not ad-hoc practice. Access control, cryptography, logging and audit, operations and
+  change control, supplier security, and incident management each map onto an existing canon
+  rule (cluster SSO & session security, secrets handling, observability & audit trail, CI
+  gates & protected `main`, project decoupling & supply-chain pinning, typed/contained errors),
+  so conformance is reached by satisfying those — not a parallel checklist. The organizational
+  artefacts ISO 27001 also demands (ISMS scope, risk assessment & treatment, Statement of
+  Applicability, internal audit) are a versioned governance backlog under `docs/`. Detail:
+  annexe `GOVERNANCE.md` GV-041.
 
 ## Governance — strategic pillars & ADR format
 
@@ -691,7 +1445,27 @@ requires an ADR with a kill-test, not a shrug.
 
 1. **LLM-provider independence** — no vendor SDK in business code; inference goes through a
    local port with **≥2 real, tested adapters** (e.g. Claude + a local model). A prompt that
-   only works on one vendor is a bug, not a feature.
+   only works on one vendor is a bug, not a feature. **"Local model" means a model running on
+   the machine or self-hosted** — an interpreter/weights the owner runs (Ollama, llama.cpp, a
+   vLLM/TGI server on chrysa infrastructure), never a third-party hosted API dressed up as
+   "local". The independence is only proven when one of the tested adapters needs no external
+   provider to answer. **Every LLM call — internal or external — goes through the `chrysa-LLM`
+   gateway**, never a vendor SDK or raw provider endpoint called directly from a product's
+   business code. `chrysa-LLM` *is* the local port of this pillar made concrete across the
+   fleet: it owns provider selection and the ≥2 tested adapters, and it is the one place where
+   routing, fallback, prompt/model/version pinning, evaluation, cost and token budgets, caching,
+   rate limiting and observability live (satisfying the *AI feature is evaluated* and *agent
+   actions are governed* obligations once, not per repo). A product calls it as a **versioned
+   contract** through a thin local adapter (*projects talk through versioned contracts only*)
+   and degrades to a documented no-AI / fallback mode when it is unreachable — it never reaches
+   a model by any other path. A direct call to Claude, OpenAI, Ollama, or any inference endpoint
+   that bypasses `chrysa-LLM` is a defect, not a shortcut; the single documented exception is
+   `chrysa-LLM` itself, which owns the real adapters. Products built *on top of* the gateway —
+   e.g. `ai-aggregator`, a showcase/front consuming `chrysa-LLM` — are consumers of this
+   contract, not alternative gateways: they route through `chrysa-LLM` like everything else and
+   never re-implement provider access. This is the transport-level application of *no code
+   duplication* and *external servers addressed through the environment*: the gateway's endpoint
+   arrives by env, and the adapters exist once, there.
 2. **GAFAM independence** — every managed-cloud dependency has a documented self-hosted exit
    path; the cloud SDK stays confined to an adapter (`BlobStore`, not `S3Client`).
 3. **Portable personalisation data** — all user/personal data is exportable to an open format

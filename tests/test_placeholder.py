@@ -6,6 +6,8 @@ from pytest_mock import MockerFixture
 
 import lifeos
 from lifeos import __author__, __version__
+from lifeos.app import Application
+from lifeos.config.settings import Settings, load_config
 
 
 def test_version_string() -> None:
@@ -57,28 +59,17 @@ def test_main_module_importable() -> None:
     importlib.import_module("lifeos.__main__")
 
 
-def test_cli_run_headless_mocked(mocker: MockerFixture) -> None:
+def test_cli_run_headless(mocker: MockerFixture) -> None:
     from click.testing import CliRunner
 
     from lifeos.cli import main
 
-    mock_app = mocker.MagicMock()
-    mock_app.run.return_value = None
-    mock_app_cls = mocker.MagicMock(return_value=mock_app)
-    mock_load_config = mocker.MagicMock(return_value=mocker.MagicMock())
-
-    mocker.patch.dict(
-        "sys.modules",
-        {
-            "lifeos.app": mocker.MagicMock(Application=mock_app_cls),
-            "lifeos.config": mocker.MagicMock(),
-            "lifeos.config.settings": mocker.MagicMock(load_config=mock_load_config),
-        },
-    )
+    run_spy = mocker.spy(Application, "run")
     runner = CliRunner()
     result = runner.invoke(main, ["--headless"])
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.output
+    run_spy.assert_called_once()
 
 
 def test_cli_run_with_enable(mocker: MockerFixture) -> None:
@@ -86,25 +77,67 @@ def test_cli_run_with_enable(mocker: MockerFixture) -> None:
 
     from lifeos.cli import main
 
-    mock_plugin = mocker.MagicMock()
-    mock_plugin.enabled = False
-    mock_plugins = mocker.MagicMock()
-    mock_plugins.discord = mock_plugin
-    mock_settings = mocker.MagicMock()
-    mock_settings.plugins = mock_plugins
-    mock_load_config = mocker.MagicMock(return_value=mock_settings)
-    mock_app = mocker.MagicMock()
-    mock_app_cls = mocker.MagicMock(return_value=mock_app)
+    captured: dict[str, Application] = {}
+    original_run = Application.run
 
-    mocker.patch.dict(
-        "sys.modules",
-        {
-            "lifeos.app": mocker.MagicMock(Application=mock_app_cls),
-            "lifeos.config": mocker.MagicMock(),
-            "lifeos.config.settings": mocker.MagicMock(load_config=mock_load_config),
-        },
-    )
+    def _capture(self: Application) -> None:
+        captured["app"] = self
+        original_run(self)
+
+    mocker.patch.object(Application, "run", _capture)
     runner = CliRunner()
     result = runner.invoke(main, ["--headless", "--enable", "discord"])
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.output
+    assert captured["app"].enabled_plugins() == ["discord"]
+
+
+def test_load_config_defaults_when_missing(tmp_path: object) -> None:
+    from pathlib import Path
+
+    missing = Path(str(tmp_path)) / "does-not-exist.toml"
+    settings = load_config(config_path=missing)
+
+    assert isinstance(settings, Settings)
+    assert settings.plugins.discord.enabled is False
+
+
+def test_load_config_reads_toml(tmp_path: object) -> None:
+    from pathlib import Path
+
+    config = Path(str(tmp_path)) / "config.toml"
+    config.write_text("[plugins.discord]\nenabled = true\n")
+    settings = load_config(config_path=config)
+
+    assert settings.plugins.discord.enabled is True
+    assert settings.plugins.notion.enabled is False
+
+
+def test_application_enabled_plugins_empty() -> None:
+    app = Application(settings=Settings(), enable_ui=False)
+
+    assert app.enabled_plugins() == []
+
+
+def test_application_run_headless(caplog: object) -> None:
+    import logging
+
+    settings = Settings()
+    settings.plugins.notion.enabled = True
+    app = Application(settings=settings, enable_ui=False, debug=True)
+
+    with caplog.at_level(logging.INFO):  # type: ignore[attr-defined]
+        app.run()
+
+    assert app.enabled_plugins() == ["notion"]
+
+
+def test_application_run_with_ui_warns(caplog: object) -> None:
+    import logging
+
+    app = Application(settings=Settings(), enable_ui=True)
+
+    with caplog.at_level(logging.WARNING):  # type: ignore[attr-defined]
+        app.run()
+
+    assert any("headless" in record.message for record in caplog.records)  # type: ignore[attr-defined]

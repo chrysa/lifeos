@@ -3,11 +3,16 @@
     types:
     - opened
     - synchronize
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   update-body:
     if: contains(github.event.pull_request.body, '<!-- auto-changes-start -->')
     name: Fill auto-changes section
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -34,7 +39,3 @@ jobs:
           \ detected \u2014 skipping update.');\n    return;\n}\n\nawait github.rest.pulls.update({\n\
           \    owner: context.repo.owner,\n    repo: context.repo.repo,\n    pull_number:\
           \ prNumber,\n    body: updatedBody,\n});\n\nconsole.log('PR body updated.');\n"
-name: Update PR body
-permissions:
-  contents: read
-  pull-requests: write
