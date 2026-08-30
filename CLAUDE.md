@@ -123,7 +123,7 @@ Where an annexe and this file disagree, **this file wins**.
 | `CONTAINERS-K3S.md`       | reference stage shape · container responsibility · k3s workload baseline |
 | `DATA-MIGRATIONS.md`      | data ownership & classification · versioned schemas · safe migrations · rollback · retention/export |
 | `OBSERVABILITY-OPS.md`    | probes · OpenTelemetry (replaceable backend) · alerts+runbooks · SLI/SLO · resource envelope · `/version` · production-ready gate |
-| `API-CONTRACTS.md`        | machine-readable contract · versioning & deprecation · typed errors · cursor pagination · idempotency · contract tests · events/webhooks |
+| `API-CONTRACTS.md`        | machine-readable contract · versioning & deprecation · typed errors · cursor pagination · hypermedia/HATEOAS links · idempotency · contract tests · events/webhooks |
 | `TESTING.md`              | common test levels and rules across languages                   |
 | `CI-CD.md`                | pipeline architecture · action pinning · least privilege · cost · what the gate proves |
 | `SCM.md`                  | type-driven issues & pull requests · taxonomy & labels · per-type templates · shape gates |
@@ -333,6 +333,27 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   `@notion-sync` after any state change; on conflict about project state, Notion wins.
   This does **not** apply to the standards corpus: there the repo is the canon and Notion is
   a governance view (annexe `GOVERNANCE.md` GV-000).
+- **Documentation and Notion are maintained in lockstep with the code — a change that leaves
+  them stale is unfinished.** Keeping the docs and the project's Notion current is an
+  **obligation of every change**, part of the same unit of work, never a later cleanup.
+  Concretely, in the **same PR** as a behaviour or interface change:
+  1. **The affected documentation is updated** — the repo `README.md` and the per-folder
+     `README.md` (folder-readme rule), the `docs/` pages (MkDocs), the ADR for the *why*, the
+     API/contract docs, and the setup/ops runbook. `README.md` always reflects the **actual
+     current state** (updated at least each release); a `primer.md`/session-state file, where
+     the repo carries one, is refreshed too.
+  2. **Notion is updated** — every advancement, decision or state change is logged per the
+     *Notion logging* rule above (Notion is the source of truth for **project state**;
+     `@notion-sync` after any state change). A state change that never reaches Notion is a
+     lie by omission about where the project stands.
+  Stale documentation is a defect on par with a failing test: a doc that describes behaviour
+  the code no longer has misleads every future reader — human or agent — and an agent that
+  trusts it acts on a falsehood (this is why *the repository is legible to an agent* depends on
+  it). The Definition of Done for any change therefore includes **"the docs and the Notion it
+  touches are current"**; a PR that changes behaviour without touching a single doc, or a state
+  change never reflected in Notion, is incomplete — reviewers reject it. The one carve-out is
+  the standards corpus itself (this repo): there the repo is canon and Notion is only a
+  governance view (`GV-000`).
 - **Agent actions are governed.** Any feature where an agent *acts* (writes, calls, runs,
   changes state) needs a versioned manifest with typed I/O and a business owner, least
   privilege, a declared risk level R0–R5 with proportionate confirmation and dry-run,
@@ -657,7 +678,10 @@ deprecated and archived — nothing is added to it, nothing reads from it.
 - **APIs, SDKs & public contracts follow the `STD-API-001` contract.** A machine-readable
   contract (OpenAPI/AsyncAPI/JSON Schema) is the canonical interface; public versions are
   explicit with a backward-compatibility guarantee and a dated deprecation policy; errors are
-  typed with a machine code + correlation id; collections paginate by cursor; critical writes
+  typed with a machine code + correlation id; collections paginate by cursor; responses are
+  **hypermedia-driven (HATEOAS)** — each carries at least a `self` link plus the
+  authorization-aware links for the actions and related resources reachable next, so a client
+  follows links instead of templating URLs from ids; critical writes
   are idempotent; guards (timeouts, sizes, authz) live in the contract; inter-project contracts
   are tested provider **and** consumer side; SDKs track the public contract, never internal
   models; and events/webhooks are identified, versioned, signed, replay-protected, with bounded
@@ -803,6 +827,35 @@ deprecated and archived — nothing is added to it, nothing reads from it.
   not a dev image. Mechanised by the `compose-dev-hot-reload` hook
   (`chrysa/pre-commit-tools`): a compose service targeting the `dev` stage with neither a bind
   mount nor a `develop.watch` sync action is flagged at commit time.
+- **Local dev runs the code in-container, live, in debug mode — never the production server.**
+  The local development loop is edit-on-host, run-in-container, and the three properties below
+  are non-negotiable because together they make "it ran on my machine" mean "it ran the way the
+  container runs it":
+  1. **Sources are synchronised host ↔ container.** The code the developer edits on the host is
+     the code executing in the running `dev` container, with **no rebuild step** between save and
+     effect — via a source **bind mount** (`.:/app`) or Compose `develop.watch` **sync** (not
+     `sync+restart` for interpreted code, which defeats the point). A dev workflow that requires
+     `docker build` after every edit is a defect: it is not a dev loop, it is a slow CI loop.
+  2. **The dev process is the framework's dev server with autoreload, not a production server.**
+     The `dev` stage launches the app through its **autoreloading dev runner** — `uvicorn --reload`,
+     `flask run --debug`, `manage.py runserver`, `vite`/`next dev`, `nodemon`, `air`, etc. — so a
+     source change reloads the process automatically. A **production WSGI/ASGI/static server —
+     `gunicorn`, `uwsgi`, `serve`, `nginx` fronting built assets, `uvicorn` **without** `--reload`,
+     a compiled release binary — is forbidden in the `dev` stage**: those exist for the
+     `production` target (multi-worker, no reload, no debugger), where reloading on every edit and
+     exposing a debugger would be exactly wrong. The `dev` and `production` stages differ **here**,
+     not only in installed tooling.
+  3. **Debug mode is on in dev.** The dev process runs with the framework's debug switch enabled
+     (`DEBUG=1`, `--debug`, `--reload`, `NODE_ENV=development`) — verbose errors, the interactive
+     debugger/PDB attach, and autoreload — and that switch is **off in production by contract**
+     (`DEBUG` false, no debugger, no stack traces to the client; a debug-on production build is a
+     security defect, see *every form is a hostile input surface* and the session rules). Debug is
+     a **per-environment flag read from config** (*no hardcoded constants*), never a literal baked
+     into an image that ships to prod.
+  In short: same sources, live, debug-on, dev runner in `dev`; a frozen copy, no reload, debug-off,
+  production runner in `production`. A `dev` service that runs `gunicorn`/`serve`, needs a rebuild
+  to see a change, or ships with debug off is not a dev environment. Extends *Dev stage must
+  hot-reload* and is checked by the same `compose-dev-hot-reload` hook plus review.
 - **`.dockerignore` mandatory & exhaustive** — at minimum `.git`, `node_modules`, `__pycache__`,
   `.env*`, `*.log`. Base images pin an explicit version or digest (never a bare `FROM …:latest`);
   no secret in build args or image layers (BuildKit secrets or runtime env only). Every application
@@ -1240,6 +1293,12 @@ Five of its rules are load-bearing enough to state here:
 - **A skipped job reports as skipped, never as passed** (`CI-032`). Path filters may skip work;
   they must never turn a required check green without running it. A tick that means "not
   executed" destroys trust in the whole pipeline.
+- **No `continue-on-error` that swallows a real failure** (`CI-037`). A step that matters — a
+  test, lint, type-check, build, scan, migration, deploy — never runs under
+  `continue-on-error: true`: making it fail *green* is the same lie as a skip that reads as a
+  pass. A genuinely optional step is guarded **explicitly** (`if:`, a `hashFiles` check, an
+  exit-0-on-absent design), never by blanket-tolerating every failure mode; "run even if a
+  previous step failed" is `if: always()` (honest), not `continue-on-error` (hidden).
 - **Build once, promote the artefact** (`CI-046`). The image digest that was tested is the one
   deployed; rebuilding per environment means production runs something no test ever saw.
 - **Every job declares `timeout-minutes:` and every PR workflow a concurrency group**
@@ -1314,8 +1373,10 @@ and CI invokes `pre-commit`, not `make`.
   genuinely needs the project image (Django settings, a DB, a compiled tool) **degrades gracefully on the host**:
   it probes for the tool and skips with a message when absent
   (`command -v <tool> >/dev/null 2>&1 && <run> || echo 'skipping — runs in CI/Docker'`),
-  it does **not** spin up a container. Container-side enforcement is CI's job; locally the
-  gate is best-effort and never blocks on the Docker daemon being up. This does not
+  it does **not** spin up a container. Container-side enforcement is CI's job **and is
+  mandatory**: a check skipped on the host **and** absent from CI is not a gate — it runs
+  nowhere (`CI-036`). Locally the gate is best-effort and never blocks on the Docker daemon
+  being up. This does not
   contradict the container-runtime policy — the *application* runs in a container; the
   *commit gate*, like git, is a host tool.
 - **Two stages, two scopes — do not mix them:**
