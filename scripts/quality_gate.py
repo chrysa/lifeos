@@ -256,9 +256,13 @@ class QualityGate:
                 return float(match.group(1))
         for line in output.splitlines():
             if any(token in line.lower() for token in ["total", "coverage", "covered"]):
+                # Drop pytest's own progress marker ("... test_x_covered PASSED [ 42%]"):
+                # a test name containing "covered" matches the token, and [ 42%] would
+                # otherwise be read as coverage. Coverage percentages are never bracketed.
+                stripped = re.sub(r"\[\s*\d+%\s*\]", "", line)
                 # The pattern captures digits only, so float() cannot raise here —
                 # the try/except this replaces was dead defensive code (PERF203).
-                for value in re.findall(r"(\d+(?:\.\d+)?)%", line):
+                for value in re.findall(r"(\d+(?:\.\d+)?)%", stripped):
                     return float(value)
         return self._parse_coverage_report()
 
