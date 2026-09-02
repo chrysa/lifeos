@@ -45,13 +45,14 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      obscure ways. Deployed versions per environment are also visible from the platform side
      (release notes, deployment log), so "what is in production" never requires a shell.
 
-## Observability — Sentry → GitHub issues (norm)
+## Observability — error-tracking → GitHub issues (norm)
 
-Every status:dev repo ships a Sentry project, and **a new Sentry issue automatically opens a
-GitHub issue** via Sentry's native GitHub integration. No relay, no PAT in the repo — the
-integration owns the link, so a Sentry issue maps to exactly one GitHub issue (no duplicates).
+Every status:dev repo ships an error-tracking project, and **a new error-tracking issue
+automatically opens a GitHub issue** via the error-tracking service's native GitHub integration.
+No relay, no PAT in the repo — the integration owns the link, so an error-tracking issue maps to
+exactly one GitHub issue (no duplicates).
 
-Mechanism: a per-project Sentry **issue alert rule** with
+Mechanism: a per-project error-tracking **issue alert rule** with
 condition `FirstSeenEventCondition` (a new issue is created) and action
 `GitHubCreateTicketAction` targeting `chrysa/<repo>`, labels `sentry`, `bug`.
 Provision it across all projects with
@@ -59,9 +60,9 @@ Provision it across all projects with
 
 Per-project activation checklist:
 
-1. Org GitHub integration installed once in Sentry (Settings → Integrations → GitHub) with
-   access to the chrysa repos.
-2. The repo has a Sentry project whose slug matches the repo name.
+1. Org GitHub integration installed once in the error-tracking service (Settings → Integrations
+   → GitHub) with access to the chrysa repos.
+2. The repo has an error-tracking project whose slug matches the repo name.
 3. The auto-issue alert rule exists (run the provisioning script, or add it in
    Alerts → Create Alert → Issues → action "Create a GitHub issue").
 4. The GitHub repo has a `sentry` label (CI label sync provides it).

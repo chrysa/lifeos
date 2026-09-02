@@ -33,7 +33,7 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   the design system. Inside one repo, duplication is extracted to a shared module in the same
   layer — never re-typed in a sibling. Rewriting the same logic in different words does not
   make it a different implementation; a near-duplicate diverges silently and costs sixty PRs
-  to fix once. Mechanisation: SonarCloud duplication ratio and `jscpd`-class detectors; a
+  to fix once. Mechanisation: the code-quality analysis service's duplication ratio and `jscpd`-class detectors; a
   reported duplicate block is a defect to factor, not a warning to carry. Legitimate exception:
   a deliberate copy that decouples two projects on purpose (see *projects talk through
   versioned contracts only*) — documented as such, not left implicit.
@@ -145,8 +145,8 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      shared mutable global state, silent `except: pass` (see *typed errors*), stringly-typed domains,
      circular imports, and dead code kept "just in case" (git is the archive).
   Mechanisation: Ruff (`C901`, `PLR*`, `B`, `SIM`, `PERF`, `RUF`) + Mypy on Python, ESLint
-  (`complexity`, `no-await-in-loop`, `react-hooks/exhaustive-deps`) on TS, SonarCloud rating **A**
-  with 0 hotspot on both. A finding here is a defect to fix, not a warning to carry.
+  (`complexity`, `no-await-in-loop`, `react-hooks/exhaustive-deps`) on TS, the code-quality
+  analysis service rating **A** with 0 hotspot on both. A finding here is a defect to fix, not a warning to carry.
   The armed Ruff selection is the canonical set distributed by `scripts/pyproject-ruff-merge.py`
   and merged into each repo's `[tool.ruff.lint] select` — the script is the source of truth for
   which codes are on. Two rules that the `PLR*`/`RUF` shorthand above would otherwise imply are
@@ -177,7 +177,7 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
 ## Quality gates
 
 - Test coverage **>= 85%** by default. A repo may override upward, never below 80%.
-- Lint warnings: **0**. Mypy clean. SonarCloud rating **A**, 0 security hotspot.
+- Lint warnings: **0**. Mypy clean. Code-quality analysis service rating **A**, 0 security hotspot.
 - Max function lines 50 · max file lines 500 · cyclomatic complexity heuristic <= 10.
 - **Performance and cost budgets are declared per profile and enforced.** Frontend bundle,
   Docker image size, startup time, memory, CPU, latency, throughput, storage and log volume

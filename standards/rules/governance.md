@@ -29,6 +29,7 @@ Where an annexe and this file disagree, **this file wins**.
 | `EVENTING.md`             | real-time channels · typed channel contracts · non-blocking bounded buffers · fail-safe external access · delivery semantics · transport-as-adapter |
 | `TOOLING-ECOSYSTEM.md`    | one truth per tool (Shortcut/Sentry/GitHub/Notion/Slack) · native-before-custom integrations · `sc-<id>` cross-tool thread · canonical journeys · anti-patterns |
 | `GOVERNANCE.md`           | rule identity, maturity ladder, enforcement rollout, sources of truth |
+| `STACK.chrysa.md`         | chrysa's concrete settled stack — the named products/versions implementing the canon's agnostic categories (deliberately NOT tool-agnostic) |
 
 **Source of truth:** the canon lives in this repo. Notion is a governance and decision view
 of the standards corpus, not its authority (`GOVERNANCE.md` GV-000). `chrysa/standards` is
