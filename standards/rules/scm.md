@@ -27,8 +27,8 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      promotion opens with conflicts. *Squash merge only* governs feature PRs into `develop`;
      the release promotion is the documented exception.
   5. **Production is triggered by a new release**, not by a merge: merging `develop` → `main`
-     lands the code, and the deployment is driven by the tagged release (GitVersion tag +
-     git-cliff changelog + the release workflow). No manual deploy from a laptop, no push
+     lands the code, and the deployment is driven by the tagged release (the semantic-version
+     tool's tag + git-cliff changelog + the release workflow). No manual deploy from a laptop, no push
      that silently ships.
   Protection is configured, not assumed: `main` requires a PR, blocks force-push and
   deletion, and is machine-checked across the fleet by `scripts/audit-branch-policy.sh`.

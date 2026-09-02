@@ -16,7 +16,7 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   **obligation of every change**, part of the same unit of work, never a later cleanup.
   Concretely, in the **same PR** as a behaviour or interface change:
   1. **The affected documentation is updated** — the repo `README.md` and the per-folder
-     `README.md` (folder-readme rule), the `docs/` pages (MkDocs), the ADR for the *why*, the
+     `README.md` (folder-readme rule), the `docs/` pages (the docs-site generator), the ADR for the *why*, the
      API/contract docs, and the setup/ops runbook. `README.md` always reflects the **actual
      current state** (updated at least each release); a `primer.md`/session-state file, where
      the repo carries one, is refreshed too.

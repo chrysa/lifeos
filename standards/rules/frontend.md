@@ -18,7 +18,7 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   resolves dependencies with **pnpm**. Concretely: the committed lockfile is
   **`pnpm-lock.yaml`** (a `package-lock.json` or `yarn.lock` in the tree is a defect — delete
   it and regenerate with pnpm), workspaces are pnpm workspaces (`pnpm-workspace.yaml`) under
-  Turborepo, CI installs with **`pnpm install --frozen-lockfile`** (never `npm ci`), images
+  the monorepo task runner, CI installs with **`pnpm install --frozen-lockfile`** (never `npm ci`), images
   install with pnpm in the builder stage, and scripts run as `pnpm <script>` / `pnpm dlx`
   (never `npm run` / `npx`). The version is pinned via `packageManager` in `package.json` and
   provisioned by Corepack, so every machine and runner resolves the same pnpm. This makes

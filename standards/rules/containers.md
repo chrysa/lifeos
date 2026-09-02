@@ -5,6 +5,8 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
 
 > Detail for the slim core in `CLAUDE.md`. **Generated** from `standards/STANDARDS.chrysa.md` — do not edit here; edit the canon and regenerate.
 
+- **Everything runs in a container — the only exception is the slice of a repo genuinely bound to the host OS.** Application code, tooling, dependencies, tests, and the services a project talks to all execute inside images / compose — the container *is* the environment. A repo runs code natively **only** for the part that genuinely requires deep host access (`exempt:native`: desktop apps, OS/hardware agents, editor/IDE extensions, kernel or device work), and **only that part**: its portable pieces (deps, tests, tooling, CI) still containerise. "It is simpler on the host" is not a reason; a real host binding (a syscall, a device, a GUI toolkit, an OS API) is. The three sanctioned host tools (git, Docker, the commit gate) are the only things installed on the machine itself; everything else reaches the developer through `docker compose` / `make docker-*`. A service that could run in a container but does not is drift, not a preference.
+
 - **External dependencies are installed in containers, never on the host.** A project's
   runtime dependencies — language packages (pip/npm/cargo/nuget), databases, brokers, caches,
   system libraries, compilers, CLIs a service shells out to — are declared in the image
@@ -85,10 +87,11 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   not embed a reverse proxy and still run as non-root where they bind-mount host paths.
 
 - **App containers ship the app only — the platform layer is the owner's responsibility.** An
-  application image/container **never embeds a reverse proxy** (nginx/Traefik/Caddy/HAProxy as a
-  TLS-terminating or routing front). The app container exposes its own port and speaks plain HTTP;
+  application image/container **never embeds a reverse proxy** (any TLS-terminating or routing
+  front). The app container exposes its own port and speaks plain HTTP;
   routing, TLS, virtual hosts, and load-balancing live in the **platform layer** (the owner's
-  Nginx/Traefik + Certbot on the host, or `deploy/k8s/` ingress), out of the app image. A static
+  reverse proxy with automated TLS/ACME certificate management on the host, or `deploy/k8s/`
+  ingress), out of the app image. A static
   frontend may use a minimal internal web server to serve its own built assets, but it does **not**
   proxy other services. Baking a reverse proxy into an app container is a defect (couples the app to
   infra, duplicates the platform, and breaks the ownership boundary).
@@ -124,8 +127,8 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   restates a default is deleted. Detail: annexe `CONTAINERS-K3S.md` CT-019.
 
 - **Dev stage must hot-reload.** The `dev` target/service provides live auto-reload so a source edit
-  is reflected without a manual rebuild/restart: backend `uvicorn --reload` (or the framework's
-  autoreload), frontend the dev server with HMR (`vite`/`npm run dev`), watched via the compose
+  is reflected without a manual rebuild/restart: the backend's autoreload runner and the
+  frontend's dev server with HMR, watched via the compose
   `develop.watch` sync or a source bind mount. A `dev` image identical to `production` (no reload) is
   not a dev image. Mechanised by the `compose-dev-hot-reload` hook
   (`chrysa/pre-commit-tools`): a compose service targeting the `dev` stage with neither a bind
@@ -141,11 +144,12 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      `sync+restart` for interpreted code, which defeats the point). A dev workflow that requires
      `docker build` after every edit is a defect: it is not a dev loop, it is a slow CI loop.
   2. **The dev process is the framework's dev server with autoreload, not a production server.**
-     The `dev` stage launches the app through its **autoreloading dev runner** — `uvicorn --reload`,
-     `flask run --debug`, `manage.py runserver`, `vite`/`next dev`, `nodemon`, `air`, etc. — so a
+     The `dev` stage launches the app through its **autoreloading dev runner** — the framework's own
+     reload-enabled dev server (backend hot-reload, frontend dev server with HMR) — so a
      source change reloads the process automatically. A **production WSGI/ASGI/static server —
-     `gunicorn`, `uwsgi`, `serve`, `nginx` fronting built assets, `uvicorn` **without** `--reload`,
-     a compiled release binary — is forbidden in the `dev` stage**: those exist for the
+     a multi-worker application server, a static or reverse-proxy server fronting built assets, an
+     application server **without** autoreload, a compiled release binary — is forbidden in the `dev`
+     stage**: those exist for the
      `production` target (multi-worker, no reload, no debugger), where reloading on every edit and
      exposing a debugger would be exactly wrong. The `dev` and `production` stages differ **here**,
      not only in installed tooling.
