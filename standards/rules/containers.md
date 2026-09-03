@@ -165,6 +165,8 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   to see a change, or ships with debug off is not a dev environment. Extends *Dev stage must
   hot-reload* and is checked by the same `compose-dev-hot-reload` hook plus review.
 
+- **Default to dev mode when starting an app locally — any other mode only when explicitly asked.** Running an app on the developer machine (yourself, an agent, a `make` target, a README's first step) starts it in the framework's **development mode** by default: the dev server, autoreload on, debug on, the dev-stage container (`target: dev`). A production/staging/prod-like local run happens **only when a mode is explicitly requested** — reproducing a prod-only bug, a perf measurement, a release smoke-test — and is stated as such. Absent an explicit mode, dev is the default; never launch the production server locally to "just run it". This is the local-run counterpart of *local dev runs the code in-container, live, in debug mode* — that rule governs *how* the dev process runs, this one fixes *which* mode is chosen by default.
+
 - **`.dockerignore` mandatory & exhaustive** — at minimum `.git`, `node_modules`, `__pycache__`,
   `.env*`, `*.log`. Base images pin an explicit version or digest (never a bare `FROM …:latest`);
   no secret in build args or image layers (BuildKit secrets or runtime env only). Every application
