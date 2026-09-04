@@ -118,3 +118,29 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      an XSS payload until proven otherwise. File fields additionally follow *if a user can
      supply a file, the product accepts an upload* — type, size and content are validated
      server-side there too.
+
+- **Security scanning is a gate, not an afterthought — it runs in pre-commit and in CI.**
+  Every repo scans for the two failure modes a human review misses: **leaked secrets** and
+  **known-vulnerable code/dependencies**. The scan is wired at both the local boundary
+  (pre-commit) and the shared boundary (CI), from the scaffold — never bolted on after an
+  incident.
+  1. **Secrets never reach a commit.** A secret scanner (gitleaks) runs in pre-commit and in
+     CI; a positive is a hard failure, not a warning. `detect-private-key` and the
+     `env-file-check` hook stay on. A secret that is already committed is rotated, not
+     `.gitignore`d.
+  2. **Code is scanned for known weaknesses (SAST).** Python code runs `bandit` (config in
+     `pyproject.toml`, tests excluded) in pre-commit and CI; the container/IaC surface runs a
+     vulnerability + misconfiguration scan (Trivy filesystem) in CI, and Dockerfiles are
+     linted (`hadolint`). High/critical findings fail the build.
+  3. **The gate is centralised, not copy-pasted.** The pre-commit hooks come from the
+     `project-init` baseline and `chrysa/pre-commit-tools`; the CI jobs are **reusable
+     workflows** in `chrysa/github-actions` (`secret-scan.yml`, `sast.yml`) referenced by a
+     thin per-repo caller pinned to a tag. A repo does not fork the scan logic — it consumes
+     the shared version.
+  4. **A container release carries its provenance.** A published image additionally ships an
+     SBOM (Syft), a vulnerability scan of the built image (Trivy), and a signature (Cosign) —
+     the supply-chain half of *observability & production readiness*.
+  5. **A control is never silently disabled.** Skipping or removing a security hook, lowering
+     a severity threshold, or `--no-verify` on a security gate is a governed decision recorded
+     in `DECISIONS.md`, not a convenience a single commit grants itself. A pre-existing
+     unrelated failure is skipped by name (`SKIP=<hook>`), never by turning the gate off.
