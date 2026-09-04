@@ -57,6 +57,7 @@ lifeos = "lifeos.__main__:main"
 packages = ["lifeos"]
 
 [tool.ruff]
+extend-exclude = [".claude", "scripts/quality_gate.py"]
 # py313 (not py314): ruff format <=0.15.15 strips multi-except parens under py314 — restore when fixed upstream
 target-version = "py313"
 line-length = 120
