@@ -26,6 +26,15 @@ components. This complements *dark mode + WCAG 2.1 AA* and the `ui-ux` skill.
   focus is mandatory.
 - **Consistent UX writing** — voice-and-tone guide; error messages say what to do (no raw
   codes); action-oriented labels and CTAs; terminology aligned to the domain glossary.
+- **Numbers are displayed with a space thousands separator** — every human-facing number
+  (`1 234 567`, `12 500 €`) groups thousands with a **space**, on every surface: frontend,
+  backoffice, generated documents, reports, and CLI output. The separator is a **non-breaking
+  space** (`U+202F` narrow no-break, or `U+00A0`) so the number never wraps mid-value; the
+  decimal mark stays the locale's own. This is a **display** rule only — stored, serialised,
+  logged, and API-transported numbers stay raw (unseparated), and formatting happens at the
+  view boundary through a shared formatter, never by hand per component (mirrors *no code
+  duplication*). Identifiers, years, ports, and version numbers are not quantities and are
+  never separated.
 - **Standardised motion** — tokenised durations and easing (e.g. 150/250 ms); animation is
   functional (state transition, feedback), never gratuitous; honours `prefers-reduced-motion`.
 - **Mobile-first responsive** — mobile-first design, breakpoints from tokens, touch targets

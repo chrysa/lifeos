@@ -47,6 +47,19 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   adapter, so the product stays independently deployable against an alternative identity provider
   (or a standalone local mode) by configuration, without touching the domain.
 
+- **Rights are resolved against the common directory (LDAP), never re-declared per service.**
+  The SSO above is the sign-in front door; the **shared LDAP directory is the source of truth for
+  *who may do what*** — the people, the groups, and the group memberships that grant rights. Every
+  service that requires a connection (interactive product, backend service, admin tool, job runner)
+  authorises against that directory: it reads a subject's group/role membership from LDAP and maps
+  those to its own permissions, rather than maintaining a parallel, authoritative list of users or
+  who-is-an-admin. A right granted or revoked in the directory takes effect everywhere; a local
+  role table that shadows the directory is drift, and a security bug. As with sign-in, the directory
+  sits **behind an adapter** (the domain speaks `roles`/`permissions`, not LDAP filters), so the
+  product stays deployable against an alternative directory or a standalone local mode by
+  configuration — but wherever it is deployed in the cluster, the cluster's directory is authoritative.
+  The directory is read for authorisation; it is **not** a datastore for a product's own domain data.
+
 - **A session is secured and it expires.** Authenticating is not the end of the security
   story: the *session* is the credential from then on, and a session that never ends is a
   password that can never be changed. Every authenticated product declares, in config, how
