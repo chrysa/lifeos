@@ -33,6 +33,16 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   the standards corpus itself (this repo): there the repo is canon and Notion is only a
   governance view (`GV-000`).
 
+- **Every repo ships generated context files.** A standard, vendor-neutral context set makes
+  every repo self-describing for a fresh agent or the returning owner: `handover.md` (what the
+  repo is, its place in the ecosystem, its `shared-standards` dependency, its ADRs, and current
+  state), `context-map.json` (a machine-readable map — entry points, key dirs, profile/DDD,
+  contracts, dependencies — with **no assistant-specific format or vendor name**), `llms-full.txt`
+  (a technical digest built from the real code/config), and `ai-instructions.md` (working
+  instructions in FR that *point* to the repo's agent views and the canon, never fork them). They
+  are **generated from the repo, never hand-filled**, and drift-gated exactly like the agent views
+  (`scripts/gen_context_files.py`, the `context-files-drift` gate). ADR `D-0012`.
+
 ## Session lifecycle (primer + memory + hindsight)
 
 A repo **may** carry a session lifecycle so an AI agent keeps context across sessions. The
