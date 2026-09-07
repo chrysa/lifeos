@@ -1,0 +1,48 @@
+{
+  "adrs": [],
+  "contracts": [
+    "standards"
+  ],
+  "ddd_level": "(not available)",
+  "dependencies": {
+    "python": [
+      "PySide6",
+      "click",
+      "discord.py",
+      "httpx",
+      "mypy",
+      "pre-commit",
+      "psutil",
+      "pydantic",
+      "pydantic-settings",
+      "pytest",
+      "pytest-asyncio",
+      "pytest-cov",
+      "pytest-mock",
+      "python-dotenv",
+      "rich",
+      "ruff",
+      "sentry-sdk"
+    ]
+  },
+  "depends_on_shared_standards": true,
+  "description": "Floating AI assistant multi-OS — system monitoring, messaging, AI and external service integrations",
+  "entry_points": [
+    "lifeos"
+  ],
+  "key_directories": [
+    ".claude",
+    ".devcontainer",
+    ".github",
+    ".vscode",
+    "docs",
+    "lifeos",
+    "makefiles",
+    "scripts",
+    "standards",
+    "tests"
+  ],
+  "name": "lifeos",
+  "profiles": [],
+  "schema": "chrysa.context-map/1"
+}
