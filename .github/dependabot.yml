@@ -1,6 +1,31 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+    # ═══ GitHub Actions (all repos) ═══
+    - package-ecosystem: github-actions
+      directory: .github/workflows/
+      assignees:
+          - chrysa
+      reviewers:
+          - chrysa
+      open-pull-requests-limit: 8
+      commit-message:
+          prefix: "[SKIP CI] [GA] "
+      labels:
+          - skip-ci
+          - dependencies
+          - Ci
+      schedule:
+          interval: cron
+          cronjob: "0 4 * * 5"
+      groups:
+          actions-official:
+              patterns:
+                  - actions/*
+          peter-evans:
+              patterns:
+                  - peter-evans/*
+          community-actions:
+              patterns:
+                  - "*"
+      cooldown:
+          default-days: 7
