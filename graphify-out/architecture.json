@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "my-assistant \u2014 module map",
+    "quality_profile": "standard",
+    "viewBox": [
+      776,
+      570
+    ],
+    "views": [
+      {
+        "id": "modules",
+        "label": "Modules",
+        "focus": [
+          "d_claude",
+          "d_root",
+          "d_standards",
+          "d_scripts",
+          "d_github",
+          "d_lifeos"
+        ],
+        "note": "Top source directories sized by graph node count; edges are cross-module references."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "d_claude",
+      "type": "backend",
+      "label": ".claude",
+      "sublabel": "433 nodes",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_root",
+      "type": "backend",
+      "label": "(root)",
+      "sublabel": "147 nodes",
+      "pos": [
+        272,
+        60
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_standards",
+      "type": "backend",
+      "label": "standards",
+      "sublabel": "63 nodes",
+      "pos": [
+        504,
+        60
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_scripts",
+      "type": "backend",
+      "label": "scripts",
+      "sublabel": "53 nodes",
+      "pos": [
+        40,
+        210
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_github",
+      "type": "backend",
+      "label": ".github",
+      "sublabel": "48 nodes",
+      "pos": [
+        272,
+        210
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_lifeos",
+      "type": "backend",
+      "label": "lifeos",
+      "sublabel": "40 nodes",
+      "pos": [
+        504,
+        210
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_devcontainer",
+      "type": "backend",
+      "label": ".devcontainer",
+      "sublabel": "22 nodes",
+      "pos": [
+        40,
+        360
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_docs",
+      "type": "backend",
+      "label": "docs",
+      "sublabel": "20 nodes",
+      "pos": [
+        272,
+        360
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_tests",
+      "type": "external",
+      "label": "tests",
+      "sublabel": "19 nodes",
+      "pos": [
+        504,
+        360
+      ],
+      "size": [
+        156,
+        64
+      ]
+    }
+  ],
+  "connections": [],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Auto-generated",
+      "items": [
+        "Derived from graphify graph.json",
+        "845 nodes \u00b7 863 edges"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Top cross-module links",
+      "items": [
+        "tests \u2194 lifeos (15)",
+        "lifeos \u2194 (root) (3)",
+        "tests \u2194 scripts (1)"
+      ]
+    }
+  ]
+}
