@@ -168,7 +168,6 @@ mkdocs.yml
 opencode.json
 pyproject.toml
 scripts/
-  command_spec.py
   gen_context_files.py
   quality_gate.py
 sonar-project.properties
@@ -216,7 +215,6 @@ lifeos/cli.py — CLI entry point using Click.
 lifeos/config/__init__.py — Configuration package for lifeos.
 lifeos/config/settings.py — Application settings loaded from a TOML config file.
 lifeos/observability/__init__.py — Observability — Sentry error tracking for CLI application.
-scripts/command_spec.py
 scripts/gen_context_files.py — Generate the standardised per-repo context files from the repo's own content.
 scripts/quality_gate.py
 tests/__init__.py
