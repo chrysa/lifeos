@@ -1,0 +1,24 @@
+---
+# Enforce Shortcut story link on every PR (chrysa ecosystem)
+#
+# Copy to .github/workflows/enforce-shortcut-link.yml
+# Blocks PRs that do not reference a Shortcut story (sc-1234, [sc-1234], or a
+# shortcut.com story URL) in the branch name, PR title, or PR body.
+# dependabot is exempt; a `no-story` label waives the check.
+#
+# Thin caller of the centralised reusable workflow — logic lives in
+# chrysa/github-actions and is bumped by tag.
+
+name: Enforce Shortcut Link Policy
+
+"on":
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call:
+    uses: chrysa/github-actions/.github/workflows/enforce-shortcut-link.yml@v1.10.0
