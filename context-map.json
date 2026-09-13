@@ -1,5 +1,7 @@
 {
-  "adrs": [],
+  "adrs": [
+    "ADR-LIFEOS-001-capability-pack-of-logos.md"
+  ],
   "contracts": [
     "standards"
   ],
