@@ -12,7 +12,7 @@
 
 ## Settled decisions (ADRs)
 
-- (not available)
+- `ADR-LIFEOS-001-capability-pack-of-logos.md` — ADR-LIFEOS-001: LifeOS is a capability pack consumed by LOGOS — a standalone repo, not a submodule (Accepted (2026-09-06))
 
 ## Notion links
 

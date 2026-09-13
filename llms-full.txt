@@ -149,6 +149,8 @@ Makefile
 README.md
 cliff.toml
 docs/
+  adr/
+    ADR-LIFEOS-001-capability-pack-of-logos.md
   index.md
   reference/
     github-inspiration.md

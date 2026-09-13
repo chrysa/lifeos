@@ -39,6 +39,15 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
 
+- **Every PR references a Shortcut story.** The story is the unit of work tracking; a PR
+  with no story is invisible to the fleet's planning surface and is a defect. Carry the
+  reference as `sc-<id>` (or the `app.shortcut.com/.../story/<id>` URL) in the branch name
+  (`feat/sc-1234-short-desc`), the PR title, or the PR body — the PR template has a required
+  field for it. dependabot is exempt; a genuinely story-less PR must carry the `no-story`
+  label, which records the waiver. The `enforce-shortcut-link` workflow is a blocking status
+  check. A story beyond `In Progress` must itself link the branch/commit (native VCS
+  integration), so the thread reads both ways.
+
 - **Issues and PRs are type-driven.** Every issue declares exactly one **type** from a fixed
   taxonomy (bug · feature · enhancement · chore · docs · ci · security · research · epic),
   carried as a canonical label and backed by a committed per-type issue form; every PR's type is
