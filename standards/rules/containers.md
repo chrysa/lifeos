@@ -31,6 +31,12 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
 - **Tool caches & deps never touch the project tree.** `__pycache__`, `.pytest_cache`,
   `.ruff_cache`, `.mypy_cache`, `.benchmarks`, `node_modules`, and pip/npm/uv download caches
   are regenerable machine artifacts — they must be **invisible in the repo working copy**.
+  **Fewest cache files possible is the target:** a cache that earns nothing is disabled outright
+  (e.g. `PYTEST_ADDOPTS: -p no:cacheprovider`), and wherever a tool exposes a cache-dir env var it
+  is redirected to an **ephemeral out-of-tree location** — `/tmp` for host/CI runs
+  (`RUFF_CACHE_DIR: /tmp/ruff_cache`, `MYPY_CACHE_DIR: /tmp/mypy_cache`,
+  `PYTHONPYCACHEPREFIX: /tmp/pycache`), a named volume under `/caches` in-container (below). A repo
+  or working copy that accumulates cache directories is a defect, not a convenience.
   Enforcement is three-layered and all three are mandatory:
   1. **`.gitignore`** carries the managed canonical block (`templates/gitignore.canonical`) so
      they are never tracked. Appended, not hand-maintained.
