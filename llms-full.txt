@@ -118,6 +118,7 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
     dependabot-auto-merge.yml
     detect-conflicts.yml
     enforce-feature-branch.yml
+    enforce-shortcut-link.yml
     labeler.yml
     mutation-testing.yml
     pages.yml
