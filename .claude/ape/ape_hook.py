@@ -16,10 +16,11 @@ Wire in .claude/settings.json:
 The hook reads the prompt on stdin (Claude Code passes the user prompt) and writes
 context to stdout, which Claude Code injects before the turn.
 """
-import sys
-import re
-import json
+
 import argparse
+import json
+import re
+import sys
 
 # --- fast triage: is this prompt worth optimizing at all? ---
 
@@ -38,6 +39,12 @@ STRUCTURE_CUES = re.compile(
 )
 
 
+# Triage thresholds.
+WELL_STRUCTURED_CUES = 3  # this many structure cues → already well-formed, stay silent
+MIN_PROMPT_LENGTH = 15  # shorter prompts are not worth optimizing
+LONG_PROMPT_LENGTH = 600  # longer prompts are high-stakes → blocking treatment
+
+
 def triage(prompt: str) -> str:
     p = prompt.strip()
     if not p or TRIVIAL.match(p) or SKIP_MARKERS.search(p):
@@ -45,13 +52,31 @@ def triage(prompt: str) -> str:
     if FORCE_BLOCK.search(p):
         return "BLOCKING"
     # count structure cues as a proxy for slots already filled
-    cues = len(set(m.group(0).lower() for m in STRUCTURE_CUES.finditer(p)))
-    if cues >= 3 or len(p) < 15:
+    cues = len({m.group(0).lower() for m in STRUCTURE_CUES.finditer(p)})
+    if cues >= WELL_STRUCTURED_CUES or len(p) < MIN_PROMPT_LENGTH:
         return "SILENT"
     # long / high-stakes prompts get the blocking treatment
-    if len(p) > 600:
+    if len(p) > LONG_PROMPT_LENGTH:
         return "BLOCKING"
     return "SUGGESTIVE"
+
+
+def _read_prompt() -> str:
+    """Return the user prompt from the hook payload.
+
+    Claude Code passes UserPromptSubmit hook data as a JSON object on stdin
+    (e.g. ``{"prompt": "...", "hook_event_name": "UserPromptSubmit", ...}``).
+    Fall back to the raw stdin text for other harnesses that pipe the prompt
+    directly.
+    """
+    raw = sys.stdin.read()
+    try:
+        payload = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return raw
+    if isinstance(payload, dict):
+        return str(payload.get("prompt", ""))
+    return raw
 
 
 def main() -> int:
@@ -59,7 +84,7 @@ def main() -> int:
     ap.add_argument("--spec", required=True, help="path to ape-transform-v2.md")
     args = ap.parse_args()
 
-    prompt = sys.stdin.read()
+    prompt = _read_prompt()
     regime = triage(prompt)
 
     if regime == "SILENT":
