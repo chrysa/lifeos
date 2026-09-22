@@ -15,8 +15,8 @@
         "focus": [
           "d_claude",
           "d_root",
-          "d_standards",
           "d_scripts",
+          "d_standards",
           "d_github",
           "d_lifeos"
         ],
@@ -29,7 +29,7 @@
       "id": "d_claude",
       "type": "backend",
       "label": ".claude",
-      "sublabel": "433 nodes",
+      "sublabel": "529 nodes",
       "pos": [
         40,
         60
@@ -43,23 +43,9 @@
       "id": "d_root",
       "type": "backend",
       "label": "(root)",
-      "sublabel": "147 nodes",
+      "sublabel": "183 nodes",
       "pos": [
         272,
-        60
-      ],
-      "size": [
-        156,
-        64
-      ]
-    },
-    {
-      "id": "d_standards",
-      "type": "backend",
-      "label": "standards",
-      "sublabel": "63 nodes",
-      "pos": [
-        504,
         60
       ],
       "size": [
@@ -71,7 +57,21 @@
       "id": "d_scripts",
       "type": "backend",
       "label": "scripts",
-      "sublabel": "53 nodes",
+      "sublabel": "136 nodes",
+      "pos": [
+        504,
+        60
+      ],
+      "size": [
+        156,
+        64
+      ]
+    },
+    {
+      "id": "d_standards",
+      "type": "backend",
+      "label": "standards",
+      "sublabel": "64 nodes",
       "pos": [
         40,
         210
@@ -110,10 +110,10 @@
       ]
     },
     {
-      "id": "d_devcontainer",
+      "id": "d_docs",
       "type": "backend",
-      "label": ".devcontainer",
-      "sublabel": "22 nodes",
+      "label": "docs",
+      "sublabel": "26 nodes",
       "pos": [
         40,
         360
@@ -124,10 +124,10 @@
       ]
     },
     {
-      "id": "d_docs",
+      "id": "d_devcontainer",
       "type": "backend",
-      "label": "docs",
-      "sublabel": "20 nodes",
+      "label": ".devcontainer",
+      "sublabel": "22 nodes",
       "pos": [
         272,
         360
@@ -159,7 +159,7 @@
       "title": "Auto-generated",
       "items": [
         "Derived from graphify graph.json",
-        "845 nodes \u00b7 863 edges"
+        "1067 nodes \u00b7 1183 edges"
       ]
     },
     {

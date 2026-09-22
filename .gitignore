@@ -71,3 +71,11 @@ graphify-out/
 graphify-out/*
 !graphify-out/architecture.json
 !graphify-out/architecture.html
+
+# Claude Code (personal/generated — shared config is tracked)
+.claude/.active-feature
+.claude/settings.local.json
+.claude/sessions/
+.claude/state/
+.claude/worktrees/
+.claude/hooks/*-state.json
