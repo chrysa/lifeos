@@ -113,3 +113,25 @@ repos:
   rev: v1.30.16
   hooks:
   - id: guideline-check
+- repo: local
+  hooks:
+  - id: claude-config-drift
+    name: claude config drift (advisory)
+    language: system
+    entry: node .claude/hooks/claude-config-drift.cjs
+    always_run: true
+    pass_filenames: false
+    verbose: true
+  - id: graphify-auto-update
+    name: graphify auto-update (post-merge/checkout)
+    language: system
+    entry: node .claude/hooks/graphify-auto-update.cjs
+    always_run: true
+    pass_filenames: false
+    stages:
+    - post-merge
+    - post-checkout
+default_install_hook_types:
+- pre-commit
+- post-merge
+- post-checkout
