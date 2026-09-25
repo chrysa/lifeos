@@ -99,6 +99,27 @@ Shared skills from `shared-standards/.claude/skills/`:
 
 - `ui-ux/SKILL.md` — UX/UI/ergonomics across ALL surfaces (web, CLI, VS Code, Discord, desktop, game, agent) + WCAG 2.1 AA + dark mode + i18n FR+EN (load when building any human-facing surface)
 
+## Documentation map
+
+Root docs (reverse-engineered 2026-09-25, docs-only pass):
+
+- `README.md` — quickstart + honest status table
+- `ARCHITECTURE.md` — stack, layout, entrypoints (pre-existing, accurate)
+- `REQUIREMENTS.md` — REQ-PROD / REQ-TECH matrix (IMPLEMENTED vs PLANNED)
+- `CONSTRAINTS.md` — platform/language/security/process/arch constraints, tagged
+- `DECISIONS.md` — ADR index (ADR-LIFEOS-001 + reconstructed decisions)
+- `TESTING.md` — pytest layout, coverage gate, commands
+- `SECURITY.md` — secret-handling baseline + findings (no HIGH/CRITICAL)
+- `OBSERVABILITY.md` — logging + Sentry
+- `ROADMAP.md` — shipped vs planned (repo-stated only)
+- `GLOSSARY.md` — terms (lifeos, LOGOS, capability pack…)
+- `REVIEW.md` — contradictions, doc debt, lifeos/LOGOS overlap
+- `docs/adr/ADR-LIFEOS-001-*` — canonical/capability-pack decision
+
+Key open tension (see REVIEW.md): ADR-LIFEOS-001 retires this `my-assistant`
+identity in favour of the canonical `lifeos` repo + LOGOS capability-pack model,
+but README/CLAUDE/pyproject still describe the old "floating assistant" product.
+
 
 <!-- chrysa:standards:start · managed by distribute-standards.sh · DO NOT EDIT -->
 # chrysa — Transverse Standards (core)
