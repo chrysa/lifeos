@@ -16,7 +16,9 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      Reading `main` answers "what is running in prod right now" — nothing else is on it.
   2. **`develop` is the repository's default branch** (the GitHub default, what a clone
      checks out) and the integration target for all work. A repo whose default branch is
-     `main` is a defect, not a variant.
+     `main` is a defect, not a variant. `develop` **is a protected branch too** (ADR D-0015):
+     it carries the same gate as `main` — every change arrives through a pull request, and
+     force-push and deletion are blocked. Direct pushes to `develop` are not allowed.
   3. **Every feature/bugfix/chore PR targets `develop`.** `feature/x` → PR → `develop`.
      A feature PR opened against `main` is closed and retargeted.
   4. **The only way code reaches `main` is a pull request from `develop`** (or, for a
@@ -30,8 +32,15 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
      lands the code, and the deployment is driven by the tagged release (the semantic-version
      tool's tag + git-cliff changelog + the release workflow). No manual deploy from a laptop, no push
      that silently ships.
-  Protection is configured, not assumed: `main` requires a PR, blocks force-push and
-  deletion, and is machine-checked across the fleet by `scripts/audit-branch-policy.sh`.
+  Protection is configured, not assumed: **both `main` and `develop`** require a PR and
+  block force-push and deletion (ADR D-0015), applied by `scripts/apply-branch-policy.sh`
+  and machine-checked across the fleet by `scripts/audit-branch-policy.sh`. The gate is
+  "a PR exists" (0 required approvals) with `enforce_admins=false`, so the solo owner can
+  still admin-merge. On repos that run the canonical CI, the status checks **`Docker
+  tests`** and **`SonarCloud`** are additionally required (ADR D-0016) — required only
+  where those contexts actually report, so a repo with a different CI shape is never
+  gated on a check that cannot run; `enforce_admins=false` keeps admin-merge as the
+  escape hatch when CI is red for infra reasons (Actions billing, SonarCloud LOC cap).
 
 - **Merge**: squash merge only (exception: the `develop` → `main` release promotion, merged
   with a merge commit) · force push forbidden · auto-merge requires CI + owner.
