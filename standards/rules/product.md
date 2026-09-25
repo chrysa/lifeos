@@ -5,6 +5,62 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
 
 > Detail for the slim core in `CLAUDE.md`. **Generated** from `standards/STANDARDS.chrysa.md` — do not edit here; edit the canon and regenerate.
 
+- **A public web surface is legally compliant, consent-respecting, and operable — before it
+  ships.** Any surface a stranger can reach on the open web (a product front, a landing page,
+  a generated micro-site) is held to a Definition of Done that goes past "it renders". The
+  obligations below are non-negotiable for a public surface and marked **N/A** only for a
+  surface with no public reach (an internal backoffice behind SSO, a CLI, a headless service);
+  the a11y, semantic-markup, form-validation, and GDPR rules already in this canon are
+  assumed and not repeated here.
+  1. **The legal pages exist and are reachable from every page.** A **privacy policy**, a
+     **legal notice** (mentions légales — publisher identity, host, contact), and **terms of
+     use** (CGU) are published as real, addressable pages and linked from a persistent footer
+     on every public page. They are not lorem-ipsum: they state what the product actually
+     does with data. Sourced from the shared `legal/` templates (`mentions-legales.md`,
+     `cgu.md`) and the `cgu` / `rgpd-compliance` skills, adapted per product — never invented
+     ad hoc, never omitted "for now".
+  2. **Cookies and trackers are opt-in, not opt-out.** No non-essential cookie, analytics
+     tag, or third-party tracker fires before the user has actively consented; a consent
+     banner offers *reject* as prominently as *accept*, records the choice, and the choice is
+     revocable. Strictly necessary cookies (the session cookie of *cookies over localStorage*)
+     need no consent and are the only ones allowed pre-consent. A pre-ticked box or a
+     cookie-wall that only offers "accept" is a defect.
+  3. **Applicable local law is checked, not assumed.** The jurisdictions the product serves
+     are named, and the obligations they add on top of GDPR/RGPD (consent specifics, age
+     gating, sector rules, accessibility law such as the EAA, mandatory notices) are recorded
+     in the product's compliance notes before launch. "It works in France" is not a
+     substitute for knowing where the users are. Detail: annexe `GOVERNANCE.md`, the
+     `rgpd-compliance` and `legal-compliance` skills.
+  4. **HTTPS is forced end to end.** Every public surface is served over TLS only: plain
+     `http://` **301-redirects** to `https://`, `HSTS` is sent (`Strict-Transport-Security`,
+     with a sane `max-age` and, once stable, preload), and no mixed content is loaded. TLS is
+     terminated in the platform layer (*the application image never embeds a reverse proxy*);
+     the product's obligation is that no reachable route answers in clear text.
+  5. **Error states are custom pages that let the user report the bug.** The `404` and `5xx`
+     responses render a branded, on-brand page (not the server default, not a stack trace —
+     see *errors say what to fix, and nothing about the system*) that keeps the user oriented
+     (a way back home, working navigation) and offers a **one-click way to report the
+     problem**. The report reaches the team as a GitHub issue via the same path as
+     *error-tracking → GitHub issues*, carrying enough context (route, correlation id) to be
+     actionable; the user tracks it through product-level statuses only, never the Git thread
+     (*bug remontée* obligation). This is the human-facing complement of the automatic
+     error-tracking norm.
+  6. **No broken links, internal or outbound.** A link that `404`s (or a stale outbound URL)
+     is a defect caught before merge: a link-check runs in CI over the built surface, and an
+     internal path that must change follows *a URL is a permanent contract* (`301`, never a
+     dead end). Renaming a route without a redirect is a broken link by another name.
+  7. **Pages are fast, and images earn their bytes.** The frontend meets the declared
+     **performance budget** (*performance and cost budgets are declared per profile and
+     enforced*): Core Web Vitals in the "good" range and a Lighthouse performance score at the
+     per-profile threshold, measured in CI on the built artefact. Images are **compressed and
+     served in a modern format** (AVIF/WebP with fallback), sized to their display box,
+     lazy-loaded below the fold, and never shipped as a multi-megabyte original — an
+     uncompressed hero image is a budget breach, not a detail.
+  Mechanisation: a public-surface DoD checklist plus CI gates — TLS/HSTS and header check,
+  link-checker, Lighthouse performance + a11y, image-weight budget, and a presence check for
+  the legal-page routes and the consent banner. A public surface that ships missing any of
+  these is a defect, not a fast follow.
+
 - **Setup wizard & config panel** (deployable web apps/services — not libs, CLIs, utilities). A
   first-run **setup wizard** (CLI or web) covers DB, admin user, integrations, secrets and locale;
   it is **idempotent**, detects missing prerequisites with explicit fixes, and offers a CI skip

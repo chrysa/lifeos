@@ -1,7 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "_comment_model": "Model auto-selected from latest Claude available via Copilot. Do not hardcode a version. Fallback: anthropic/claude-sonnet-4-6 if Copilot unavailable.",
-  "instructions": "You are an expert software engineer. Default to English in code, docs, and issues. Respect CLAUDE.md per repo. Use GitHub Copilot (latest Claude) as default model.",
+  "_comment_model": "Offline-first: default = local Ollama coder model. Claude & ChatGPT are opt-in via API keys. Do not hardcode cloud model versions.",
+  "instructions": [
+    "You are an expert software engineer. Default to English in code, docs, and issues. Respect CLAUDE.md per repo. Offline-first: local Ollama is the default model; Claude and ChatGPT are opt-in via API keys."
+  ],
   "mcp": {
     "github": {
       "command": [
@@ -28,13 +30,38 @@
       "type": "local"
     }
   },
-  "model": "github-copilot",
+  "model": "ollama/qwen2.5-coder",
   "provider": {
+    "anthropic": {
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+      }
+    },
     "github-copilot": {
       "options": {
         "model": "claude-sonnet-4-6"
       },
       "type": "copilot"
+    },
+    "ollama": {
+      "models": {
+        "qwen2.5-coder": {
+          "name": "Qwen2.5 Coder (local)"
+        },
+        "qwen3:8b": {
+          "name": "Qwen3 8B (local)"
+        }
+      },
+      "name": "Ollama (local)",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "{env:OLLAMA_URL}/v1"
+      }
+    },
+    "openai": {
+      "options": {
+        "apiKey": "{env:OPENAI_API_KEY}"
+      }
     }
   }
 }
