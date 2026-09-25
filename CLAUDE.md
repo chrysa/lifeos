@@ -2,6 +2,18 @@
 
 > @[claude-sonnet-4-6]
 
+<!-- documentation-map:start -->
+> **Documentation map.** README.md (status + quickstart) · ARCHITECTURE.md
+> (grounded architecture) · REQUIREMENTS.md (traceability matrix) ·
+> DECISIONS.md (ADR index; ADRs in `docs/adr/`) · SECURITY.md (posture) ·
+> REVIEW.md (audit + contradictions). **Caveat:** the "Project Purpose" and
+> "Architecture" sections below describe the *planned* plugin/UI system; the repo
+> today is a headless CLI scaffold only, and ADR-LIFEOS-001 re-scopes lifeos as a
+> capability pack consumed by LOGOS. See REVIEW.md for the drift and DECISIONS.md
+> for the scope boundary before trusting the file list below.
+<!-- documentation-map:end -->
+
+
 ## Project Purpose
 
 Floating AI assistant multi-OS desktop application. Monitors the system, integrates with messaging platforms (Discord), routes queries to AI providers (GitHub Copilot via OpenCode, OpenAI-compatible), and connects to external services (Notion, GitHub). Runs as a floating overlay or headless tray application on Linux and Windows.
