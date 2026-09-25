@@ -26,7 +26,7 @@ Floating AI assistant multi-OS desktop application. Monitors the system, integra
 
 ## Key Constraints
 
-- Python 3.12+ minimum; target 3.14
+- Python 3.14+ minimum; target 3.14
 - Must run on Linux **and** Windows (no platform-specific code in core or plugins)
 - PySide6 is optional (`[ui]` extra); app must start headless without it
 - `discord.py` is optional (`[discord]` extra); discord plugin must gracefully skip if absent
