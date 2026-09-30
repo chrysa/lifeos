@@ -34,7 +34,9 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
   hooks/
     check-no-env-files.cjs
     circuit-breaker.cjs
+    claude-config-drift.cjs
     frustration-detection.cjs
+    graphify-auto-update.cjs
     memory-consolidation.cjs
     model-debt-inventory.cjs
     secret-scanner.cjs
@@ -139,6 +141,7 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
   tasks.json
 .yamllint
 AGENTS.md
+ARCHITECTURE.md
 CHANGELOG.md
 CLAUDE.md
 CODEOWNERS
@@ -179,6 +182,7 @@ standards/
     README.md
     accessibility.md
     agents.md
+    ai-orchestration.md
     api.md
     architecture.md
     backend-python.md
