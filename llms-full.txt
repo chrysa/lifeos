@@ -79,6 +79,8 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
       SKILL.md
     plan/
       SKILL.md
+    rollout-status/
+      SKILL.md
     spec/
       SKILL.md
     standards-authoring/

@@ -34,3 +34,17 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
   publishing outside the owner's own perimeter is the owner's call. Inside the perimeter,
   the normal rules still hold — one issue per real problem, no duplicate of an open one, and
   every PR references its issue.
+
+- **A retryable operation proves the retry has no external effects.** Any operation that may be
+  retried carries an **idempotency key**, declares a **compensation**, or is marked
+  **non-retryable** — a redelivery, a timeout after commit, or a process restart never
+  double-applies. Runtime teardown never touches user data, personal-data deletion needs an
+  explicit confirmation and a prior backup, and every call reaching outside the system is
+  journalled. Detail: annexe `AGENTIC-CAPABILITIES.md` AG-017.
+
+- **A mass-mutation batch returns the explicit list of what it changed.** A session that mutates
+  a batch of pages, records or repositories returns **one id per touched element** with the
+  nature of the change; the announced count and the returned ids must match, skipped elements are
+  listed with their reason, the set is independently replayable, and the list is written to the
+  tracker — not only the conversation. No list means the batch is deemed not done. Detail: annexe
+  `AGENTIC-CAPABILITIES.md` AG-018.
