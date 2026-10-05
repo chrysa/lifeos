@@ -6,7 +6,7 @@ description: Write a feature specification (reports/specs/<feature>.md) as the f
 # /spec — Write a feature specification
 
 You are producing the **specification** artefact, the first mandatory gate before
-any code can be written (enforced by `.claude/hooks/enforce-spec-plan.cjs`).
+any code can be written (enforced by `.claude/hooks/enforce-spec-plan.cjs <!-- ⚠️ file not found — verify reference -->`).
 
 ## Steps
 
