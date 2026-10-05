@@ -7,7 +7,7 @@ description: Write an implementation plan (reports/plans/<feature>.md) from an a
 
 You are producing the **plan** artefact, the second mandatory gate. It requires an
 **approved spec** and, once approved itself, unlocks code edits (enforced by
-`.claude/hooks/enforce-spec-plan.cjs`).
+`.claude/hooks/enforce-spec-plan.cjs <!-- ⚠️ file not found — verify reference -->`).
 
 ## Steps
 
