@@ -1,4 +1,5 @@
 ---
+name: issue
 description: Resolve a GitHub issue end-to-end following GitHub Flow
 argument-hint: <issue-number>
 ---
@@ -61,5 +62,5 @@ Adapt to the issue type:
 ## Deploy
 
 Open a PR. The chrysa PR template (`@templates/pr-template.md` /
-`.github/PULL_REQUEST_TEMPLATE.md`) auto-populates — fill Summary, Motivation (link the issue),
+`.github/PULL_REQUEST_TEMPLATE.md <!-- ⚠️ file not found — verify reference -->`) auto-populates — fill Summary, Motivation (link the issue),
 Changes, Testing, Checklist. PR title = the most significant commit message.

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "autoCompact": true,
   "autoCompactThreshold": 0.85,
   "effortLevel": "medium",
@@ -24,7 +25,20 @@
             "type": "command"
           }
         ],
-        "matcher": "Write|Edit|MultiEdit"
+        "matcher": "Write|Edit"
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/format.py"
+            ],
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PreCompact": [
@@ -97,6 +111,111 @@
           }
         ]
       }
+    ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(rtk git status *)",
+      "Bash(rtk git diff *)",
+      "Bash(rtk git log *)",
+      "Bash(rtk git show *)",
+      "Bash(rtk git branch *)",
+      "Bash(rtk git add *)",
+      "Bash(rtk git commit *)",
+      "Bash(rtk make build)",
+      "Bash(rtk make dev)",
+      "Bash(rtk make format)",
+      "Bash(rtk make help)",
+      "Bash(rtk make lint)",
+      "Bash(rtk make run)",
+      "Bash(rtk make test)",
+      "Bash(rtk make typecheck)",
+      "Bash(rtk pytest *)",
+      "Bash(rtk python -m pytest *)",
+      "Bash(rtk ruff check *)",
+      "Bash(rtk ruff format *)",
+      "Bash(rtk mypy *)",
+      "Bash(rtk gh pr view *)",
+      "Bash(rtk gh pr list *)",
+      "Bash(rtk gh pr diff *)",
+      "Bash(rtk gh pr checks *)",
+      "Bash(rtk gh issue view *)",
+      "Bash(rtk gh issue list *)",
+      "Bash(rtk gh run list *)",
+      "Bash(rtk gh run view *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh release *)",
+      "Bash(gh repo *)",
+      "Bash(kubectl apply *)",
+      "Bash(kubectl delete *)",
+      "Bash(kubectl patch *)",
+      "Bash(helm install *)",
+      "Bash(helm upgrade *)",
+      "Bash(helm uninstall *)",
+      "Bash(argocd *)",
+      "Bash(terraform apply *)",
+      "Bash(terraform destroy *)",
+      "Bash(tofu apply *)",
+      "Bash(tofu destroy *)",
+      "Bash(bao write *)",
+      "Bash(vault write *)",
+      "Bash(docker push *)",
+      "Bash(npm publish *)",
+      "Bash(twine upload *)",
+      "Bash(rm -rf *)",
+      "Bash(rtk git push *)",
+      "Bash(rtk gh pr create *)",
+      "Bash(rtk gh pr merge *)",
+      "Bash(rtk gh release *)",
+      "Bash(rtk gh repo *)",
+      "Bash(rtk kubectl apply *)",
+      "Bash(rtk kubectl delete *)",
+      "Bash(rtk kubectl patch *)",
+      "Bash(rtk helm install *)",
+      "Bash(rtk helm upgrade *)",
+      "Bash(rtk helm uninstall *)",
+      "Bash(rtk argocd *)",
+      "Bash(rtk terraform apply *)",
+      "Bash(rtk terraform destroy *)",
+      "Bash(rtk tofu apply *)",
+      "Bash(rtk tofu destroy *)",
+      "Bash(rtk bao write *)",
+      "Bash(rtk vault write *)",
+      "Bash(rtk docker push *)",
+      "Bash(rtk npm publish *)",
+      "Bash(rtk twine upload *)",
+      "Bash(rtk rm -rf *)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.vault-token)",
+      "Read(!.env.example)",
+      "Read(**/node_modules/**)",
+      "Read(**/.venv/**)",
+      "Read(**/__pycache__/**)",
+      "Read(**/.mypy_cache/**)",
+      "Read(**/.ruff_cache/**)",
+      "Read(**/.terraform/**)",
+      "Read(**/coverage/**)",
+      "Read(**/.next/**)",
+      "Read(**/dist/**)",
+      "Read(**/*.min.js)",
+      "Read(**/*.map)"
     ]
   }
 }

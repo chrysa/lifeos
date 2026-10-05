@@ -1,6 +1,8 @@
 ---
 name: accessibility
-description: 'Use when building, reviewing, or signing off ANY human-facing surface — web app, public micro-site, generated/showcase page, admin backoffice, desktop, game 2D — to make it usable by the majority of disabilities, not only the screen-reader case. Operationalises the STANDARDS.chrysa "Every site is usable by the majority of disabilities" rule into a per-category contract and a testable Definition of Done. Load it alongside ui-ux whenever accessibility is a Definition-of-Done concern, and always before declaring an a11y-bearing surface finished.'
+description: Use when building, reviewing, or signing off ANY human-facing surface — web app, public micro-site, generated/showcase page, admin backoffice, desktop, game 2D — to make it usable by the majority of disabilities, not only the screen-reader case.
+metadata:
+  full_description: Use when building, reviewing, or signing off ANY human-facing surface — web app, public micro-site, generated/showcase page, admin backoffice, desktop, game 2D — to make it usable by the majority of disabilities, not only the screen-reader case. Operationalises the STANDARDS.chrysa "Every site is usable by the majority of disabilities" rule into a per-category contract and a testable Definition of Done. Load it alongside ui-ux whenever accessibility is a Definition-of-Done concern, and always before declaring an a11y-bearing surface finished.
 ---
 
 # Accessibility — usable by the majority of disabilities
