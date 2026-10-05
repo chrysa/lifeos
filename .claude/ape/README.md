@@ -24,7 +24,7 @@ Court-circuit manuel : `sans APE`, `raw` ou `n'optimise pas` force SILENT.
 ## Désactiver
 
 Retirer l'entrée `UserPromptSubmit` pointant vers `ape_hook.py` dans
-`.claude/settings.json`. Les fichiers de `.claude/ape/` peuvent rester en place.
+`.claude/settings.json <!-- ⚠️ file not found — verify reference -->`. Les fichiers de `.claude/ape/` peuvent rester en place.
 
 ## Avant de généraliser
 
