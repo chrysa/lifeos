@@ -5,7 +5,7 @@ import json, os, shutil, subprocess, sys
 def main() -> int:
     try:
         data = json.load(sys.stdin)
-    except Exception:
+    except ValueError:
         return 0
     path = (data.get("tool_input") or {}).get("file_path") or ""
     if not path or not os.path.isfile(path):
@@ -25,7 +25,7 @@ def main() -> int:
     if cmd:
         try:
             subprocess.run(cmd, cwd=root, timeout=25, capture_output=True)
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             pass
     return 0
 
