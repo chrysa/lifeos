@@ -1,6 +1,8 @@
 ---
 name: standards-authoring
-description: 'Use when adding, migrating, or editing a transverse standards domain in chrysa/shared-standards — creating a normative annexe, adding rules under a stable XX-nnn prefix, registering a STD-* domain in GV-015 + domains.yaml, anchoring it in the socle, and reconciling Notion. Load it before touching standards/STANDARDS.chrysa.md, standards/annexes/*, standards/domains.yaml, or GOVERNANCE.md GV-015, and before opening a standards PR.'
+description: Use when adding, migrating, or editing a transverse standards domain in chrysa/shared-standards — creating a normative annexe, adding rules under a stable XX-nnn prefix, registering a STD-* domain in GV-015 + domains.yaml, anchoring it in the socle, and reconciling Notion.
+metadata:
+  full_description: Use when adding, migrating, or editing a transverse standards domain in chrysa/shared-standards — creating a normative annexe, adding rules under a stable XX-nnn prefix, registering a STD-* domain in GV-015 + domains.yaml, anchoring it in the socle, and reconciling Notion. Load it before touching standards/STANDARDS.chrysa.md, standards/annexes/*, standards/domains.yaml, or GOVERNANCE.md GV-015, and before opening a standards PR.
 ---
 
 # Standards authoring — add or migrate a domain
