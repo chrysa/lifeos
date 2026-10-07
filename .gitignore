@@ -67,3 +67,12 @@ logs/
 graphify
 sys
 graphify-out/
+
+# prism-ai-lint: keep secrets and local config out of git
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+.claude/settings.local.json
+CLAUDE.local.md

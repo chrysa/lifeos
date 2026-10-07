@@ -1,4 +1,5 @@
 ---
+name: help-commands
 description: Show all available custom commands and how to use them
 ---
 

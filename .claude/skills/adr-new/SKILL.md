@@ -1,4 +1,5 @@
 ---
+name: adr-new
 description: Scaffold a new ADR in the chrysa refutable format (fatal hypothesis, kill-test, gate)
 argument-hint: <short decision title>
 ---
