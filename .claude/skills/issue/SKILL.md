@@ -1,4 +1,5 @@
 ---
+name: issue
 description: Resolve a GitHub issue end-to-end following GitHub Flow
 argument-hint: <issue-number>
 ---
