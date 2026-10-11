@@ -12,6 +12,11 @@ on:
     branches:
       - main
       - master
+permissions:
+  contents: read
+  checks: write
+  statuses: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -62,7 +67,7 @@ jobs:
           OUTCOME: ${{ steps.quality-gate.outcome }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        if: always()
+        if: always() && github.actor != 'dependabot[bot]'
         name: Set quality-gate commit status
         run: |
           STATE="success"
