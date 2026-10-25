@@ -74,8 +74,17 @@ def read_input(raw: str) -> tuple[str, str]:
 def marker_path(session_id: str) -> Path | None:
     if not session_id:
         return None
-    digest = hashlib.sha1(session_id.encode("utf-8")).hexdigest()[:16]
-    return Path(tempfile.gettempdir()) / f"ape-{digest}"
+    digest = hashlib.sha256(session_id.encode("utf-8")).hexdigest()[:16]
+    return Path(tempfile.gettempdir()) / f"ape-{os.getuid()}" / digest
+
+
+def touch_marker(marker: Path) -> None:
+    """Create the marker in a private per-user directory, never following a symlink."""
+    marker.parent.mkdir(mode=0o700, exist_ok=True)
+    if marker.parent.is_symlink() or marker.parent.stat().st_uid != os.getuid():
+        return
+    fd = os.open(marker, os.O_CREAT | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+    os.close(fd)
 
 
 def triage(prompt: str, seen: bool) -> str:
@@ -110,7 +119,10 @@ def run(raw: str, spec_path: str) -> str:
         return f"<!-- APE regime (pre-triaged): {regime}; spec already loaded this session -->"
     spec = compact(Path(spec_path).read_text(encoding="utf-8"))
     if marker:
-        marker.touch()
+        try:
+            touch_marker(marker)
+        except OSError:
+            pass  # no marker: the spec may load again, which is safe
     sink = os.environ.get("APE_TRACE_SINK")
     trace = f"\nTrace sink: {sink}" if sink else ""
     return f"<!-- APE regime (pre-triaged): {regime} -->\n{spec}{trace}"
