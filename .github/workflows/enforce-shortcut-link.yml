@@ -1,10 +1,17 @@
 ---
-# Enforce Shortcut story link on every PR (chrysa ecosystem)
+# Enforce the PR link policy on a public open-source repo (chrysa ecosystem)
 #
-# Copy to .github/workflows/enforce-shortcut-link.yml
-# Blocks PRs that do not reference a Shortcut story (sc-1234, [sc-1234], or a
-# shortcut.com story URL) in the branch name, PR title, or PR body.
-# dependabot is exempt; a `no-story` label waives the check.
+# Open-source repo (DEC-V3-006): a linked GitHub issue or a Shortcut story.
+#
+# Copy to .github/workflows/enforce-shortcut-link.yml on public open-source repos ONLY
+# (private repos keep templates/workflows-process/enforce-shortcut-link.yml).
+# Blocks PRs that reference neither a Shortcut story (sc-1234, [sc-1234], or a
+# shortcut.com story URL) nor an issue of this repository (#123, closes #123,
+# .../issues/123, branch issue-123) in the branch name, PR title, or PR body.
+# A PR number does not count. dependabot is exempt; a `no-story` label waives the check.
+#
+# Kept outside templates/workflows-process/ on purpose: apply-ci-process.sh copies every
+# file of that folder into every repo.
 #
 # Thin caller of the centralised reusable workflow — logic lives in
 # chrysa/github-actions and is bumped by tag.
@@ -21,4 +28,12 @@ concurrency:
 
 jobs:
   call:
-    uses: chrysa/github-actions/.github/workflows/enforce-shortcut-link.yml@v1.10.0
+    # Required: the reusable workflow reads issues/PRs through the API, and the repo
+    # default token (restricted) grants neither scope; without this the run fails at startup.
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: chrysa/github-actions/.github/workflows/enforce-shortcut-link.yml@v1.11.0
+    with:
+      accept-github-issue: true
