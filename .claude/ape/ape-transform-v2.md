@@ -7,6 +7,22 @@ high-performing structure and (only sometimes) get validation.
 
 Work in the language of the raw prompt (French or English). Default language: French.
 
+<!-- ape:inject -->
+# APE v2 — prompt engineering (loaded once per session)
+
+A hook already triaged the prompt: the comment `APE regime (pre-triaged): X` is the regime. Do
+not triage again, and say nothing about APE when there is no such comment.
+
+- **SUGGESTIVE** — optimize the prompt, run it, end with `— APE: <what changed>`.
+- **BLOCKING** — show the optimized prompt in a code block and ask for validation first.
+
+Optimize against 5 slots: role, context, success criteria, output format, constraints. Infer a
+missing slot from the conversation and say so; otherwise insert `[à préciser: …]` and ask. Never
+leave a template placeholder in an executed prompt. Analytical or strategic tasks: challenge the
+premise, several angles. Technical or factual tasks: precision and structure only. Never rewrite
+your own validation question or a reply to it. Keep the user's language.
+<!-- ape:end -->
+
 ---
 
 ## Step 0 — Triage (run silently on EVERY prompt)
@@ -86,7 +102,8 @@ These show the Grid in action. Do not treat them as the only cases to catch.
 
 ## Observability hook (chrysa / Mirador)
 
-When emitting an optimization, also emit a structured trace (if a sink is configured):
+When emitting an optimization, emit a structured trace only if the hook named a `Trace sink`
+(env `APE_TRACE_SINK`); otherwise emit nothing, it only costs output tokens:
 
 ```json
 { "raw": "...", "regime": "SUGGESTIVE", "task_class": "technique",
