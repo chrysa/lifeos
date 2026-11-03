@@ -6,6 +6,12 @@ Machine-readable output lines:
 - GATE_RESULT|<Gate>|FAIL|...
 - OVERALL_RESULT|PASS
 - OVERALL_RESULT|FAIL
+- OVERALL_RESULT|SKIP  (verify only: no baseline, nothing was evaluated)
+
+Exit codes:
+- 0  every gate passed
+- 1  a gate failed, the baseline is invalid, or the usage is wrong
+- 2  ``verify`` evaluated nothing (no baseline). Never 0: "not evaluated" is not "green".
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -26,6 +33,13 @@ from typing import Any
 _EXIT_NOT_FOUND = 127
 # No alternative applied: every one was guarded by a manifest this repo lacks.
 _EXIT_NOT_APPLICABLE = 126
+
+# Process exit codes of the CLI. NOT_EVALUATED is distinct from both PASS and FAIL:
+# a verify run without a baseline checked nothing, and exiting 0 made every repo
+# without a baseline look green (the "false green" this code exists to prevent).
+EXIT_PASS = 0
+EXIT_FAIL = 1
+EXIT_NOT_EVALUATED = 2
 
 # Operator -> comparison, as a table. Both the unicode and ASCII spellings of each
 # ordering are accepted because baselines exist carrying either. An operator absent
@@ -117,14 +131,24 @@ DEFAULT_GATES: list[GateSpec] = [
         "Secrets",
         "security_secrets",
         "secret_count",
-        "=",
+        # ≤, not =: the metric counts findings the repo has NOT acknowledged in its
+        # .secrets.baseline (see _parse_secret_count). Fewer of them is an improvement;
+        # under = a removed or newly-audited finding failed the gate as a "regression".
+        "≤",
         # NOT --all-files: that scans the working *directory*, and Tests and
         # Coverage run before this gate in the same job, writing coverage.xml and
         # report files into it. The metric then measures partly the run instead of
         # the code — it reported 111 against a baseline of 110 for a commit whose
         # tracked tree measured 110 exactly. Without the flag detect-secrets scans
         # what git tracks, which is what the baseline describes.
-        CommandSpec((("detect-secrets", "scan"),), swallow_exit=True),
+        # The baseline file itself is excluded with a fixed pattern (never one read
+        # from the repo): its hashed_secret lines are flagged as hex high-entropy
+        # strings and secret keywords, two findings per acknowledged entry, so
+        # acknowledging a false positive raised the count instead of lowering it.
+        CommandSpec(
+            (("detect-secrets", "scan", "--exclude-files", r"^\.secrets\.baseline$"),),
+            swallow_exit=True,
+        ),
     ),
     (
         "VulnDeps",
@@ -143,6 +167,9 @@ class QualityGate:
     CONFIG_FILE = ".quality-gate.json"
     BASELINE_FILE = ".quality-gate-baseline.json"
     LAST_REPORT_FILE = ".quality-gate-last-report.json"
+    # detect-secrets' own baseline: findings listed there are known (audited or
+    # accepted) and must not count against the gate. Read only — never rewritten.
+    SECRETS_BASELINE_FILE = ".secrets.baseline"
 
     def __init__(self) -> None:
         self.config_path = Path(self.CONFIG_FILE)
@@ -157,6 +184,8 @@ class QualityGate:
             self.config = json.load(handle)
 
         self.gates: list[GateSpec] = list(DEFAULT_GATES)
+        # Start time of the gate command being run (set by _run_gate); None outside a run.
+        self._gate_started_at: float | None = None
 
     def _execute(self, executable: str, argv: list[str]) -> tuple[int, str, bool]:
         """Run one resolved alternative: ``(exit code, output, aborted)``.
@@ -272,8 +301,15 @@ class QualityGate:
         `make test-cov` may emit only `--cov-report=xml`, in which case stdout
         carries no summary at all and the textual patterns above find nothing.
         """
+        started = getattr(self, "_gate_started_at", None)
         for candidate in (Path("reports/coverage.xml"), Path("coverage.xml")):
             if not candidate.is_file():
+                continue
+            # A report older than this gate's own command was left by an earlier run
+            # (or committed): its figure says nothing about the code under test and
+            # would mask a regression. 1 s of slack absorbs coarse filesystem mtimes.
+            if started is not None and candidate.stat().st_mtime < started - 1:
+                print(f"WARNING|Coverage|stale report ignored: {candidate}")
                 continue
             match = re.search(
                 r'<coverage[^>]*\bline-rate="([0-9.]+)"',
@@ -298,11 +334,58 @@ class QualityGate:
             return int(match.group(1))
         return 0
 
+    def _load_secrets_baseline(self) -> dict[str, Any] | None:
+        """The repo's .secrets.baseline as a dict, or None if absent or unreadable."""
+        path = Path(self.SECRETS_BASELINE_FILE)
+        if not path.is_file():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        return data if isinstance(data, dict) and isinstance(data.get("results"), dict) else None
+
+    def _known_secrets(self) -> set[tuple[str, str, str]] | None:
+        """(filename, hashed_secret, type) of every finding the baseline acknowledges.
+
+        Line numbers are deliberately ignored — they move with every edit above a
+        finding, which is why detect-secrets itself matches on these three fields.
+        ``None`` (no usable baseline) means "nothing is known": every finding counts.
+        """
+        baseline = self._load_secrets_baseline()
+        if baseline is None:
+            return None
+        return {
+            (str(filename), str(item.get("hashed_secret")), str(item.get("type")))
+            for filename, items in baseline["results"].items()
+            if isinstance(items, list)
+            for item in items
+            if isinstance(item, dict)
+        }
+
     def _parse_secret_count(self, output: str) -> int:
+        """Findings the scan reports that .secrets.baseline does not acknowledge.
+
+        Counting every finding made the metric useless wherever a repo keeps test
+        fixtures or audited false positives in its baseline: it measured the
+        fixtures, not new leaks, and could only be compared with ``=``.
+        """
         try:
             d = json.loads(output)
-            return sum(len(v) for v in d.get("results", {}).values())
-        except (json.JSONDecodeError, AttributeError, ValueError):
+            results = d.get("results", {})
+            known = self._known_secrets() or set()
+            count = 0
+            for filename, items in results.items():
+                # A malformed entry is not evidence that nothing was found. Counting it
+                # fails closed; the AttributeError it used to raise sent the parser to
+                # the text fallback, which returned 0.
+                for item in items if isinstance(items, list) else [items]:
+                    if not isinstance(item, dict) or (
+                        (str(filename), str(item.get("hashed_secret")), str(item.get("type"))) not in known
+                    ):
+                        count += 1
+            return count
+        except (json.JSONDecodeError, AttributeError, ValueError, TypeError):
             pass
         match = re.search(r"secrets?\s+found[:\s]+(\d+)", output, re.IGNORECASE)
         if match:
@@ -362,6 +445,8 @@ class QualityGate:
         # into config dropped it once, and pip-audit finding a CVE failed the gate.
         spec = CommandSpec.parse(raw, swallow_exit=default_spec.swallow_exit) if raw is not None else default_spec
         print(f"RUN_GATE|{gate_name}|{spec.display()}")
+        # Read back by _parse_coverage_report: a report older than this is stale.
+        self._gate_started_at = time.time()
         exit_code, output = self._run(spec)
         metric = self._parse_metric(gate_name, exit_code, output)
         return {
@@ -433,7 +518,13 @@ class QualityGate:
         print("ERROR: baseline contains failing gates; fix quality checks before using this baseline")
         return False
 
-    def verify(self) -> bool:
+    def verify(self) -> int:
+        """Compare the current metrics with the baseline; return the process exit code.
+
+        ``EXIT_PASS`` when every gate holds, ``EXIT_FAIL`` on any regression, and
+        ``EXIT_NOT_EVALUATED`` when there is no baseline: nothing was compared, so the
+        run must not read as a pass.
+        """
         print("VERIFY|START")
         if not self.baseline_path.exists():
             report = {
@@ -444,8 +535,11 @@ class QualityGate:
             }
             self._write_report(report)
             print("OVERALL_RESULT|SKIP")
-            print("WARNING: no baseline found — skipping regression check (run quality-gate-baseline to initialize)")
-            return True
+            print(
+                f"ERROR: not evaluated — no baseline at {self.baseline_path}; nothing was checked "
+                f"(exit {EXIT_NOT_EVALUATED}). Run 'make quality-gate-baseline' and commit the file."
+            )
+            return EXIT_NOT_EVALUATED
 
         with open(self.baseline_path, encoding="utf-8") as handle:
             baseline = json.load(handle)
@@ -518,10 +612,10 @@ class QualityGate:
 
         if all_passed:
             print("OVERALL_RESULT|PASS")
-            return True
+            return EXIT_PASS
 
         print("OVERALL_RESULT|FAIL")
-        return False
+        return EXIT_FAIL
 
 
 def main() -> None:
@@ -533,9 +627,9 @@ def main() -> None:
     quality_gate = QualityGate()
 
     if command == "baseline":
-        sys.exit(0 if quality_gate.baseline() else 1)
+        sys.exit(EXIT_PASS if quality_gate.baseline() else EXIT_FAIL)
     if command == "verify":
-        sys.exit(0 if quality_gate.verify() else 1)
+        sys.exit(quality_gate.verify())
 
     print(f"Unknown command: {command}")
     sys.exit(1)
