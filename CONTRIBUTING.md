@@ -23,6 +23,9 @@ make install
    `type(scope): subject` (allowed types: feat, fix, docs, style, refactor, test,
    chore, perf, revert, ci). Commit messages are linted via `conventional-pre-commit`.
 4. **Verify** before pushing, then open a PR against `main`.
+5. **Link** the PR. On a public open-source repo: open an issue first, or reference an
+   existing one (`#123`, `closes #123`) in your PR — a Shortcut story is not required
+   (DEC-V3-006). On a private repo: reference the Shortcut story (`sc-1234`).
 
 Verification commands:
 
