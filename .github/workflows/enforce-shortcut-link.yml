@@ -34,6 +34,6 @@ jobs:
       contents: read
       issues: read
       pull-requests: read
-    uses: chrysa/github-actions/.github/workflows/enforce-shortcut-link.yml@v1.11.0
+    uses: chrysa/github-actions/.github/workflows/enforce-shortcut-link.yml@v1.11.1
     with:
       accept-github-issue: true
