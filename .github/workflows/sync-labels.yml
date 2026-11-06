@@ -9,6 +9,9 @@
   schedule:
   - cron: 0 2 * * 1
   workflow_dispatch: null
+permissions:
+  contents: read
+  issues: write
 jobs:
   sync-labels:
     name: Synchronize labels
