@@ -9,45 +9,38 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
 
 .claude/
   agents/
-    general-backend-developer.md
-    general-code-quality-debugger.md
-    general-devops.md
-    general-frontend-developer.md
-    general-fullstack-developer.md
-    general-pm.md
-    general-qa.md
-    general-solution-architect.md
-    general-technical-project-lead.md
-    general-technical-writer.md
+    code-reviewer.md
+    security-auditor.md
+    test-runner.md
   ape/
     README.md
     ape-transform-v2.md
     ape_hook.py
-  commands/
-    adr-new.md
-    commit.md
-    custom-init.md
-    help-commands.md
-    issue.md
-    reviewpr.md
-    test.md
   hooks/
     check-no-env-files.cjs
     circuit-breaker.cjs
     claude-config-drift.cjs
+    format.py
     frustration-detection.cjs
     graphify-auto-update.cjs
     memory-consolidation.cjs
     model-debt-inventory.cjs
+    pre-compact.sh
+    read_guard.py
     secret-scanner.cjs
+    session-context.sh
     verifiable-thresholds.cjs
   settings.json
   skills/
     accessibility/
       SKILL.md
+    adr-new/
+      SKILL.md
     agent-patterns/
       SKILL.md
     api-design/
+      SKILL.md
+    architecture/
       SKILL.md
     async-patterns/
       SKILL.md
@@ -58,9 +51,13 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
       scripts/
     clean-architecture/
       SKILL.md
+    commit/
+      SKILL.md
     contract-testing/
       SKILL.md
     council/
+      SKILL.md
+    custom-init/
       SKILL.md
     dockerfile-multistage/
       SKILL.md
@@ -73,17 +70,29 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
       gitnexus-guide/
       gitnexus-impact-analysis/
       gitnexus-refactoring/
+    help-commands/
+      SKILL.md
     hunt/
       SKILL.md
     implement/
       SKILL.md
+    issue/
+      SKILL.md
     plan/
       SKILL.md
+    review-changes/
+      SKILL.md
+    reviewpr/
+      SKILL.md
     rollout-status/
+      SKILL.md
+    skills/
       SKILL.md
     spec/
       SKILL.md
     standards-authoring/
+      SKILL.md
+    test/
       SKILL.md
     testing-pytest/
       SKILL.md
@@ -148,6 +157,7 @@ CHANGELOG.md
 CLAUDE.md
 CODEOWNERS
 CONTRIBUTING.md
+DESIGN.md
 Dockerfile.test
 GitVersion.yml
 LICENSE
@@ -217,6 +227,8 @@ version: 0.1.0
 ## Modules
 
 .claude/ape/ape_hook.py
+.claude/hooks/format.py
+.claude/hooks/read_guard.py
 lifeos/__init__.py — lifeos — Floating AI assistant multi-OS.
 lifeos/__main__.py — Entry point for `python -m lifeos` and `lifeos` CLI.
 lifeos/app.py — Application orchestrator.
