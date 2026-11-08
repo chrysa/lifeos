@@ -1,0 +1,113 @@
+# Managed by prism-ai-lint --align: Claude Code deny/ask rules mirrored for Codex.
+# Codex applies the most restrictive matching rule; this file only adds prompt/forbidden rules.
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["gh", "pr", "create"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["gh", "release"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["gh", "repo"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["kubectl", "apply"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["kubectl", "delete"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["kubectl", "patch"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["helm", "install"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["helm", "upgrade"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["helm", "uninstall"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["argocd"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["terraform", "apply"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["terraform", "destroy"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["tofu", "apply"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["tofu", "destroy"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["bao", "write"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["vault", "write"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["docker", "push"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["npm", "publish"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["twine", "upload"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
