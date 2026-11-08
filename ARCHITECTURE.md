@@ -22,8 +22,7 @@ goals but **not yet implemented** (README "Status" table; package still marked
 - **sentry-sdk** — observability / error reporting.
 - **httpx**, **psutil**, **rich**, **python-dotenv** — declared runtime deps
   (psutil-based monitoring not yet wired).
-- Optional extras (declared, not implemented): **PySide6** (`[ui]`),
-  **discord.py** (`[discord]`).
+- Optional extra (declared, not implemented): **PySide6** (`[ui]`).
 - Build backend: **hatchling**. Lint/format: **ruff**. Types: **mypy** (strict).
   Tests: **pytest** (+ pytest-asyncio, pytest-cov, pytest-mock).
 
@@ -68,8 +67,8 @@ From `Makefile` (tier `lib`):
 
 ```bash
 make install        # pip install -e .            (headless core)
-make install-ui     # pip install -e ".[ui,discord]"
-make dev            # pip install -e ".[ui,discord,dev]" + pre-commit install
+make install-ui     # pip install -e ".[ui]"
+make dev            # pip install -e ".[ui,dev]" + pre-commit install
 make test           # pytest tests/ -v
 make test-cov       # pytest with coverage
 make docker-test    # docker build --target test -f Dockerfile.test && run

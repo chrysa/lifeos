@@ -77,7 +77,7 @@ make run-headless # python -m lifeos --headless
 - **Click** — CLI
 - **Pydantic v2** — config validation
 - **sentry-sdk** — error reporting
-- Optional extras (declared, not yet wired): **PySide6** (`[ui]`), **discord.py** (`[discord]`)
+- Optional extra (declared, not yet wired): **PySide6** (`[ui]`)
 
 ## License
 
