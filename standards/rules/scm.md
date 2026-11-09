@@ -48,14 +48,19 @@ Canonical source of truth is the canon; edit there, then run `make gen-agent-vie
 - **One PR per issue**, scoped tight. Every PR references an issue (`Closes/Fixes/Refs #N`).
   Exception: label `hotfix`. The `enforce-issue-link` workflow is a blocking status check.
 
-- **Every PR references a Shortcut story.** The story is the unit of work tracking; a PR
-  with no story is invisible to the fleet's planning surface and is a defect. Carry the
-  reference as `sc-<id>` (or the `app.shortcut.com/.../story/<id>` URL) in the branch name
-  (`feat/sc-1234-short-desc`), the PR title, or the PR body — the PR template has a required
-  field for it. dependabot is exempt; a genuinely story-less PR must carry the `no-story`
-  label, which records the waiver. The `enforce-shortcut-link` workflow is a blocking status
-  check. A story beyond `In Progress` must itself link the branch/commit (native VCS
-  integration), so the thread reads both ways.
+- **Every PR references a Shortcut story — except in public open-source repos (DEC-V3-006),
+  where a linked GitHub issue is enough; Shortcut stays the internal tracker.** The story is
+  the unit of work tracking; a PR with no story is invisible to the fleet's planning surface
+  and is a defect. Carry the reference as `sc-<id>` (or the `app.shortcut.com/.../story/<id>`
+  URL) in the branch name (`feat/sc-1234-short-desc`), the PR title, or the PR body — the PR
+  template has a required field for it. dependabot is exempt; a genuinely story-less PR must
+  carry the `no-story` label, which records the waiver. The `enforce-shortcut-link` workflow
+  is a blocking status check. A story beyond `In Progress` must itself link the branch/commit
+  (native VCS integration), so the thread reads both ways. On a public open-source repo the
+  caller is `templates/workflows-oss/enforce-shortcut-link.yml` (`@v1.11.0`,
+  `accept-github-issue: true`): a reference to an issue of that repository (`#123`,
+  `closes #123`, `.../issues/123`) satisfies the gate as well — a PR number does not — so an
+  external contributor only needs to open an issue first, or reference an existing one.
 
 - **Issues and PRs are type-driven.** Every issue declares exactly one **type** from a fixed
   taxonomy (bug · feature · enhancement · chore · docs · ci · security · research · epic),
