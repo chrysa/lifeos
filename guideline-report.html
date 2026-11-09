@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guideline Compliance Report</title>
+<style>
+:root {
+  --clr-bg: #f8f9fa; --clr-surface: #fff; --clr-border: #dee2e6;
+  --clr-muted: #6c757d; --clr-dark: #343a40; --clr-text: #212529;
+  --clr-ok: #198754; --clr-err: #dc3545; --clr-warn: #fd7e14; --clr-info: #0d6efd;
+  --nav-width: 280px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; margin: 0; background: var(--clr-bg);
+  color: var(--clr-text); display: flex; flex-direction: column; min-height: 100vh; }
+a { color: var(--clr-info); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Header ── */
+header { background: var(--clr-dark); color: #fff; padding: 1rem 1.5rem;
+  display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+header h1 { margin: 0; font-size: 1.2rem; flex: 1; }
+header p { margin: 0; opacity: .7; font-size: 0.8rem; white-space: nowrap; }
+#nav-toggle { background: none; border: 1px solid rgba(255,255,255,.4); color: #fff;
+  padding: .3rem .7rem; border-radius: 4px; cursor: pointer; font-size: .85rem; }
+
+/* ── Layout ── */
+.layout { display: flex; flex: 1; }
+
+/* ── Sidebar / Nav ── */
+nav#sidebar {
+  width: var(--nav-width); min-width: var(--nav-width);
+  background: #fff; border-right: 1px solid var(--clr-border);
+  position: sticky; top: 53px; height: calc(100vh - 53px);
+  overflow-y: auto; padding: .5rem 0; flex-shrink: 0;
+  transition: margin-left .2s ease;
+}
+nav#sidebar.hidden { margin-left: calc(-1 * var(--nav-width)); }
+.nav-section { padding: .25rem 0; }
+.nav-section-header { display: flex; align-items: center; gap: .4rem;
+  padding: .35rem .75rem; font-size: .78rem; font-weight: 600;
+  color: var(--clr-muted); text-transform: uppercase; letter-spacing: .05em; }
+.nav-item { display: flex; align-items: center; gap: .4rem;
+  padding: .3rem .75rem .3rem 1rem; font-size: .8rem; cursor: pointer;
+  border-left: 3px solid transparent; transition: background .15s; }
+.nav-item:hover { background: #f0f4ff; }
+.nav-item.active { background: #e8f0fe; border-left-color: var(--clr-info); }
+.nav-item.err { border-left-color: var(--clr-err); }
+.nav-item.warn { border-left-color: var(--clr-warn); }
+.nav-item.ok { border-left-color: var(--clr-ok); }
+.nav-item .nav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-item .nav-count { font-size: .7rem; padding: .1em .45em; border-radius: 10px;
+  background: #e9ecef; color: var(--clr-muted); flex-shrink: 0; }
+.nav-item.err .nav-count { background: #f8d7da; color: #842029; }
+.nav-item.warn .nav-count { background: #fff3cd; color: #664d03; }
+.nav-sub { padding-left: 1rem; }
+.nav-sub .nav-item { font-size: .75rem; padding-left: 1.25rem; }
+
+/* ── Main content ── */
+main { flex: 1; padding: 1rem 1.5rem; min-width: 0; }
+
+/* ── Summary bar ── */
+.summary { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.stat { background: var(--clr-surface); border: 1px solid var(--clr-border);
+  border-radius: 8px; padding: .75rem 1.25rem; min-width: 110px; text-align: center; }
+.stat .value { font-size: 1.8rem; font-weight: 700; }
+.stat .label { font-size: .75rem; color: var(--clr-muted); text-transform: uppercase;
+  letter-spacing: .05em; }
+.stat.error .value { color: var(--clr-err); }
+.stat.warning .value { color: var(--clr-warn); }
+.stat.info .value { color: var(--clr-info); }
+.stat.ok .value { color: var(--clr-ok); }
+
+/* ── Audit overview table ── */
+.audit-table-wrap { background: var(--clr-surface); border: 1px solid var(--clr-border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem; }
+.audit-table-title { background: #e9ecef; padding: .6rem 1rem; font-weight: 600;
+  font-size: .9rem; display: flex; align-items: center; gap: .5rem; }
+
+/* ── Sections (per rule) ── */
+.section { background: var(--clr-surface); border: 1px solid var(--clr-border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 1rem; scroll-margin-top: 60px; }
+.section-header { padding: .7rem 1rem; background: #e9ecef;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+.section-header-left h2 { margin: 0; font-size: .95rem; }
+.section-meta { font-size: .75rem; color: var(--clr-muted); margin-top: .2rem; }
+.section-meta code { background: #dee2e6; padding: .1em .3em; border-radius: 3px; }
+
+/* ── Badges ── */
+.badge { display: inline-block; padding: .2em .55em; border-radius: 4px;
+  font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.badge-error { background: #f8d7da; color: #842029; }
+.badge-warning { background: #fff3cd; color: #664d03; }
+.badge-info { background: #cfe2ff; color: #084298; }
+.badge-ok { background: #d1e7dd; color: #0a3622; }
+.badge-neutral { background: #e9ecef; color: #495057; }
+
+/* ── Constraints details ── */
+details.constraints { margin: 0; }
+details.constraints summary {
+  padding: .5rem 1rem; cursor: pointer; font-size: .82rem; color: var(--clr-muted);
+  background: #f8f9fa; border-top: 1px solid var(--clr-border);
+  list-style: none; display: flex; align-items: center; gap: .4rem;
+  user-select: none;
+}
+details.constraints summary::-webkit-details-marker { display: none; }
+details.constraints summary::before { content: "▶"; font-size: .6rem; transition: transform .15s; }
+details[open].constraints summary::before { transform: rotate(90deg); }
+details.constraints summary:hover { background: #e9ecef; }
+.constraints-body { padding: .5rem 1rem .75rem; border-top: 1px solid var(--clr-border);
+  background: #fafbfc; }
+.constraints-body ol { margin: 0; padding-left: 1.25rem; font-size: .82rem; line-height: 1.7; }
+.constraints-body li { color: var(--clr-text); }
+.constraints-body li .kw { font-weight: 600; color: #6f42c1; }
+
+/* ── File groups in violations ── */
+.file-group { border-top: 1px solid var(--clr-border); }
+.file-group-header { padding: .4rem 1rem; background: #f8f9fa; font-family: monospace;
+  font-size: .78rem; color: var(--clr-muted); display: flex; align-items: center;
+  gap: .5rem; }
+.file-group-header .file-icon { opacity: .5; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th { background: #f8f9fa; padding: .45rem .9rem; text-align: left;
+  border-bottom: 2px solid var(--clr-border); white-space: nowrap; }
+td { padding: .4rem .9rem; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8f9fa; }
+.file-path { font-family: monospace; font-size: .78rem; color: var(--clr-muted); }
+.line-content { font-family: monospace; background: #f8f9fa; padding: .1em .4em;
+  border-radius: 3px; font-size: .8rem; }
+.rule-text { max-width: 380px; font-size: .8rem; color: #495057; }
+td.line-no { width: 50px; text-align: right; color: var(--clr-muted);
+  font-family: monospace; font-size: .78rem; }
+
+/* ── No violations ── */
+.no-violations { padding: .9rem 1rem; color: var(--clr-ok); font-size: .875rem; }
+
+/* ── Linter sections ── */
+.linter-section { background: var(--clr-surface); border: 1px solid var(--clr-border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 1rem; scroll-margin-top: 60px; }
+.linter-header { padding: .7rem 1rem; background: #e3f2fd;
+  display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.linter-header h2 { margin: 0; font-size: .95rem; }
+.linter-meta { font-size: .75rem; color: var(--clr-muted); }
+.linter-unavailable { padding: .9rem 1rem; color: var(--clr-muted); font-size: .875rem; font-style: italic; }
+.linter-ok { padding: .9rem 1rem; color: var(--clr-ok); font-size: .875rem; }
+
+/* ── Footer ── */
+footer { text-align: center; color: var(--clr-muted); font-size: .78rem;
+  padding: 1.5rem; border-top: 1px solid var(--clr-border); margin-top: 1rem; }
+</style>
+</head>
+<body>
+<header>
+  <button id="nav-toggle"
+    onclick="document.getElementById('sidebar').classList.toggle('hidden')"
+    title="Toggle navigation">&#9776;</button>
+  <h1>&#128203; Guideline Compliance Report</h1>
+  <p>&#128193; /home/anthony/Documents/perso/projects/chrysa/lifeos &nbsp;&mdash;&nbsp; &#128197; 2026-10-05 13:04 UTC</p>
+</header>
+<div class="layout">
+<nav id="sidebar">
+  <div class="nav-section">
+    <div class="nav-section-header">&#128270; Navigation</div>
+    <div class="nav-item" onclick="document.getElementById('audit-overview').scrollIntoView({behavior:'smooth'})">
+      <span class="nav-label">&#128202; Audit Overview</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-header">&#128218; Guidelines (17)</div>
+    <div class="nav-item warn" data-target="rule-0" onclick="document.getElementById('rule-0').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="python_guidelines.instructions">python_guidelines.instructions</span><span class="nav-count">18 warn</span></div>
+<div class="nav-sub"><div class="nav-item" style="padding-left:1.75rem;font-size:.73rem" onclick="document.getElementById('file-0-0').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="scripts/quality_gate.py">&#128196; quality_gate.py</span><span class="nav-count">15</span></div><div class="nav-item" style="padding-left:1.75rem;font-size:.73rem" onclick="document.getElementById('file-0-1').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title=".claude/ape/ape_hook.py">&#128196; ape_hook.py</span><span class="nav-count">3</span></div></div>
+<div class="nav-item ok" data-target="rule-1" onclick="document.getElementById('rule-1').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — code-reviewer.md">Agents — code-reviewer.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-2" onclick="document.getElementById('rule-2').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-backend-developer.…">Agents — general-backend-developer.…</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-3" onclick="document.getElementById('rule-3').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-frontend-developer…">Agents — general-frontend-developer…</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-4" onclick="document.getElementById('rule-4').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-fullstack-develope…">Agents — general-fullstack-develope…</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-5" onclick="document.getElementById('rule-5').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-devops.md">Agents — general-devops.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-6" onclick="document.getElementById('rule-6').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-code-quality-debug…">Agents — general-code-quality-debug…</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-7" onclick="document.getElementById('rule-7').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-technical-project-…">Agents — general-technical-project-…</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-8" onclick="document.getElementById('rule-8').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-solution-architect…">Agents — general-solution-architect…</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-9" onclick="document.getElementById('rule-9').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — test-runner.md">Agents — test-runner.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-10" onclick="document.getElementById('rule-10').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-technical-writer.md">Agents — general-technical-writer.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-11" onclick="document.getElementById('rule-11').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — security-auditor.md">Agents — security-auditor.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-12" onclick="document.getElementById('rule-12').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-qa.md">Agents — general-qa.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-13" onclick="document.getElementById('rule-13').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — AGENTS.md">Agents — AGENTS.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-14" onclick="document.getElementById('rule-14').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Claude — CLAUDE.md">Claude — CLAUDE.md</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-15" onclick="document.getElementById('rule-15').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="GitHub Copilot — global instructions">GitHub Copilot — global instructions</span><span class="nav-count">✓</span></div>
+<div class="nav-item ok" data-target="rule-16" onclick="document.getElementById('rule-16').scrollIntoView({behavior:'smooth'})"><span class="nav-label" title="Agents — general-pm.md">Agents — general-pm.md</span><span class="nav-count">✓</span></div>
+  </div>
+  
+</nav>
+<main>
+<div class="summary">
+  <div class="stat ok"><div class="value">2474</div><div class="label">Files scanned</div></div>
+  <div class="stat error"><div class="value">0</div><div class="label">Errors</div></div>
+  <div class="stat warning"><div class="value">18</div><div class="label">Warnings</div></div>
+  <div class="stat info"><div class="value">0</div><div class="label">Info</div></div>
+  <div class="stat"><div class="value">17</div><div class="label">Rule files</div></div>
+  <div class="stat"><div class="value">739</div><div class="label">Constraints</div></div>
+  
+</div>
+
+<div class="audit-table-wrap" id="audit-overview">
+  <div class="audit-table-title">&#128202; Audit Overview — Compliance by Guideline</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Guideline</th><th>Apply To</th><th>Files</th>
+        <th>Constraints</th><th>&#128308; Errors</th><th>&#128993; Warnings</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>python_guidelines.instructions</td><td><code style='font-size:.75rem'>**/*.py</code></td><td style='text-align:right'>13</td><td style='text-align:right'>15</td><td style='text-align:right'>0</td><td style='text-align:right'><span style="color:var(--clr-warn);font-weight:600">18</span></td><td><span class="badge badge-warning">WARN</span></td></tr>
+<tr><td>Agents — code-reviewer.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-backend-developer.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>36</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-frontend-developer.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>27</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-fullstack-developer.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>35</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-devops.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>44</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-code-quality-debugger.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>44</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-technical-project-lead.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>19</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-solution-architect.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>23</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — test-runner.md</td><td><code style='font-size:.75rem'>**/tests/**/*.py, **/test_*.py, **/conftest.py</code></td><td style='text-align:right'>1</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-technical-writer.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>34</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — security-auditor.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-qa.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>37</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — AGENTS.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>97</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Claude — CLAUDE.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>135</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>GitHub Copilot — global instructions</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>107</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+<tr><td>Agents — general-pm.md</td><td><code style='font-size:.75rem'>**/*</code></td><td style='text-align:right'>164</td><td style='text-align:right'>86</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td><span class="badge badge-ok">PASS</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section" id="rule-0">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>python_guidelines.instructions <span class="badge badge-neutral" style="font-size:.68rem">copilot-instruction</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*.py</code> &nbsp;&mdash;&nbsp;
+        13 file(s) scanned &nbsp;&mdash;&nbsp;
+        15 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-warning">18 warning(s)</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 15 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Python 3.14 minimum</li><li>from future import annotations in every file</li><li>Target: runs on Linux and Windows — no platform-specific imports in core/ or plugins/</li><li>Strict mypy: no Any, no untyped defs</li><li>PEP 585 generics: list[str], dict[str, int] — <span class="kw">never</span> List, Dict</li><li>PEP 604 unions: str | None — <span class="kw">never</span> Optional[str]</li><li>All I/O in plugins: async def — <span class="kw">never</span> blocking calls in event loop</li><li>Use asyncio.tothread() for unavoidable blocking operations</li><li><span class="kw">Never</span> asyncio.sleep(0) as workaround — fix the blocking code</li><li>No secrets in logs (self.logger.warning(...) — redact tokens)</li><li>Validate all external API responses before use</li><li>No hardcoded credentials — <span class="kw">always</span> env var interpolation</li><li>One class per file. Each class lives in its own module (e.g. models/user.py contains only User).</li><li>Domain-driven structure. Organise by domain (connectors/, services/, schemas/) — not by layer.</li><li>No print() in production. Use structlog or logging with JSON formatter.</li></ol></div></details>
+  <div class="file-group" id="file-0-0"><div class="file-group-header"><span class="file-icon">&#128196;</span><span style="flex:1;font-weight:600">.claude/ape/ape_hook.py</span><span class="badge badge-warning">3 warn</span></div><table><thead><tr><th>Severity</th><th>Line</th><th>Code</th><th>Rule</th></tr></thead><tbody><tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>98</td><td class='line-content'>print(f&quot;[APE] spec unreadable: {e}&quot;, file=sys.stderr)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>102</td><td class='line-content'>print(f&quot;&lt;!-- APE regime (pre-triaged): {regime} --&gt;\n&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>103</td><td class='line-content'>print(spec)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr></tbody></table></div><div class="file-group" id="file-0-1"><div class="file-group-header"><span class="file-icon">&#128196;</span><span style="flex:1;font-weight:600">scripts/quality_gate.py</span><span class="badge badge-warning">15 warn</span></div><table><thead><tr><th>Severity</th><th>Line</th><th>Code</th><th>Rule</th></tr></thead><tbody><tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>153</td><td class='line-content'>print(f&quot;ERROR: configuration file not found: {self.CONFIG_FILE}&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>364</td><td class='line-content'>print(f&quot;RUN_GATE|{gate_name}|{spec.display()}&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>394</td><td class='line-content'>print(&quot;BASELINE|START&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>409</td><td class='line-content'>print(</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>429</td><td class='line-content'>print(&quot;OVERALL_RESULT|PASS&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>432</td><td class='line-content'>print(&quot;OVERALL_RESULT|FAIL&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>433</td><td class='line-content'>print(&quot;ERROR: baseline contains failing gates; fix quality checks before using this baseline&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>437</td><td class='line-content'>print(&quot;VERIFY|START&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>446</td><td class='line-content'>print(&quot;OVERALL_RESULT|SKIP&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>447</td><td class='line-content'>print(&quot;WARNING: no baseline found — skipping regression check (run quality-gate-baseline to initialize)&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>489</td><td class='line-content'>print(</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>520</td><td class='line-content'>print(&quot;OVERALL_RESULT|PASS&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>523</td><td class='line-content'>print(&quot;OVERALL_RESULT|FAIL&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>529</td><td class='line-content'>print(&quot;Usage: python3 quality_gate.py [baseline|verify]&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr>
+<tr><td><span class='badge badge-warning'>WARNING</span></td><td class='line-no'>540</td><td class='line-content'>print(f&quot;Unknown command: {command}&quot;)</td><td class='rule-text'>No print() in production. Use structlog or logging with JSON formatter.</td></tr></tbody></table></div>
+</div>
+<div class="section" id="rule-1">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — code-reviewer.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        0 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128683; No constraints extracted from this file</summary></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-2">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-backend-developer.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        36 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 36 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Design RESTful and GraphQL APIs following industry best practices and standards</li><li>Implement proper HTTP status codes, error responses, and API versioning strategies</li><li>Create comprehensive API documentation with clear endpoint specifications</li><li>Design efficient data models and schema structures for optimal performance</li><li>Implement proper authentication, authorization, and security measures</li><li>Design normalized database schemas with proper relationships and constraints</li><li>Optimize queries for performance using indexing, query analysis, and caching strategies</li><li>Implement database migrations and version control for schema changes</li><li>Design for data integrity with proper validation, transactions, and consistency checks</li><li>Recommend appropriate database technologies based on use case requirements</li><li>Implement comprehensive error handling with proper logging and monitoring</li><li>Design fault-tolerant systems with graceful degradation and circuit breakers</li><li>Create scalable architectures that can handle increasing load and data volume</li><li>Implement proper caching strategies at multiple layers (application, database, CDN)</li><li>Design for horizontal and vertical scaling patterns</li><li>Implement comprehensive logging with structured formats and appropriate log levels</li><li>Set up performance monitoring with metrics, alerts, and dashboards</li><li>Design health check endpoints and system status monitoring</li><li>Implement distributed tracing for complex request flows</li><li>Create proper error tracking and alerting mechanisms</li><li>Follow SOLID principles and clean architecture patterns</li><li>Implement proper dependency injection and inversion of control</li><li>Write comprehensive unit and integration tests for API endpoints</li><li>Ensure proper separation of concerns between layers (controller, service, repository)</li><li>Implement proper validation at API boundaries and business logic layers</li><li><span class="kw">Always</span> consider scalability, performance, and maintainability implications</li><li>Provide specific code examples with proper error handling and validation</li><li>Explain the reasoning behind architectural decisions and trade-offs</li><li>Include monitoring and observability considerations in your recommendations</li><li>Address security concerns and best practices proactively</li><li>Consider the existing technology stack and project constraints</li><li>Provide migration strategies when suggesting architectural changes</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-3">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-frontend-developer.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        27 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 27 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Accessibility Standards: Deep knowledge of WCAG 2.1/2.2 guidelines, ARIA patterns, semantic HTML, and assistive technology compatibility</li><li>Performance Optimization: Bundle optimization, lazy loading, code splitting, Core Web Vitals, image optimization, and runtime performance tuning</li><li>Responsive Design: Mobile-first approaches, fluid layouts, CSS Grid/Flexbox mastery, and cross-device compatibility</li><li>Modern Frameworks: React (hooks, context, performance patterns), Vue.js (composition API, reactivity), Angular (components, services, RxJS)</li><li>CSS Architecture: BEM methodology, CSS-in-JS, CSS modules, Sass/SCSS, design systems, and maintainable stylesheets</li><li>User Experience: Information architecture, interaction design, usability principles, and conversion optimization</li><li>Prioritize Accessibility: <span class="kw">Always</span> consider screen readers, keyboard navigation, color contrast, and inclusive design principles</li><li>Optimize for Performance: Suggest efficient implementations that minimize bundle size and runtime overhead</li><li>Ensure Responsiveness: Provide solutions that work seamlessly across desktop, tablet, and mobile devices</li><li>Follow Best Practices: Use semantic HTML, proper component architecture, and maintainable code patterns</li><li>Consider Browser Compatibility: Account for cross-browser differences and provide fallbacks when necessary</li><li>Implement Progressive Enhancement: Build core functionality first, then enhance with advanced features</li><li>Include proper TypeScript types when applicable</li><li>Demonstrate accessibility attributes (ARIA labels, roles, etc.)</li><li>Show responsive design considerations</li><li>Include performance optimizations</li><li>Follow modern ES6+ syntax and patterns</li><li>Include relevant testing considerations</li><li>Accessibility compliance and potential improvements</li><li>Performance bottlenecks and optimization opportunities</li><li>Responsive design implementation</li><li>Code maintainability and scalability</li><li>User experience and interaction patterns</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-4">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-fullstack-developer.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        35 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 35 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Design and implement complete user stories from database schema to user interface</li><li>Coordinate changes across multiple application layers (database, API, frontend)</li><li>Ensure data consistency and proper error handling throughout the entire stack</li><li>Implement proper validation at both client and server levels</li><li>Design efficient database schemas and relationships using modern ORM patterns</li><li>Build robust API endpoints (REST, GraphQL) with proper authentication and authorization</li><li>Implement business logic with appropriate error handling and logging</li><li>Design scalable data access patterns and caching strategies</li><li>Create responsive, accessible user interfaces using modern frameworks</li><li>Implement efficient state management patterns (Redux, Zustand, React Query)</li><li>Handle asynchronous operations and API integration with proper loading states</li><li>Ensure optimal user experience with proper error boundaries and feedback</li><li>Design clean API contracts that serve frontend needs efficiently</li><li>Implement proper data transformation between backend and frontend layers</li><li>Ensure type safety across the stack (TypeScript, schema validation)</li><li>Handle real-time features using WebSockets or Server-Sent Events when needed</li><li>Follow established project patterns and coding standards from CLAUDE.md</li><li>Write maintainable, testable code with proper separation of concerns</li><li>Implement proper error handling and user feedback mechanisms</li><li>Consider performance implications at every layer (database queries, API responses, frontend rendering)</li><li>Ensure security best practices (input validation, authentication, authorization)</li><li>Test features end-to-end to ensure proper integration</li><li>Verify data flow and state management across all application layers</li><li>Ensure responsive design and cross-browser compatibility</li><li>Validate proper error handling and edge case scenarios</li><li>Start by understanding the complete user workflow and requirements</li><li>Design the data model and API contracts first</li><li>Implement backend functionality with proper validation and error handling</li><li>Create frontend components with efficient state management</li><li>Integrate all layers and test the complete user journey</li><li>Optimize performance and ensure proper error handling throughout</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-5">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-devops.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        44 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 44 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Design and implement infrastructure using Terraform, CloudFormation, or Pulumi</li><li>Create reusable, version-controlled infrastructure modules</li><li>Establish proper state management and workspace strategies</li><li>Implement infrastructure testing and validation</li><li>Design comprehensive build, test, and deployment pipelines</li><li>Implement GitOps workflows and branch strategies</li><li>Set up automated testing, security scanning, and quality gates</li><li>Create deployment strategies including blue-green, canary, and rolling deployments</li><li>Optimize build times and pipeline efficiency</li><li>Design and manage Kubernetes clusters and Docker environments</li><li>Implement service mesh architectures (Istio, Linkerd)</li><li>Create efficient container images with multi-stage builds</li><li>Set up auto-scaling, resource management, and networking</li><li>Implement security best practices for containerized applications</li><li>Design comprehensive monitoring stacks (Prometheus, Grafana, ELK)</li><li>Implement distributed tracing and application performance monitoring</li><li>Create meaningful alerts, dashboards, and SLI/SLO frameworks</li><li>Set up log aggregation and analysis systems</li><li>Establish incident response and on-call procedures</li><li>Architect solutions across AWS, GCP, Azure, and hybrid environments</li><li>Implement cost optimization and resource management strategies</li><li>Design for high availability, disaster recovery, and business continuity</li><li>Ensure compliance with security and regulatory requirements</li><li>Implement chaos engineering and fault injection testing</li><li>Design systems for graceful degradation and fault tolerance</li><li>Create capacity planning and performance optimization strategies</li><li>Establish backup, recovery, and data protection procedures</li><li>Assess Current State: Understand existing infrastructure, constraints, and requirements</li><li>Design Holistically: Consider security, scalability, maintainability, and cost implications</li><li>Provide Practical Implementation: Offer concrete steps, code examples, and configuration files</li><li>Include Best Practices: Incorporate industry standards, security principles, and operational excellence</li><li>Plan for Operations: Include monitoring, alerting, troubleshooting, and maintenance considerations</li><li>Consider Trade-offs: Explain different approaches and their implications</li><li>Automation over manual processes</li><li>Infrastructure as code over manual configuration</li><li>Observability and monitoring from the start</li><li>Security and compliance by design</li><li>Scalability and performance optimization</li><li>Documentation and knowledge sharing</li><li>Incident prevention over incident response</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-6">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-code-quality-debugger.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        44 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 44 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Perform comprehensive code reviews focusing on maintainability, readability, and performance</li><li>Identify code smells, anti-patterns, and violations of SOLID principles</li><li>Assess technical debt and provide prioritized remediation strategies</li><li>Evaluate adherence to established coding standards and best practices</li><li>Analyze code complexity metrics and suggest simplification approaches</li><li>Apply structured debugging frameworks: hypothesis formation, evidence collection, systematic elimination</li><li>Guide users through root cause analysis using techniques like 5 Whys, fishbone diagrams, and fault tree analysis</li><li>Recommend appropriate debugging tools and techniques for different scenarios</li><li>Help establish reproducible test cases for intermittent issues</li><li>Design debugging strategies that minimize system impact while maximizing information gathering</li><li>Identify refactoring opportunities that improve code quality without changing functionality</li><li>Provide step-by-step refactoring plans with risk assessment</li><li>Suggest design patterns that solve recurring problems elegantly</li><li>Recommend architectural improvements for better separation of concerns</li><li>Balance immediate fixes with long-term architectural health</li><li><span class="kw">Always</span> request relevant code context, error logs, and system specifications</li><li>Base recommendations on concrete evidence rather than assumptions</li><li>Provide measurable criteria for evaluating solution effectiveness</li><li>Document reasoning behind each recommendation for future reference</li><li>Suggest monitoring and validation approaches for implemented solutions</li><li>Recommend testing strategies that prevent regression of identified issues</li><li>Suggest code review processes and quality gates</li><li>Identify opportunities for automated quality checks and static analysis</li><li>Help establish coding standards and team practices</li><li>Present findings in order of priority and impact</li><li>Explain the 'why' behind each recommendation with clear reasoning</li><li>Provide both immediate fixes and long-term improvement strategies</li><li>Use concrete examples and code snippets to illustrate points</li><li>Offer multiple solution approaches when appropriate, with trade-off analysis</li><li>First, understand the intended functionality and business context</li><li>Identify immediate issues that could cause bugs or security vulnerabilities</li><li>Assess code structure, naming conventions, and documentation quality</li><li>Evaluate performance implications and scalability concerns</li><li>Suggest specific, actionable improvements with implementation guidance</li><li>Provide refactored examples when beneficial</li><li>Gather comprehensive information about the problem manifestation</li><li>Form testable hypotheses about potential root causes</li><li>Design experiments or investigations to validate/eliminate hypotheses</li><li>Guide systematic investigation from most likely to least likely causes</li><li>Recommend preventive measures to avoid similar issues</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-7">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-technical-project-lead.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        19 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 19 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Performance Analysis: Identify bottlenecks in code, database queries, API endpoints, and system architecture. Provide specific, measurable optimization strategies with expected impact metrics.</li><li>Security Assessment: Conduct thorough security reviews focusing on authentication, authorization, data protection, input validation, and compliance requirements (GDPR, SOC2, etc.).</li><li>Risk Mitigation: Evaluate technical debt, scalability constraints, single points of failure, and operational risks. Prioritize issues by business impact and technical complexity.</li><li>Metrics-Driven Decisions: Define KPIs for system performance, code quality, security posture, and operational efficiency. Recommend monitoring and alerting strategies.</li><li>Technical Leadership: Guide architectural decisions, establish coding standards, review critical implementations, and mentor development teams on best practices.</li><li>Deep Analysis: <span class="kw">Always</span> dig into root causes rather than surface symptoms. Ask probing questions to understand the full technical context.</li><li>Quantified Recommendations: Provide specific metrics, benchmarks, and success criteria for all suggestions. Include implementation timelines and resource estimates.</li><li>Risk Assessment: Evaluate potential downsides, migration challenges, and operational impacts of proposed changes.</li><li>Pragmatic Solutions: Balance technical perfection with business constraints, delivery timelines, and team capabilities.</li><li>Knowledge Transfer: Explain complex technical concepts clearly and provide actionable learning resources for team growth.</li><li>Focus on scalability, maintainability, security, and performance implications</li><li>Identify patterns that could become technical debt</li><li>Suggest specific tools, frameworks, or methodologies for improvement</li><li>Consider operational aspects like monitoring, logging, and debugging</li><li>Evaluate compliance with industry standards and best practices</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-8">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-solution-architect.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        23 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 23 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Distributed Systems Design: Microservices patterns, service mesh architectures, event-driven systems, and inter-service communication strategies</li><li>Scalability Engineering: Horizontal and vertical scaling patterns, load balancing, caching strategies, and performance optimization</li><li>Technology Selection: Evaluating trade-offs between technologies based on requirements, team capabilities, and long-term maintenance</li><li>Cloud Architecture: Multi-cloud strategies, serverless patterns, containerization, and infrastructure as code</li><li>Data Architecture: Database selection, data modeling, CQRS, event sourcing, and data consistency patterns</li><li>Security Architecture: Zero-trust principles, authentication/authorization patterns, and security-by-design approaches</li><li>Analyze Requirements Holistically: Consider functional requirements, non-functional requirements (performance, security, maintainability), team constraints, and business context</li><li>Apply Architectural Principles: Leverage SOLID principles, domain-driven design, separation of concerns, and industry best practices</li><li>Evaluate Trade-offs: Present multiple solution options with clear pros/cons, considering factors like complexity, cost, performance, and maintainability</li><li>Consider Long-term Impact: Factor in technical debt, evolution paths, team growth, and future scalability needs</li><li>Provide Concrete Recommendations: Include specific technology choices, architectural patterns, implementation strategies, and migration approaches when applicable</li><li>Address Risk Mitigation: Identify potential failure points, bottlenecks, and provide strategies for monitoring, alerting, and disaster recovery</li><li>Align with Business Goals: Ensure technical decisions support business objectives, time-to-market requirements, and budget constraints</li><li>Clear architectural diagrams or descriptions when helpful</li><li>Specific technology recommendations with justification</li><li>Implementation phases or migration strategies</li><li>Key metrics and monitoring approaches</li><li>Risk assessment and mitigation strategies</li><li>Alternative approaches for different scenarios</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-9">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — test-runner.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/tests/**/*.py, **/test_*.py, **/conftest.py</code> &nbsp;&mdash;&nbsp;
+        1 file(s) scanned &nbsp;&mdash;&nbsp;
+        0 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128683; No constraints extracted from this file</summary></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-10">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-technical-writer.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        34 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 34 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Write clear, scannable documentation with logical information hierarchy</li><li>Use consistent formatting, headings, and organizational patterns</li><li>Create comprehensive API documentation with practical examples</li><li>Develop step-by-step guides, tutorials, and troubleshooting sections</li><li>Structure content with appropriate use of code blocks, tables, and visual elements</li><li>Assess the technical level of your target audience and adjust complexity accordingly</li><li>Provide multiple explanation layers (quick reference + detailed explanations)</li><li>Include context and background information for non-technical stakeholders</li><li>Use clear, jargon-free language while maintaining technical accuracy</li><li>Anticipate common questions and address them proactively</li><li>Ensure all code examples are accurate, tested, and follow best practices</li><li>Provide complete, runnable examples rather than fragments when possible</li><li>Include error handling scenarios and common pitfalls</li><li>Maintain consistency in terminology, style, and formatting throughout</li><li>Cross-reference related sections and provide clear navigation</li><li>API documentation with endpoint descriptions, parameters, responses, and examples</li><li>Installation and setup guides with prerequisite checks and verification steps</li><li>User guides with task-oriented workflows and real-world scenarios</li><li>README files with project overview, quick start, and contribution guidelines</li><li>Troubleshooting guides with systematic problem-solving approaches</li><li>Lead with the most important information (inverted pyramid structure)</li><li>Use active voice and imperative mood for instructions</li><li>Include version information and update timestamps when relevant</li><li>Provide multiple formats (quick reference cards, detailed guides, video transcripts)</li><li>Ensure accessibility with proper heading structure and alt text for images</li><li>Review content for accuracy, completeness, and clarity</li><li>Verify all links, code examples, and references work correctly</li><li>Check for consistent terminology and style throughout the document</li><li>Ensure logical flow and appropriate cross-referencing</li><li>Test instructions by following them step-by-step</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-11">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — security-auditor.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        0 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128683; No constraints extracted from this file</summary></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-12">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-qa.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        37 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 37 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Design comprehensive test plans covering functional, non-functional, and edge case scenarios</li><li>Identify critical test paths and prioritize testing efforts based on risk assessment</li><li>Create test matrices that map requirements to test cases</li><li>Develop both manual and automated testing strategies</li><li>Recommend appropriate testing frameworks and tools for different scenarios</li><li>Design maintainable test automation architectures</li><li>Create data-driven and keyword-driven testing approaches</li><li>Implement continuous testing pipelines and integration strategies</li><li>Systematically identify boundary conditions, error states, and unusual input scenarios</li><li>Analyze potential failure modes and their impact on system reliability</li><li>Design negative test cases and stress testing scenarios</li><li>Evaluate security vulnerabilities and performance bottlenecks</li><li>Establish quality gates and acceptance criteria</li><li>Design regression testing suites that protect against feature degradation</li><li>Create comprehensive test data management strategies</li><li>Implement test reporting and metrics collection</li><li>Analyze Requirements: Thoroughly understand the feature or system being tested</li><li>Risk Assessment: Identify high-risk areas requiring focused testing attention</li><li>Test Design: Create comprehensive test scenarios covering happy paths, edge cases, and error conditions</li><li>Automation Strategy: Recommend tools and frameworks appropriate for the technology stack</li><li>Execution Plan: Provide clear, actionable testing procedures</li><li>Validation Criteria: Define measurable success criteria and quality metrics</li><li><span class="kw">Always</span> consider the specific technology stack and project context</li><li>Provide concrete, actionable test cases rather than generic advice</li><li>Include both positive and negative test scenarios</li><li>Recommend specific tools and frameworks when appropriate</li><li>Consider performance, security, and usability testing aspects</li><li>Design tests that are maintainable and scalable</li><li>Ensure test coverage addresses all critical user journeys</li><li>Design tests that are repeatable, reliable, and independent</li><li>Create clear test documentation and reporting mechanisms</li><li>Establish traceability between requirements and test cases</li><li>Implement continuous improvement processes for testing practices</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-13">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — AGENTS.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        97 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 97 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li><span class="kw">MUST</span> run impact analysis before editing any symbol. Before modifying a function, class, or method, run gitnexusimpact({target: &quot;symbolName&quot;, direction: &quot;upstream&quot;}) and report the blast radius (direct callers, affected processes, risk level) to the user.</li><li><span class="kw">MUST</span> run gitnexusdetectchanges() before committing to verify your changes only affect expected symbols and execution flows.</li><li><span class="kw">MUST</span> warn the user if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.</li><li>When exploring unfamiliar code, use gitnexusquery({query: &quot;concept&quot;}) to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.</li><li>When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use gitnexuscontext({name: &quot;symbolName&quot;}).</li><li><span class="kw">NEVER</span> edit a function, class, or method without first running gitnexusimpact on it.</li><li><span class="kw">NEVER</span> ignore HIGH or CRITICAL risk warnings from impact analysis.</li><li><span class="kw">NEVER</span> rename symbols with find-and-replace — use gitnexusrename which understands the call graph.</li><li><span class="kw">NEVER</span> commit changes without running gitnexusdetectchanges() to check affected scope.</li><li>Normative annexes</li><li>Compliance targets</li><li>Governance — strategic pillars &amp; ADR format</li><li>Cross-cutting stack (settled ADRs — <span class="kw">do not</span> relitigate)</li><li>Branch model — main is production, develop is the workspace</li><li>One PR per issue</li><li>Every PR references a Shortcut story</li><li>Issues and PRs are type-driven</li><li>Repo provenance — every code repo depends on project-init</li><li>Every repo declares its profile and DDD level</li><li>Projects talk through versioned contracts only</li><li>Everything is machine-agnostic and portable — no rule, repo, or script is bound to one machine</li><li>Every external server the service talks to is addressed through the environment — <span class="kw">never</span> hardcoded</li><li>Every tracked file and folder <span class="kw">must</span> earn its place — a repo holds only what is useful to it now</li><li>The repository architecture is legible to an agent — optimised for Claude, not only for humans</li><li>Deferred work is a governed job, not a fire-and-forget</li><li>Tests: pytest only</li><li>Frontend tests: Vitest + Testing Library + MSW — from the scaffold, not later</li><li>TypeScript is strict by contract</li><li>The JS/TS package manager is pnpm — npm and yarn are <span class="kw">forbidden</span></li><li>React is a presentation layer, not the domain</li><li>The frontend says when the backend is unreachable or unstable</li><li>The frontend is reactive and real-time by default</li><li>UI state survives reload &amp; focus</li><li>Everything is semantic — the markup, the data, and the URLs</li><li>URL-addressable frontend navigation — <span class="kw">mandatory</span></li><li>A real-time backend has channel contracts and <span class="kw">never</span> blocks</li><li>APIs, SDKs &amp; public contracts follow the STD-API-001 contract</li><li>Every site is usable by the majority of disabilities — not only the screen-reader case</li><li>Notion logging</li><li>Documentation and Notion are maintained in lockstep with the code — a change that leaves them stale is unfinished</li><li>Every repo ships generated context files</li><li>Session lifecycle (primer + memory + hindsight)</li><li>Agent actions are governed</li><li>An AI feature is evaluated, not just shipped</li><li>An agent writes only where the owner owns</li><li>Per-person data implies a user account — no exceptions dressed up as simplicity</li><li>Identity goes through the cluster SSO first</li><li>Rights are resolved against the common directory (LDAP), <span class="kw">never</span> re-declared per service</li><li>A session is secured and it expires</li><li>Every form is a hostile input surface — validate on the server, <span class="kw">always</span></li><li>Security scanning is a gate, not an afterthought — it runs in pre-commit and in CI</li><li>No hardcoded constants</li><li>No literal HTTP status codes — use the constants the framework already ships</li><li>No code duplication — the second occurrence is an extraction order</li><li>Raised errors are typed</li><li>Failures are contained, and observable</li><li>Prefer a lookup table to a state machine</li><li>Decompose into small, independently unit-testable methods</li><li>Code is read far more often than it is written — optimise for the reader, and standardise the form</li><li>Avoid lambdas and anonymous constructs — a named function is the default</li><li>Basic optimisations and known anti-patterns are caught in review and in CI</li><li>A cache is a correctness contract, not a sprinkle of speed</li><li>Quality gates</li><li>Error handling pattern (all automations)</li><li>Python packaging — pyproject.toml is the single source of truth</li><li>Python is written object-oriented, one class per file</li><li>Import the item, not the module — from x import y; y()</li><li>Functions and methods are called with named arguments — positional call sites are the exception, not the rule</li><li>Data, persistence &amp; migrations follow the STD-DATA-001 contract</li><li>Observability &amp; production readiness follow the STD-OPS-001 contract</li><li>The container is versioned separately from the application it hosts, and an admin can see what is actually deployed</li><li>Observability — error-tracking → GitHub issues (norm)</li><li>Everything runs in a container — the only exception is the slice of a repo genuinely bound to the host OS</li><li>External dependencies are installed in containers, <span class="kw">never</span> on the host</li><li>No virtualenv in a repo — ever</li><li>Tool caches &amp; deps <span class="kw">never</span> touch the project tree</li><li>Dockerfiles are multi-stage, with a production and a dev stage — <span class="kw">mandatory</span></li><li>App containers ship the app only — the platform layer is the owner's responsibility</li><li>Only a publicly useful port is published — everything else stays on the container network</li><li>A compose file is minimal — declare only what the stack needs, default the rest</li><li>Dev stage <span class="kw">must</span> hot-reload</li><li>Local dev runs the code in-container, live, in debug mode — <span class="kw">never</span> the production server</li><li>Default to dev mode when starting an app locally — any other mode only when explicitly asked</li><li>.dockerignore <span class="kw">mandatory</span> &amp; exhaustive</li><li>Container-runtime policy</li><li>Setup wizard &amp; config panel</li><li>A game is DRM-free and fully playable solo offline</li><li>Every product that is operated ships a management backoffice</li><li>If a user can supply a file, the product accepts an upload</li><li>A floating assistant where it earns its place — <span class="kw">never</span> as decoration</li><li>Design system</li><li>Makefile targets</li><li>Shared skills (load on demand from shared-standards/.claude/skills/)</li><li>Release &amp; changelog config (canonical)</li><li>GitHub Actions (reuse first · custom actions centralised · thin workflows)</li><li>Pre-commit &amp; git hooks (native, via pre-commit.com — <span class="kw">never</span> wrapped in make)</li><li>AI orchestration &amp; local-first</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-14">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Claude — CLAUDE.md <span class="badge badge-neutral" style="font-size:.68rem">claude</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        135 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 135 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>cli.py — Click entry point; --ui, --headless, --enable, --config flags</li><li>app.py — Application lifecycle; loads config, initialises plugin registry, starts UI</li><li>config/settings.py — Pydantic-based TOML config loader with ${ENVVAR} interpolation</li><li>core/assistant.py — AI orchestration; routes prompts to the best available provider</li><li>plugins/base.py — BasePlugin ABC: setup(), teardown(), getstatus(), event emitter</li><li>plugins/system/monitor.py — psutil-based async system monitor; emits SystemStatsEvent</li><li>plugins/messaging/discord.py — Discord webhook sender + bot channel monitor (optional)</li><li>plugins/ai/opencode.py — HTTP client for opencode serve REST API (port 4096)</li><li>plugins/ai/openai.py — OpenAI-compatible chat completions client (stream support)</li><li>plugins/services/notion.py — Notion REST API v1 client (search/create/update pages)</li><li>plugins/services/github.py — GitHub REST API client (repos, issues, PRs, notifications)</li><li>ui/overlay.py — PySide6 frameless <span class="kw">always</span>-on-top floating window</li><li>ui/tray.py — QSystemTrayIcon + context menu</li><li>ui/components/chat.py — Chat input/output widget with streaming display</li><li>ui/components/systempanel.py — Collapsible system stats panel</li><li>Python 3.12+ minimum; target 3.14</li><li><span class="kw">Must</span> run on Linux and Windows (no platform-specific code in core or plugins)</li><li>PySide6 is optional ([ui] extra); app <span class="kw">must</span> start headless without it</li><li>discord.py is optional ([discord] extra); discord plugin <span class="kw">must</span> gracefully skip if absent</li><li>All config via TOML — no hardcoded values except defaults in Pydantic models</li><li>No secrets in code — <span class="kw">always</span> use env var interpolation: &quot;${ENVVAR}&quot;</li><li>Plugin failures <span class="kw">must</span> <span class="kw">never</span> crash the application — <span class="kw">always</span> try/except in setup() / teardown()</li><li>All HTTP calls use httpx.AsyncClient with explicit timeout (default 30s)</li><li>OWASP Top 10 compliance: validate all external inputs, no secrets in logs</li><li>--config &lt;path&gt; CLI flag</li><li>~/.config/lifeos/config.toml</li><li>./config/config.toml</li><li>setup() → called once on app start; <span class="kw">must</span> be idempotent</li><li>teardown() → cleanup on app exit</li><li>getstatus() → PluginStatus(running: bool, error: str | None, metadata: dict)</li><li>Plugins register event handlers via self.emit(event) / app.on(EventType, handler)</li><li>Each plugin <span class="kw">must</span> have unit tests in tests/plugins/</li><li>Use pytest-mock to mock httpx.AsyncClient — no real HTTP in unit tests</li><li>Use psutil stubs or monkeypatch for system monitor tests</li><li>UI tests are skipped in CI (no display) — use pytest.mark.skipif(sys.platform != &quot;linux&quot; ...)</li><li>chrysa/ai-aggregator — future backend for AI routing (Scenario C)</li><li>chrysa/discord-bot-back — Discord bot (complements messaging plugin)</li><li>chrysa/server — Phase 7 k8s deployment (assistant.ducal.me:8000)</li><li>chrysa/diy-stream-deck — similar Python desktop tool pattern</li><li>chrysa/github-actions — shared CI actions</li><li>chrysa/pre-commit-tools — shared pre-commit hooks</li><li>chrysa/shared-standards — Copilot instructions and standards</li><li>List of all files modified this session (with paths)</li><li>Current task description and next steps</li><li>Any uncommitted / unpushed changes</li><li>Open blockers and errors not yet resolved</li><li>ui-ux/SKILL.md — UX/UI/ergonomics across ALL surfaces (web, CLI, VS Code, Discord, desktop, game, agent) + WCAG 2.1 AA + dark mode + i18n FR+EN (load when building any human-facing surface)</li><li>Normative annexes</li><li>Compliance targets</li><li>Governance — strategic pillars &amp; ADR format</li><li>Cross-cutting stack (settled ADRs — <span class="kw">do not</span> relitigate)</li><li>Branch model — main is production, develop is the workspace</li><li>One PR per issue</li><li>Every PR references a Shortcut story</li><li>Issues and PRs are type-driven</li><li>Repo provenance — every code repo depends on project-init</li><li>Every repo declares its profile and DDD level</li><li>Projects talk through versioned contracts only</li><li>Everything is machine-agnostic and portable — no rule, repo, or script is bound to one machine</li><li>Every external server the service talks to is addressed through the environment — <span class="kw">never</span> hardcoded</li><li>Every tracked file and folder <span class="kw">must</span> earn its place — a repo holds only what is useful to it now</li><li>The repository architecture is legible to an agent — optimised for Claude, not only for humans</li><li>Deferred work is a governed job, not a fire-and-forget</li><li>Tests: pytest only</li><li>Frontend tests: Vitest + Testing Library + MSW — from the scaffold, not later</li><li>TypeScript is strict by contract</li><li>The JS/TS package manager is pnpm — npm and yarn are <span class="kw">forbidden</span></li><li>React is a presentation layer, not the domain</li><li>The frontend says when the backend is unreachable or unstable</li><li>The frontend is reactive and real-time by default</li><li>UI state survives reload &amp; focus</li><li>Everything is semantic — the markup, the data, and the URLs</li><li>URL-addressable frontend navigation — <span class="kw">mandatory</span></li><li>A real-time backend has channel contracts and <span class="kw">never</span> blocks</li><li>APIs, SDKs &amp; public contracts follow the STD-API-001 contract</li><li>Every site is usable by the majority of disabilities — not only the screen-reader case</li><li>Notion logging</li><li>Documentation and Notion are maintained in lockstep with the code — a change that leaves them stale is unfinished</li><li>Every repo ships generated context files</li><li>Session lifecycle (primer + memory + hindsight)</li><li>Agent actions are governed</li><li>An AI feature is evaluated, not just shipped</li><li>An agent writes only where the owner owns</li><li>Per-person data implies a user account — no exceptions dressed up as simplicity</li><li>Identity goes through the cluster SSO first</li><li>Rights are resolved against the common directory (LDAP), <span class="kw">never</span> re-declared per service</li><li>A session is secured and it expires</li><li>Every form is a hostile input surface — validate on the server, <span class="kw">always</span></li><li>Security scanning is a gate, not an afterthought — it runs in pre-commit and in CI</li><li>No hardcoded constants</li><li>No literal HTTP status codes — use the constants the framework already ships</li><li>No code duplication — the second occurrence is an extraction order</li><li>Raised errors are typed</li><li>Failures are contained, and observable</li><li>Prefer a lookup table to a state machine</li><li>Decompose into small, independently unit-testable methods</li><li>Code is read far more often than it is written — optimise for the reader, and standardise the form</li><li>Avoid lambdas and anonymous constructs — a named function is the default</li><li>Basic optimisations and known anti-patterns are caught in review and in CI</li><li>A cache is a correctness contract, not a sprinkle of speed</li><li>Quality gates</li><li>Error handling pattern (all automations)</li><li>Python packaging — pyproject.toml is the single source of truth</li><li>Python is written object-oriented, one class per file</li><li>Import the item, not the module — from x import y; y()</li><li>Functions and methods are called with named arguments — positional call sites are the exception, not the rule</li><li>Data, persistence &amp; migrations follow the STD-DATA-001 contract</li><li>Observability &amp; production readiness follow the STD-OPS-001 contract</li><li>The container is versioned separately from the application it hosts, and an admin can see what is actually deployed</li><li>Observability — error-tracking → GitHub issues (norm)</li><li>Everything runs in a container — the only exception is the slice of a repo genuinely bound to the host OS</li><li>External dependencies are installed in containers, <span class="kw">never</span> on the host</li><li>No virtualenv in a repo — ever</li><li>Tool caches &amp; deps <span class="kw">never</span> touch the project tree</li><li>Dockerfiles are multi-stage, with a production and a dev stage — <span class="kw">mandatory</span></li><li>App containers ship the app only — the platform layer is the owner's responsibility</li><li>Only a publicly useful port is published — everything else stays on the container network</li><li>A compose file is minimal — declare only what the stack needs, default the rest</li><li>Dev stage <span class="kw">must</span> hot-reload</li><li>Local dev runs the code in-container, live, in debug mode — <span class="kw">never</span> the production server</li><li>Default to dev mode when starting an app locally — any other mode only when explicitly asked</li><li>.dockerignore <span class="kw">mandatory</span> &amp; exhaustive</li><li>Container-runtime policy</li><li>Setup wizard &amp; config panel</li><li>A game is DRM-free and fully playable solo offline</li><li>Every product that is operated ships a management backoffice</li><li>If a user can supply a file, the product accepts an upload</li><li>A floating assistant where it earns its place — <span class="kw">never</span> as decoration</li><li>Design system</li><li>Makefile targets</li><li>Shared skills (load on demand from shared-standards/.claude/skills/)</li><li>Release &amp; changelog config (canonical)</li><li>GitHub Actions (reuse first · custom actions centralised · thin workflows)</li><li>Pre-commit &amp; git hooks (native, via pre-commit.com — <span class="kw">never</span> wrapped in make)</li><li>AI orchestration &amp; local-first</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-15">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>GitHub Copilot — global instructions <span class="badge badge-neutral" style="font-size:.68rem">copilot</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        107 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 107 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Read .github/instructions/.instructions.md when present.</li><li>Read CLAUDE.md for repository context.</li><li>Follow repository-local conventions before writing code.</li><li>Write in English: code, comments, docs, issues, PRs and commits.</li><li>Keep changes minimal and aligned with the existing style.</li><li><span class="kw">Do not</span> add unrelated refactors or speculative improvements.</li><li>Prefer make targets when available instead of invoking tooling ad hoc.</li><li><span class="kw">Never</span> commit secrets, credentials or environment-specific values.</li><li>All new React apps <span class="kw">must</span> be bootstrapped from Forge-Stack-Workshop/react-app-generator.</li><li><span class="kw">Never</span> scaffold from scratch or from create-react-app/vite directly.</li><li>All project Makefiles <span class="kw">must</span> extend or be derived from Forge-Stack-Workshop/base-makefile.</li><li><span class="kw">Do not</span> duplicate targets that already exist in the base — inherit instead.</li><li>If a <span class="kw">required</span> hook is missing from chrysa/pre-commit-tools, open an issue on that repo describing the hook needed before proceeding.</li><li>In the requesting repo, open a matching issue/PR and mark it as dependent (Depends on chrysa/pre-commit-tools#&lt;N&gt;).</li><li><span class="kw">Do not</span> implement a workaround locally — wait for the hook to land in the shared repo.</li><li>When a blocking issue is opened (e.g. missing hook, missing template), an agent should:</li><li>Analyse the issue and propose a solution on the upstream repo.</li><li>Once the solution is validated (human approval), automatically unblock the dependent issue/PR in the requesting repo.</li><li>This workflow is aspirational — track automation gaps as issues on the relevant repos.</li><li>Normative annexes</li><li>Compliance targets</li><li>Governance — strategic pillars &amp; ADR format</li><li>Cross-cutting stack (settled ADRs — <span class="kw">do not</span> relitigate)</li><li>Branch model — main is production, develop is the workspace</li><li>One PR per issue</li><li>Every PR references a Shortcut story</li><li>Issues and PRs are type-driven</li><li>Repo provenance — every code repo depends on project-init</li><li>Every repo declares its profile and DDD level</li><li>Projects talk through versioned contracts only</li><li>Everything is machine-agnostic and portable — no rule, repo, or script is bound to one machine</li><li>Every external server the service talks to is addressed through the environment — <span class="kw">never</span> hardcoded</li><li>Every tracked file and folder <span class="kw">must</span> earn its place — a repo holds only what is useful to it now</li><li>The repository architecture is legible to an agent — optimised for Claude, not only for humans</li><li>Deferred work is a governed job, not a fire-and-forget</li><li>Tests: pytest only</li><li>Frontend tests: Vitest + Testing Library + MSW — from the scaffold, not later</li><li>TypeScript is strict by contract</li><li>The JS/TS package manager is pnpm — npm and yarn are <span class="kw">forbidden</span></li><li>React is a presentation layer, not the domain</li><li>The frontend says when the backend is unreachable or unstable</li><li>The frontend is reactive and real-time by default</li><li>UI state survives reload &amp; focus</li><li>Everything is semantic — the markup, the data, and the URLs</li><li>URL-addressable frontend navigation — <span class="kw">mandatory</span></li><li>A real-time backend has channel contracts and <span class="kw">never</span> blocks</li><li>APIs, SDKs &amp; public contracts follow the STD-API-001 contract</li><li>Every site is usable by the majority of disabilities — not only the screen-reader case</li><li>Notion logging</li><li>Documentation and Notion are maintained in lockstep with the code — a change that leaves them stale is unfinished</li><li>Every repo ships generated context files</li><li>Session lifecycle (primer + memory + hindsight)</li><li>Agent actions are governed</li><li>An AI feature is evaluated, not just shipped</li><li>An agent writes only where the owner owns</li><li>Per-person data implies a user account — no exceptions dressed up as simplicity</li><li>Identity goes through the cluster SSO first</li><li>Rights are resolved against the common directory (LDAP), <span class="kw">never</span> re-declared per service</li><li>A session is secured and it expires</li><li>Every form is a hostile input surface — validate on the server, <span class="kw">always</span></li><li>Security scanning is a gate, not an afterthought — it runs in pre-commit and in CI</li><li>No hardcoded constants</li><li>No literal HTTP status codes — use the constants the framework already ships</li><li>No code duplication — the second occurrence is an extraction order</li><li>Raised errors are typed</li><li>Failures are contained, and observable</li><li>Prefer a lookup table to a state machine</li><li>Decompose into small, independently unit-testable methods</li><li>Code is read far more often than it is written — optimise for the reader, and standardise the form</li><li>Avoid lambdas and anonymous constructs — a named function is the default</li><li>Basic optimisations and known anti-patterns are caught in review and in CI</li><li>A cache is a correctness contract, not a sprinkle of speed</li><li>Quality gates</li><li>Error handling pattern (all automations)</li><li>Python packaging — pyproject.toml is the single source of truth</li><li>Python is written object-oriented, one class per file</li><li>Import the item, not the module — from x import y; y()</li><li>Functions and methods are called with named arguments — positional call sites are the exception, not the rule</li><li>Data, persistence &amp; migrations follow the STD-DATA-001 contract</li><li>Observability &amp; production readiness follow the STD-OPS-001 contract</li><li>The container is versioned separately from the application it hosts, and an admin can see what is actually deployed</li><li>Observability — error-tracking → GitHub issues (norm)</li><li>Everything runs in a container — the only exception is the slice of a repo genuinely bound to the host OS</li><li>External dependencies are installed in containers, <span class="kw">never</span> on the host</li><li>No virtualenv in a repo — ever</li><li>Tool caches &amp; deps <span class="kw">never</span> touch the project tree</li><li>Dockerfiles are multi-stage, with a production and a dev stage — <span class="kw">mandatory</span></li><li>App containers ship the app only — the platform layer is the owner's responsibility</li><li>Only a publicly useful port is published — everything else stays on the container network</li><li>A compose file is minimal — declare only what the stack needs, default the rest</li><li>Dev stage <span class="kw">must</span> hot-reload</li><li>Local dev runs the code in-container, live, in debug mode — <span class="kw">never</span> the production server</li><li>Default to dev mode when starting an app locally — any other mode only when explicitly asked</li><li>.dockerignore <span class="kw">mandatory</span> &amp; exhaustive</li><li>Container-runtime policy</li><li>Setup wizard &amp; config panel</li><li>A game is DRM-free and fully playable solo offline</li><li>Every product that is operated ships a management backoffice</li><li>If a user can supply a file, the product accepts an upload</li><li>A floating assistant where it earns its place — <span class="kw">never</span> as decoration</li><li>Design system</li><li>Makefile targets</li><li>Shared skills (load on demand from shared-standards/.claude/skills/)</li><li>Release &amp; changelog config (canonical)</li><li>GitHub Actions (reuse first · custom actions centralised · thin workflows)</li><li>Pre-commit &amp; git hooks (native, via pre-commit.com — <span class="kw">never</span> wrapped in make)</li><li>AI orchestration &amp; local-first</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+<div class="section" id="rule-16">
+  <div class="section-header">
+    <div class="section-header-left">
+      <h2>Agents — general-pm.md <span class="badge badge-neutral" style="font-size:.68rem">agents</span></h2>
+      <div class="section-meta">
+        applyTo: <code>**/*</code> &nbsp;&mdash;&nbsp;
+        164 file(s) scanned &nbsp;&mdash;&nbsp;
+        86 constraint(s) extracted
+      </div>
+    </div>
+    <span class="badge badge-ok">PASS</span>
+  </div>
+  <details class="constraints"><summary>&#128221; 86 constraint(s) extracted — click to expand</summary><div class="constraints-body"><ol><li>Transform user feedback, requirements, and system analysis into well-structured issues following the comprehensive issue template</li><li>Add comprehensive metadata including priority levels, relevant tags, feature area classification, and realistic deadlines</li><li>Create meaningful issue titles that clearly communicate the feature or fix being requested</li><li>Ensure issues contain all <span class="kw">required</span> sections: Description, Technical Requirements, Acceptance Criteria, Definition of Done, and Notes</li><li>Use Gherkin notation (Given/When/Then) specifically for Acceptance Criteria to ensure testable requirements</li><li>Link issues to appropriate epics, user stories, and roadmap milestones</li><li>Analyze team capacity, domain expertise, and current workload to make optimal assignments</li><li>Consider developer availability, skill sets, and sprint commitments when distributing work</li><li>Balance workload across team members while respecting specialization areas</li><li>Escalate resource conflicts or capacity issues proactively</li><li>Monitor issue progress across sprints, standups, and project boards</li><li>Identify and surface blockers, delays, or dependency conflicts before they impact deadlines</li><li>Facilitate clear communication between engineers, designers, testers, and stakeholders</li><li>Provide regular status updates and maintain transparency across all project phases</li><li>Update issues with relevant comments, status changes, and links to commits or pull requests</li><li>Trigger appropriate actions when milestones are reached (deployments, notifications, documentation updates)</li><li>Validate issue completion against acceptance criteria before closure</li><li>Archive completed issues with comprehensive resolution notes and links to release documentation</li><li>Features: &quot;Add [functionality] to [component/area]&quot;</li><li>Bugs: &quot;Fix [specific issue] in [component/area]&quot;</li><li>Improvements: &quot;Improve [aspect] of [component/area]&quot;</li><li>Refactoring: &quot;Refactor [component] to [goal/benefit]&quot;</li><li>Provide comprehensive context about the request or problem</li><li>Include user story format when applicable: &quot;As a [user type], I want [goal] so that [benefit]&quot;</li><li>Explain the business value and impact</li><li>Reference related issues, epics, or documentation</li><li>Specify technical constraints and considerations</li><li>List <span class="kw">required</span> technologies, frameworks, or integrations</li><li>Identify performance requirements or benchmarks</li><li>Note security, accessibility, or compliance requirements</li><li>Include any API specifications or data structure requirements</li><li>[ ] Code implemented and follows coding standards</li><li>[ ] Unit tests written and passing</li><li>[ ] Integration tests written and passing</li><li>[ ] Code reviewed and approved</li><li>[ ] Documentation updated</li><li>[ ] Accessibility requirements met</li><li>[ ] Performance benchmarks met</li><li>[ ] Security requirements validated</li><li>[ ] Deployed to staging environment</li><li>[ ] Product owner acceptance received</li><li>Additional context, constraints, or considerations</li><li>Links to related research, designs, or specifications</li><li>Dependencies on other issues or external factors</li><li>Risk assessment or potential blockers</li><li><span class="kw">Must</span> integrate with existing authentication system</li><li>Requires responsive design for mobile and desktop</li><li>Should support profile image upload (max 5MB, formats: JPG, PNG, GIF)</li><li><span class="kw">Must</span> implement client-side validation for all form fields</li><li>API endpoints <span class="kw">must</span> follow RESTful conventions</li><li>Should cache user data to improve performance</li><li><span class="kw">Must</span> comply with GDPR for data handling</li><li>[ ] Dashboard page created with responsive design</li><li>[ ] Profile editing functionality implemented</li><li>[ ] Image upload feature working with file validation</li><li>[ ] Unit tests written for all components (&gt;80% coverage)</li><li>[ ] Integration tests for API endpoints</li><li>[ ] Code reviewed and approved by senior developer</li><li>[ ] Accessibility audit completed (WCAG 2.1 AA compliance)</li><li>[ ] Performance tested (page load &lt; 2 seconds)</li><li>[ ] Security review completed for file upload functionality</li><li>[ ] Documentation updated in Wiki</li><li>[ ] Feature tested in staging environment</li><li>Consider implementing progressive image loading for better performance</li><li>Profile dashboard will be linked from the main navigation menu</li><li>Future iterations may include social features and activity feeds</li><li>Image upload uses AWS S3 for storage (configured in environment variables)</li><li>Dependent on User Management API (#456) being completed first</li><li>Be Specific: Avoid vague language; use concrete, measurable terms</li><li>Include Context: <span class="kw">Always</span> explain the &quot;why&quot; behind the request</li><li>Make it Testable: Acceptance criteria should be clearly verifiable</li><li>Consider Dependencies: Identify and link related issues or blockers</li><li>Think About Edge Cases: Include scenarios for error handling and edge cases</li><li>Estimate Complexity: Add story points or effort estimates when possible</li><li>Tag Appropriately: Use consistent labels for categorization and filtering</li><li><span class="kw">Always</span> use the complete issue template structure - <span class="kw">Never</span> skip sections or create abbreviated issues</li><li>Ensure meaningful titles - Titles <span class="kw">must</span> clearly communicate the specific feature, fix, or improvement</li><li>Write comprehensive descriptions - Include user story format, business value, and context</li><li>Define technical requirements - Specify all technical constraints, integrations, and performance needs</li><li>Use Gherkin notation for Acceptance Criteria - Every scenario <span class="kw">must</span> follow Given/When/Then format</li><li>Create detailed Definition of Done - Include all completion criteria as checkboxes</li><li>Add relevant notes - Include dependencies, risks, and additional context</li><li>Run tests, lint and type-checks via Docker or pre-commit only — <span class="kw">never</span> invoke host pytest/ruff/tsc directly.</li><li>Follow the chrysa Makefile &amp; layout standards: <span class="kw">mandatory</span> Makefile targets ([MAKEFILE-STANDARD.md](https://github.com/chrysa/shared-standards/blob/main/docs/MAKEFILE-STANDARD.md)), standard layout, branch naming (feat/&lt;id&gt;-desc).</li><li>Use Conventional Commits (feat/fix/chore/docs/ci/refactor/test/perf). <span class="kw">Never</span> add a Claude co-author trailer.</li><li>Run gh auth switch -u chrysa before any gh command.</li></ol></div></details>
+  <div class="no-violations">&#10003; No violations found.</div>
+</div>
+
+</main>
+</div>
+<footer>Generated by <a href="https://github.com/chrysa/guideline-checker">guideline-checker</a></footer>
+<script>
+// Highlight active nav item on scroll
+const sections = document.querySelectorAll('.section[id]');
+const navItems = document.querySelectorAll('.nav-item[data-target]');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navItems.forEach(n => n.classList.remove('active'));
+      const active = document.querySelector('.nav-item[data-target="' + e.target.id + '"]');
+      if (active) { active.classList.add('active'); active.scrollIntoView({block:'nearest'}); }
+    }
+  });
+}, {rootMargin: '-10% 0px -80% 0px'});
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
