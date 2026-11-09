@@ -100,6 +100,9 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
       SKILL.md
     verification-loop/
       SKILL.md
+.codex/
+  rules/
+    prism-ai-lint.rules
 .devcontainer/
   devcontainer.json
 .editorconfig
@@ -140,7 +143,6 @@ Floating AI assistant multi-OS — system monitoring, messaging, AI and external
     quality-gate-check.yml
     release.yml
     secret-scan.yml
-    sonar.yml
     sync-labels.yml
     update-pr-body.yml
 .gitignore

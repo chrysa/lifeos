@@ -38,7 +38,8 @@ Format — see the chrysa conventions ([standards](https://github.com/chrysa/sha
 
 ## Hard Rules
 
-- **NEVER** add a `Co-Authored-By: Claude` / "Generated with Claude Code" trailer.
+- **NEVER** add assistant attribution to commits, PRs or tags: no co-author trailer naming the
+  assistant, no 'Generated with' footer, and no session-link trailer (`Claude-Session:`).
 - Do not use awattar's `New feature`/`Fix issue` types — chrysa uses the standard spec above.
 - Commit messages are validated by the repo's pre-commit hooks; run `make pre-commit` (Docker)
   if unsure, never host `pre-commit` directly.
