@@ -1,4 +1,5 @@
 ---
+name: test
 description: Run and improve the test suite for a given scope (Docker / pre-commit only)
 argument-hint: <file-or-directory | feature | all>
 ---

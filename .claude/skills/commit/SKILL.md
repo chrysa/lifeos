@@ -1,4 +1,5 @@
 ---
+name: commit
 description: Create a well-formatted Conventional Commit with atomic-commit analysis
 ---
 

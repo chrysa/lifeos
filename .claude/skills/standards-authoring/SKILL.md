@@ -1,6 +1,8 @@
 ---
 name: standards-authoring
-description: 'Use when adding, migrating, or editing a transverse standards domain in chrysa/shared-standards — creating a normative annexe, adding rules under a stable XX-nnn prefix, registering a STD-* domain in GV-015 + domains.yaml, anchoring it in the socle, and reconciling Notion. Load it before touching standards/STANDARDS.chrysa.md, standards/annexes/*, standards/domains.yaml, or GOVERNANCE.md GV-015, and before opening a standards PR.'
+description: Use when adding, migrating, or editing a transverse standards domain in chrysa/shared-standards — creating a normative annexe, adding rules under a stable XX-nnn prefix, registering a STD-* domain in GV-015 + domains.yaml, anchoring it in the socle, and reconciling Notion.
+metadata:
+  full_description: Use when adding, migrating, or editing a transverse standards domain in chrysa/shared-standards — creating a normative annexe, adding rules under a stable XX-nnn prefix, registering a STD-* domain in GV-015 + domains.yaml, anchoring it in the socle, and reconciling Notion. Load it before touching standards/STANDARDS.chrysa.md, standards/annexes/*, standards/domains.yaml, or GOVERNANCE.md GV-015, and before opening a standards PR.
 ---
 
 # Standards authoring — add or migrate a domain
@@ -52,7 +54,7 @@ description: 'Use when adding, migrating, or editing a transverse standards doma
       only the standards block refreshes, no error. State the blast radius in the PR body.
 - [ ] Branch `feat/standards-<domain>`, Conventional Commit, one issue, `Closes #N`, base `develop`.
 - [ ] PII: the loopback doc example fingerprint shifts when line numbers move — allowlist the new
-      hash in `.pii-allowlist.json` if `pii-scan` fails.
+      hash in `.pii-allowlist.json <!-- ⚠️ file not found — verify reference -->` if `pii-scan` fails.
 
 ## Tooling
 - `python -m scripts.check_domains_drift` — GV-015 ↔ domains.yaml gate.

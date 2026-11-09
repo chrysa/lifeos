@@ -1,4 +1,5 @@
 ---
+name: adr-new
 description: Scaffold a new ADR in the chrysa refutable format (fatal hypothesis, kill-test, gate)
 argument-hint: <short decision title>
 ---
@@ -6,7 +7,7 @@ argument-hint: <short decision title>
 # Command: ADR New
 
 Scaffold a new Architecture Decision Record for **$ARGUMENTS**, following the
-chrysa ADR format. Read `.claude/rules/adr.md` first — it is the standard.
+chrysa ADR format. Read `.claude/rules/adr.md <!-- ⚠️ file not found — verify reference -->` first — it is the standard.
 
 ## Usage
 
@@ -18,7 +19,7 @@ chrysa ADR format. Read `.claude/rules/adr.md` first — it is the standard.
 
 1. **Legitimacy check.** An ADR is mandatory only for: a new external dependency,
    an LLM/cloud provider choice, a breaking public-API change, a data-model
-   change, or an exception to a strategic pillar (`.claude/rules/pillars.md`). No
+   change, or an exception to a strategic pillar (`.claude/rules/pillars.md <!-- ⚠️ file not found — verify reference -->`). No
    trigger hit → say so and write nothing. An ADR for a refactor or a naming
    choice is noise that dilutes the real ones.
 

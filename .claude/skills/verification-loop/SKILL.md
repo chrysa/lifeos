@@ -1,7 +1,9 @@
 ---
 name: verification-loop
-description: "Self-checking loop that re-runs an objective against the work until it provably passes — define success criteria, execute, verify against them, iterate on failure. TRIGGER when: a task needs an explicit pass/fail gate before being called done, or the user asks to 'make sure it actually works' across multiple checks. DO NOT TRIGGER for: a single manual run-and-look (use the verify command), code review (use check), or debugging a known error (use hunt)."
-origin: ECC
+description: "Self-checking loop that re-runs an objective against the work until it provably passes — define success criteria, execute, verify against them, iterate on failure. TRIGGER when: a task needs an explicit pass/fail gate before being called done, or the user asks to 'make sure it actually works' across multiple checks."
+metadata:
+  origin: ECC
+  full_description: "Self-checking loop that re-runs an objective against the work until it provably passes — define success criteria, execute, verify against them, iterate on failure. TRIGGER when: a task needs an explicit pass/fail gate before being called done, or the user asks to 'make sure it actually works' across multiple checks. DO NOT TRIGGER for: a single manual run-and-look (use the verify command), code review (use check), or debugging a known error (use hunt)."
 ---
 
 # Verification Loop Skill

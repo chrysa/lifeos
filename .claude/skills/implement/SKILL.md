@@ -32,6 +32,6 @@ hook will block edits otherwise, so verify the gates before you start.
 ## Rules
 
 - Language: English (code, comments, commits).
-- Respect all standards in CLAUDE.md and `.claude/rules/*.md`.
+- Respect all standards in CLAUDE.md and `.claude/rules/*.md <!-- ⚠️ file not found — verify reference -->`.
 - Never bypass the hook (no editing `.claude/.active-feature` to a fake slug just to
   unlock edits). Approval is the human's call.

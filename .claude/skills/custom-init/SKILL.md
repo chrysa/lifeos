@@ -1,4 +1,5 @@
 ---
+name: custom-init
 description: Generate a comprehensive CLAUDE.md by analyzing the current project
 ---
 

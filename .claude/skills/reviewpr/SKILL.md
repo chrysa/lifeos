@@ -1,4 +1,5 @@
 ---
+name: reviewpr
 description: Thoroughly review a GitHub pull request and submit structured feedback
 argument-hint: <pr-number>
 ---
