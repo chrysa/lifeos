@@ -16,7 +16,7 @@ Follow the /architecture skill.
 - Python 3.14+ minimum; target 3.14
 - Must run on Linux **and** Windows (no platform-specific code in core or plugins)
 - PySide6 is optional (`[ui]` extra); app must start headless without it
-- `discord.py` is optional (`[discord]` extra); discord plugin must gracefully skip if absent
+- No Discord library is declared yet; when the discord plugin gets code, add `discord.py` as an optional `[discord]` extra and make the plugin skip gracefully if absent
 - All config via TOML — no hardcoded values except defaults in Pydantic models
 - No secrets in code — always use env var interpolation: `"${ENV_VAR}"`
 - Plugin failures must never crash the application — always `try/except` in `setup()` / `teardown()`
@@ -43,7 +43,7 @@ Each plugin extends `BasePlugin`:
 ## Development Commands
 
 ```bash
-make dev          # pip install -e ".[ui,discord,dev]" + pre-commit install
+make dev          # pip install -e ".[ui,dev]" + pre-commit install
 make test         # pytest
 make lint         # ruff check
 make format       # ruff format

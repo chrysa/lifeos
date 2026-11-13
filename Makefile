@@ -14,10 +14,10 @@ install:  ## Install runtime dependencies (headless)
 	pip install -e .
 
 install-ui:  ## Install with PySide6 overlay UI
-	pip install -e ".[ui,discord]"
+	pip install -e ".[ui]"
 
 dev:  ## Install all dev dependencies + pre-commit
-	pip install -e ".[ui,discord,dev]"
+	pip install -e ".[ui,dev]"
 	pre-commit install
 
 test:  ## Run tests
