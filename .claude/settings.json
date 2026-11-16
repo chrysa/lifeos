@@ -185,7 +185,15 @@
       "Bash(rtk gh issue view *)",
       "Bash(rtk gh issue list *)",
       "Bash(rtk gh run list *)",
-      "Bash(rtk gh run view *)"
+      "Bash(rtk gh run view *)",
+      "Bash(make build)",
+      "Bash(make format)",
+      "Bash(make help)",
+      "Bash(make lint)",
+      "Bash(make test)",
+      "Bash(make typecheck)",
+      "Bash(python -m pytest *)",
+      "Bash(mypy *)"
     ],
     "ask": [
       "Bash(git push *)",
@@ -231,7 +239,15 @@
       "Bash(rtk docker push *)",
       "Bash(rtk npm publish *)",
       "Bash(rtk twine upload *)",
-      "Bash(rtk rm -rf *)"
+      "Bash(rtk rm -rf *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(make dev *)",
+      "Bash(make run *)",
+      "Bash(rtk git add *)",
+      "Bash(rtk git commit *)",
+      "Bash(rtk make dev *)",
+      "Bash(rtk make run *)"
     ],
     "deny": [
       "Read(**/.env)",
