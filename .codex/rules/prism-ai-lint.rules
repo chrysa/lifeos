@@ -111,3 +111,24 @@ prefix_rule(
     decision = "prompt",
     justification = "Mirrors a Claude Code ask rule",
 )
+
+prefix_rule(
+    pattern = ["git", "add"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["git", "commit"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["make", "dev"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
+prefix_rule(
+    pattern = ["make", "run"],
+    decision = "prompt",
+    justification = "Mirrors a Claude Code ask rule",
+)
